@@ -2,6 +2,11 @@
 
 
 #--------------------------------------------------------------------------------------
+"""
+Cleans all nodes from cloudservers and cloudfiles that correspond to defined rackspace account
+"""
+
+#--------------------------------------------------------------------------------------
 import os
 RACKSPACE_USER = os.getenv( "RACKSPACE_USER" )
 RACKSPACE_KEY = os.getenv( "RACKSPACE_KEY" )

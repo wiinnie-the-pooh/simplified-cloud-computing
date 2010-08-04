@@ -1,5 +1,9 @@
 #!/usr/bin/env python
 
+#--------------------------------------------------------------------------------------
+"""
+Callback script which is called automatically on delivering task to cloud
+"""
 
 #--------------------------------------------------------------------------------------
 # Fetching the cloud provider security cridentials
@@ -18,6 +22,12 @@ a_cloudfiles_conn = cloudfiles.get_connection( RACKSPACE_USER, RACKSPACE_KEY, ti
 a_cloudfiles_container = a_cloudfiles_conn[ a_container_name ]
 a_file_object = a_cloudfiles_container.get_object( a_data_name )
 
+
+#--------------------------------------------------------------------------------------
+# Defining a simple automatic context dependatent task:
+#  - downloading corresponding 'data' archive from cloudfiles
+#  - extracting its context into the working directory
+#  - uploading back all the data items as separate objects into initial cloudfile container
 import os.path
 a_data_archive = os.path.join( a_working_dir, a_data_name )
 a_file_object.save_to_filename( a_data_archive )
@@ -33,3 +43,6 @@ for a_file in a_files :
     a_file_object = a_cloudfiles_container.create_object( a_file )
     a_file_object.load_from_filename( a_file_path )
     pass
+
+
+#--------------------------------------------------------------------------------------
