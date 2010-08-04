@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+
+# Obtain the location of the corresponding data folder
+source_dir=`dirname ${0%/*}`
+echo source_dir="${source_dir}"
+
+# Unpack the data and install the packages
+# - "libcloud"
+apt-get install unzip
+apt-get install python-paramiko
+(cd ${source_dir}/data && unzip apache-libcloud-incubating-0.3.1.zip)
+(cd ${source_dir}/data/apache-libcloud-0.3.1 && python ./setup.py install)
+
+# - "cloudfiles"
+apt-get install unzip
+apt-get install python
+(cd ${source_dir}/data && unzip rackspace-python-cloudfiles-1.7.2-0-gef2d5c0.zip)
+(cd ${source_dir}/data/rackspace-python-cloudfiles-48dd7c8 && python ./setup.py install)
+
+# Running the task
+# sudo apt-get install ipython
+echo RACKSPACE_USER="${1}", RACKSPACE_KEY="${2}"
+${source_dir}/control/load_result.py ${1} ${2} ${source_dir}
