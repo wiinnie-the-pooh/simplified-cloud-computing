@@ -10,8 +10,7 @@ This script is responsible for the task packaging and sending it for execution i
 an_usage = \
 """
 %prog \\
-      --data-dir=~/rackspace/data \\
-      --control-dir=~/rackspace/control \\
+      --task-def-dir=~/rackspace \\
       --rackspace-user=${RACKSPACE_USER} \\
       --rackspace-key=${RACKSPACE_KEY}
 """
@@ -23,19 +22,12 @@ from optparse import OptionParser
 a_option_parser = OptionParser( usage = an_usage, version="%prog 0.1", formatter = a_help_formatter )
 
 # Definition of the command line arguments
-a_option_parser.add_option( "--control-dir",
-                            metavar = "< location of the task control scripts >",
+a_option_parser.add_option( "--task-def-dir",
+                            metavar = "< location of the task defintion >",
                             action = "store",
-                            dest = "control_dir",
+                            dest = "task_def_dir",
                             help = "(\"%default\", by default)",
-                            default = "./control" )
-
-a_option_parser.add_option( "--data-dir",
-                            metavar = "< location of the task dedicated data >",
-                            action = "store",
-                            dest = "data_dir",
-                            help = "(\"%default\", by default)",
-                            default = None )
+                            default = "." )
 
 a_option_parser.add_option( "--rackspace-user",
                             metavar = "< cloud user name >",
@@ -56,19 +48,29 @@ if __name__ == '__main__' :
 
     # Check command line arguments first
     import os.path
-    an_options.control_dir = os.path.abspath( an_options.control_dir )
-    if not os.path.isdir( an_options.control_dir ) :
-        print "Use --control-dir option to specify scripts to be executed on cloud side"
+    an_options.task_def_dir = os.path.abspath( an_options.task_def_dir )
+    if not os.path.isdir( an_options.task_def_dir ) :
+        print "The task defintion should a directory"
         os._exit( os.EX_USAGE )
         pass
 
-    a_launch_script = os.path.join( an_options.control_dir, "launch" )
-    print a_launch_script
+    a_control_dir = os.path.join( an_options.task_def_dir, "control" )
+    if not os.path.isdir( a_control_dir ) :
+        print "The task defintion directory should contain 'control' sub directory"
+        os._exit( os.EX_USAGE )
+        pass
+
+    a_launch_script = os.path.join( a_control_dir, "launch" )
     if not os.path.isfile( a_launch_script ) :
-        print "The appointed should contain 'launch' start-up script"
+        print "The task definition 'control' sub directory should contain 'launch' start-up script"
         os._exit( os.EX_USAGE )
         pass
         
+    if not os.path.isdir( os.path.join( an_options.task_def_dir, "data" ) ) :
+        print "The task defintion directory should contain 'data' sub directory"
+        os._exit( os.EX_USAGE )
+        pass
+
     RACKSPACE_USER = an_options.rackspace_user
     if RACKSPACE_USER == None :
         RACKSPACE_USER = os.getenv( "RACKSPACE_USER" )
@@ -83,17 +85,11 @@ if __name__ == '__main__' :
     import tempfile
     a_working_dir = tempfile.mkdtemp()
 
-    a_target_archive = os.path.join( a_working_dir, "task.scc" )
-    a_tar_command = "tar -czf %s %s" % ( a_target_archive, an_options.control_dir )
-
-    if an_options.data_dir != None :
-        an_options.data_dir = os.path.abspath( an_options.data_dir )
-        if os.path.isdir( an_options.data_dir ) :
-            a_tar_command += " " + an_options.data_dir
-            pass
-        pass
+    a_target_archive = os.path.join( a_working_dir, "task.tgz" )
+    a_tar_command = "cd %s && tar --exclude-vcs -czf %s ./control ./data" % ( an_options.task_def_dir, a_target_archive )
 
     import os
+    print "(%s)" % a_tar_command
     if os.system( a_tar_command ) != 0 :
         print "Can not execute command %s" % a_tar_command
         os._exit( os.EX_USAGE )
