@@ -109,6 +109,9 @@ if __name__ == '__main__' :
     AWS_ACCESS_KEY_ID = an_options.aws_access_key_id
     AWS_SECRET_ACCESS_KEY = an_options.aws_secret_access_key
 
+
+    #---------------------------------------------------------------------------
+    # Packaging of the local data
     import os, tempfile
     a_working_dir = tempfile.mkdtemp()
 
@@ -192,22 +195,13 @@ if __name__ == '__main__' :
     #---------------------------------------------------------------------------
     # This value could be used as unique identifier to check progress of the task execution
     print a_container_name
+    a_command = "./fetch4cloud.py --task-container-name='%s'" % a_container_name
+    a_command += "--rackspace-user='%s'" % RACKSPACE_USER
+    a_command += "--rackspace-key='%s'" % RACKSPACE_KEY
+    a_command += "--aws-access-key-id='%s'" % AWS_ACCESS_KEY_ID
+    a_command += "--aws-secret-access-key='%s'" % AWS_SECRET_ACCESS_KEY
+    run_command( a_command )
 
-    import boto
-    a_sqs_conn = boto.connect_sqs( AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY )
-    a_sqs_queue = a_sqs_conn.create_queue( a_container_name )
-    while True :
-        a_message = a_sqs_queue.read()
-        if a_message == None :
-            continue
-
-        a_message_body = a_message.get_body()
-        a_sqs_queue.delete_message( a_message )
-        print a_message_body
-        if a_message_body == 'finish' :
-            break;
-        pass
-    
     
     #---------------------------------------------------------------------------
     import os
