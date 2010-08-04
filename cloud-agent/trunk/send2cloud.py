@@ -56,9 +56,16 @@ if __name__ == '__main__' :
 
     # Check command line arguments first
     import os.path
-    a_launch_script = os.path.join( an_options.control_dir, "launch" )
-    if os.path.isdir( an_options.control_dir ) == False :
+    an_options.control_dir = os.path.abspath( an_options.control_dir )
+    if not os.path.isdir( an_options.control_dir ) :
         print "Use --control-dir option to specify scripts to be executed on cloud side"
+        os._exit( os.EX_USAGE )
+        pass
+
+    a_launch_script = os.path.join( an_options.control_dir, "launch" )
+    print a_launch_script
+    if not os.path.isfile( a_launch_script ) :
+        print "The appointed should contain 'launch' start-up script"
         os._exit( os.EX_USAGE )
         pass
         
@@ -77,10 +84,20 @@ if __name__ == '__main__' :
     a_working_dir = tempfile.mkdtemp()
 
     a_target_archive = os.path.join( a_working_dir, "task.scc" )
-    a_tar_command = "tar -czf %s %s" % ( a_target_archive, )
-    os.path.isdir( an_options.data_dir )
+    a_tar_command = "tar -czf %s %s" % ( a_target_archive, an_options.control_dir )
+
+    if an_options.data_dir != None :
+        an_options.data_dir = os.path.abspath( an_options.data_dir )
+        if os.path.isdir( an_options.data_dir ) :
+            a_tar_command += " " + an_options.data_dir
+            pass
+        pass
+
     import os
-    os.system( "tar -czf /tmp/task.scc data control" )
+    if os.system( a_tar_command ) != 0 :
+        print "Can not execute command %s" % a_tar_command
+        os._exit( os.EX_USAGE )
+        pass
 
     import os
     os._exit( os.EX_OK )
