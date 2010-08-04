@@ -97,6 +97,16 @@ if __name__ == '__main__' :
 
 
     #---------------------------------------------------------------------------
+    # To upload the task into cloud
+    import cloudfiles
+    a_cloudfiles_conn = cloudfiles.get_connection( RACKSPACE_USER, RACKSPACE_KEY, timeout = 500 )
+    a_container_name = os.path.basename( a_working_dir )
+    a_cloudfiles_container = a_cloudfiles_conn.create_container( a_container_name )
+    a_file_object = a_cloudfiles_container.create_object( 'task.tgz' )
+    a_file_object.load_from_filename( a_target_archive )
+
+
+    #---------------------------------------------------------------------------
     # To lauch a node in cloud
     from libcloud.types import Provider 
     from libcloud.providers import get_driver 
@@ -123,12 +133,14 @@ if __name__ == '__main__' :
 
 
     #---------------------------------------------------------------------------
-    a_node.destroy()
+    # a_cloudfiles_conn.delete_container( a_cloudfiles_container )
+    # a_node.destroy()
 
     import shutil
-    shutil.rmtree( a_working_dir )
+    # shutil.rmtree( a_working_dir )
 
     import os
+    print "OK"
     os._exit( os.EX_OK )
 
     pass
