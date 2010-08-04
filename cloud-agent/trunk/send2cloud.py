@@ -6,6 +6,11 @@
 This script is responsible for the task packaging and sending it for execution in a cloud
 """
 
+
+#--------------------------------------------------------------------------------------
+import os
+
+
 #--------------------------------------------------------------------------------------
 def run_command( the_command ) :
     import os
@@ -41,18 +46,32 @@ a_option_parser.add_option( "--task-def-dir",
                             default = "." )
 
 a_option_parser.add_option( "--rackspace-user",
-                            metavar = "< cloud user name >",
+                            metavar = "< Rackspace user >",
                             action = "store",
                             dest = "rackspace_user",
                             help = "(\"%default\", by default)",
-                            default = None )
+                            default = os.getenv( "RACKSPACE_USER" ) )
     
 a_option_parser.add_option( "--rackspace-key",
-                            metavar = "< cloud authentification key >",
+                            metavar = "< Rackspace key >",
                             action = "store",
                             dest = "rackspace_key",
                             help = "(\"%default\", by default)",
-                            default = None )
+                            default = os.getenv( "RACKSPACE_KEY" ) )
+    
+a_option_parser.add_option( "--aws-access-key-id",
+                            metavar = "< Amazon key id >",
+                            action = "store",
+                            dest = "aws_access_key_id",
+                            help = "(\"%default\", by default)",
+                            default = os.getenv( "AWS_ACCESS_KEY_ID" ) )
+    
+a_option_parser.add_option( "--aws-secret-access-key",
+                            metavar = "< Amazon secret key >",
+                            action = "store",
+                            dest = "aws_secret_access_key",
+                            help = "(\"%default\", by default)",
+                            default = os.getenv( "AWS_SECRET_ACCESS_KEY" ) )
     
 
 #--------------------------------------------------------------------------------------
@@ -85,15 +104,10 @@ if __name__ == '__main__' :
         pass
 
     RACKSPACE_USER = an_options.rackspace_user
-    if RACKSPACE_USER == None :
-        RACKSPACE_USER = os.getenv( "RACKSPACE_USER" )
-        pass
-
-
     RACKSPACE_KEY = an_options.rackspace_key
-    if RACKSPACE_KEY == None :
-        RACKSPACE_KEY = os.getenv( "RACKSPACE_KEY" )
-        pass
+
+    AWS_ACCESS_KEY_ID = an_options.aws_access_key_id
+    AWS_SECRET_ACCESS_KEY = an_options.aws_secret_access_key
 
     import os, tempfile
     a_working_dir = tempfile.mkdtemp()
@@ -131,7 +145,7 @@ if __name__ == '__main__' :
     a_deployment_steps = []
     from libcloud.deployment import MultiStepDeployment, ScriptDeployment, SSHKeyDeployment
     a_deployment_steps.append( SSHKeyDeployment( open( os.path.expanduser( "~/.ssh/id_rsa.pub") ).read() ) )
-    # a_deployment_steps.append( ScriptDeployment( "apt-get -y install python-boto" ) )
+    a_deployment_steps.append( ScriptDeployment( "apt-get -y install python-boto" ) )
     # a_deployment_steps.append( ScriptDeployment( "apt-get -y install python-paramiko" ) )
     # a_deployment_steps.append( ScriptDeployment( "apt-get -y install python-libcloud" ) )
     a_deployment_steps.append( ScriptDeployment( "apt-get -y install python-software-properties" ) )
@@ -157,12 +171,14 @@ if __name__ == '__main__' :
     a_command = 'cd %s && tar -xzf %s' % ( a_working_dir, a_control_name )
     stdin, stdout, stderr = a_ssh_client.exec_command( a_command )
 
-    a_command = '%s/control/launch %s %s %s %s %s' % ( a_working_dir, 
-                                                       RACKSPACE_USER, 
-                                                       RACKSPACE_KEY, 
-                                                       a_container_name, 
-                                                       a_data_name,
-                                                       a_working_dir )
+    a_command = '%s/control/launch %s %s %s %s %s %s %s' % ( a_working_dir, 
+                                                             RACKSPACE_USER, 
+                                                             RACKSPACE_KEY, 
+                                                             a_container_name, 
+                                                             a_data_name,
+                                                             a_working_dir,
+                                                             AWS_ACCESS_KEY_ID,
+                                                             AWS_SECRET_ACCESS_KEY )
     stdin, stdout, stderr = a_ssh_client.exec_command( a_command )
     for a_line in stderr.readlines() : print a_line,
     for a_line in stdout.readlines() : print a_line,
@@ -172,6 +188,28 @@ if __name__ == '__main__' :
     import shutil
     shutil.rmtree( a_working_dir )
 
+
+    #---------------------------------------------------------------------------
+    # This value could be used as unique identifier to check progress of the task execution
+    print a_container_name
+
+    import boto
+    a_sqs_conn = boto.connect_sqs( AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY )
+    a_sqs_queue = a_sqs_conn.create_queue( a_container_name )
+    while True :
+        a_message = a_sqs_queue.read()
+        if a_message == None :
+            continue
+
+        a_message_body = a_message.get_body()
+        a_sqs_queue.delete_message( a_message )
+        print a_message_body
+        if a_message_body == 'finish' :
+            break;
+        pass
+    
+    
+    #---------------------------------------------------------------------------
     import os
     print "OK"
     os._exit( os.EX_OK )
