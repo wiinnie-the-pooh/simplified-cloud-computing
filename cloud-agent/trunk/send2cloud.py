@@ -131,6 +131,7 @@ if __name__ == '__main__' :
     a_msd = MultiStepDeployment( a_deployment_steps ) 
     a_node_name = os.path.basename( a_working_dir )
     a_node = a_libcloud_conn.deploy_node( name = a_node_name, image = images[ 9 ] , size = sizes[ 0 ], deploy = a_msd ) 
+    print "a_node.public_ip[ 0 ] = '%s'" % a_node.public_ip[ 0 ]
 
     #---------------------------------------------------------------------------
     import paramiko
@@ -142,10 +143,13 @@ if __name__ == '__main__' :
     a_sftp_client = a_ssh_client.open_sftp()
     a_sftp_client.put( a_target_archive, a_target_archive )
 
-    stdin, stdout, stderr = a_ssh_client.exec_command( 'cd %s && tar -xzf %s' % ( a_working_dir, an_archive_name ) )
-    stdin, stdout, stderr = a_ssh_client.exec_command( '%s/control/launch %s %s' % ( a_working_dir, RACKSPACE_USER, RACKSPACE_KEY  ) )
-    print stderr.readlines()
-    print stdout.readlines()
+    a_command = 'cd %s && tar -xzf %s' % ( a_working_dir, an_archive_name )
+    stdin, stdout, stderr = a_ssh_client.exec_command( a_command )
+
+    a_command = '%s/control/launch %s %s %s' % ( a_working_dir, RACKSPACE_USER, RACKSPACE_KEY, a_container_name )
+    stdin, stdout, stderr = a_ssh_client.exec_command( a_command )
+    for a_line in stderr.readlines() : print a_line,
+    for a_line in stdout.readlines() : print a_line,
 
 
     #---------------------------------------------------------------------------
