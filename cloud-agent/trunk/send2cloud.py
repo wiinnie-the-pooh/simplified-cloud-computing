@@ -95,7 +95,43 @@ if __name__ == '__main__' :
         os._exit( os.EX_USAGE )
         pass
 
+
+    #---------------------------------------------------------------------------
+    # To lauch a node in cloud
+    from libcloud.types import Provider 
+    from libcloud.providers import get_driver 
+    
+    Driver = get_driver( Provider.RACKSPACE ) 
+    a_libcloud_conn = Driver( RACKSPACE_USER, RACKSPACE_KEY ) 
+
+    images = a_libcloud_conn.list_images() 
+    sizes = a_libcloud_conn.list_sizes() 
+
+    a_deployment_steps = []
+    from libcloud.deployment import MultiStepDeployment, ScriptDeployment, SSHKeyDeployment
+    a_deployment_steps.append( SSHKeyDeployment( open( os.path.expanduser( "~/.ssh/id_rsa.pub") ).read() ) )
+    a_deployment_steps.append( ScriptDeployment( "apt-get -y install python-boto" ) )
+    a_deployment_steps.append( ScriptDeployment( "apt-get -y install python-paramiko" ) )
+    a_deployment_steps.append( ScriptDeployment( "apt-get -y install python-libcloud" ) )
+    a_deployment_steps.append( ScriptDeployment( "apt-get -y install python-software-properties" ) )
+    a_deployment_steps.append( ScriptDeployment( "add-apt-repository ppa:chmouel/rackspace-cloud-files" ) )
+    a_deployment_steps.append( ScriptDeployment( "apt-get -y install python-rackspace-cloudfiles" ) )
+
+    a_msd = MultiStepDeployment( a_deployment_steps ) 
+    a_node_name = os.path.basename( a_working_dir )
+    a_node = a_libcloud_conn.deploy_node( name = a_node_name, image = images[ 9 ] , size = sizes[ 0 ], deploy = a_msd ) 
+
+
+    #---------------------------------------------------------------------------
+    a_node.destroy()
+
+    import shutil
+    shutil.rmtree( a_working_dir )
+
     import os
     os._exit( os.EX_OK )
 
     pass
+
+
+#--------------------------------------------------------------------------------------
