@@ -85,7 +85,8 @@ if __name__ == '__main__' :
     import tempfile
     a_working_dir = tempfile.mkdtemp()
 
-    a_target_archive = os.path.join( a_working_dir, "task.tgz" )
+    an_archive_name = "task_input.tgz"
+    a_target_archive = os.path.join( a_working_dir, an_archive_name )
     a_tar_command = "cd %s && tar --exclude-vcs -czf %s ./control ./data" % ( an_options.task_def_dir, a_target_archive )
 
     import os
@@ -102,12 +103,12 @@ if __name__ == '__main__' :
     a_cloudfiles_conn = cloudfiles.get_connection( RACKSPACE_USER, RACKSPACE_KEY, timeout = 500 )
     a_container_name = os.path.basename( a_working_dir )
     a_cloudfiles_container = a_cloudfiles_conn.create_container( a_container_name )
-    a_file_object = a_cloudfiles_container.create_object( 'task.tgz' )
+    a_file_object = a_cloudfiles_container.create_object( an_archive_name )
     a_file_object.load_from_filename( a_target_archive )
 
 
     #---------------------------------------------------------------------------
-    # To lauch a node in cloud
+    # To boot a node in cloud
     from libcloud.types import Provider 
     from libcloud.providers import get_driver 
     
@@ -130,6 +131,21 @@ if __name__ == '__main__' :
     a_msd = MultiStepDeployment( a_deployment_steps ) 
     a_node_name = os.path.basename( a_working_dir )
     a_node = a_libcloud_conn.deploy_node( name = a_node_name, image = images[ 9 ] , size = sizes[ 0 ], deploy = a_msd ) 
+
+    #---------------------------------------------------------------------------
+    import paramiko
+    a_ssh_client = paramiko.SSHClient()
+    a_ssh_client.set_missing_host_key_policy( paramiko.AutoAddPolicy() )
+    a_ssh_client.connect( hostname = a_node.public_ip[ 0 ], port = 22, username = 'root')
+    stdin, stdout, stderr = a_ssh_client.exec_command( 'mkdir %s' % a_working_dir )
+
+    a_sftp_client = a_ssh_client.open_sftp()
+    a_sftp_client.put( a_target_archive, a_target_archive )
+
+    stdin, stdout, stderr = a_ssh_client.exec_command( 'cd %s && tar -xzf %s' % ( a_working_dir, an_archive_name ) )
+    stdin, stdout, stderr = a_ssh_client.exec_command( '%s/control/launch %s %s' % ( a_working_dir, RACKSPACE_USER, RACKSPACE_KEY  ) )
+    print stderr.readlines()
+    print stdout.readlines()
 
 
     #---------------------------------------------------------------------------
