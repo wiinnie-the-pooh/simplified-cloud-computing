@@ -1,18 +1,35 @@
 #!/usr/bin/env python
 
+
+#--------------------------------------------------------------------------------------
 # Fetching the cloud provider security cridentials
 import sys
 RACKSPACE_USER = sys.argv[ 1 ]
 RACKSPACE_KEY = sys.argv[ 2 ]
 a_container_name = sys.argv[ 3 ]
+a_data_name = sys.argv[ 4 ]
+a_working_dir = sys.argv[ 5 ]
 
+
+#--------------------------------------------------------------------------------------
 # Creating corresponding cloudfile container
 import cloudfiles
 a_cloudfiles_conn = cloudfiles.get_connection( RACKSPACE_USER, RACKSPACE_KEY, timeout = 500 )
-a_cloudfiles_container = a_cloudfiles_conn.create_container[ a_container_name ]
+a_cloudfiles_container = a_cloudfiles_conn[ a_container_name ]
+a_file_object = a_cloudfiles_container.get_object( a_data_name )
 
-for anId in range( 16 ) :
-    an_archive_name = 'output-%d.txt' % anId
-    a_file_object = a_cloudfiles_container.create_object( an_archive_name )
-    a_file_object.write( 'Just something different - %d\n' % anId )
+import os.path
+a_data_archive = os.path.join( a_working_dir, a_data_name )
+a_file_object.save_to_filename( a_data_archive )
+
+import os
+a_command = 'cd %s && tar -xzf %s' % ( a_working_dir, a_data_name )
+os.system( a_command )
+
+a_data_dir = os.path.join( a_working_dir, 'data' )
+a_files = os.listdir( a_data_dir )
+for a_file in a_files :
+    a_file_path = os.path.join( a_data_dir, a_file )
+    a_file_object = a_cloudfiles_container.create_object( a_file )
+    a_file_object.load_from_filename( a_file_path )
     pass

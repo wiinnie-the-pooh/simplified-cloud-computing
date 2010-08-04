@@ -7,6 +7,17 @@ This script is responsible for the task packaging and sending it for execution i
 """
 
 #--------------------------------------------------------------------------------------
+def run_command( the_command ) :
+    import os
+    print "(%s)" % the_command
+    if os.system( the_command ) != 0 :
+        print "Can not execute command %s" % the_command
+        os._exit( os.EX_USAGE )
+        pass
+    pass
+
+
+#--------------------------------------------------------------------------------------
 an_usage = \
 """
 %prog \\
@@ -43,6 +54,8 @@ a_option_parser.add_option( "--rackspace-key",
                             help = "(\"%default\", by default)",
                             default = None )
     
+
+#--------------------------------------------------------------------------------------
 if __name__ == '__main__' :
     an_options, an_args = a_option_parser.parse_args()
 
@@ -82,19 +95,16 @@ if __name__ == '__main__' :
         RACKSPACE_KEY = os.getenv( "RACKSPACE_KEY" )
         pass
 
-    import tempfile
+    import os, tempfile
     a_working_dir = tempfile.mkdtemp()
 
-    an_archive_name = "task_input.tgz"
-    a_target_archive = os.path.join( a_working_dir, an_archive_name )
-    a_tar_command = "cd %s && tar --exclude-vcs -czf %s ./control ./data" % ( an_options.task_def_dir, a_target_archive )
+    a_control_name = "task_control.tgz"
+    a_control_archive = os.path.join( a_working_dir, a_control_name )
+    run_command( "cd %s && tar --exclude-vcs -czf %s ./control" % ( an_options.task_def_dir, a_control_archive ) )
 
-    import os
-    print "(%s)" % a_tar_command
-    if os.system( a_tar_command ) != 0 :
-        print "Can not execute command %s" % a_tar_command
-        os._exit( os.EX_USAGE )
-        pass
+    a_data_name = "task_data.tgz"
+    a_data_archive = os.path.join( a_working_dir, a_data_name )
+    run_command( "cd %s && tar --exclude-vcs -czf %s ./data" % ( an_options.task_def_dir, a_data_archive ) )
 
 
     #---------------------------------------------------------------------------
@@ -103,8 +113,8 @@ if __name__ == '__main__' :
     a_cloudfiles_conn = cloudfiles.get_connection( RACKSPACE_USER, RACKSPACE_KEY, timeout = 500 )
     a_container_name = os.path.basename( a_working_dir )
     a_cloudfiles_container = a_cloudfiles_conn.create_container( a_container_name )
-    a_file_object = a_cloudfiles_container.create_object( an_archive_name )
-    a_file_object.load_from_filename( a_target_archive )
+    a_file_object = a_cloudfiles_container.create_object( a_data_name )
+    a_file_object.load_from_filename( a_data_archive )
 
 
     #---------------------------------------------------------------------------
@@ -121,9 +131,9 @@ if __name__ == '__main__' :
     a_deployment_steps = []
     from libcloud.deployment import MultiStepDeployment, ScriptDeployment, SSHKeyDeployment
     a_deployment_steps.append( SSHKeyDeployment( open( os.path.expanduser( "~/.ssh/id_rsa.pub") ).read() ) )
-    a_deployment_steps.append( ScriptDeployment( "apt-get -y install python-boto" ) )
-    a_deployment_steps.append( ScriptDeployment( "apt-get -y install python-paramiko" ) )
-    a_deployment_steps.append( ScriptDeployment( "apt-get -y install python-libcloud" ) )
+    # a_deployment_steps.append( ScriptDeployment( "apt-get -y install python-boto" ) )
+    # a_deployment_steps.append( ScriptDeployment( "apt-get -y install python-paramiko" ) )
+    # a_deployment_steps.append( ScriptDeployment( "apt-get -y install python-libcloud" ) )
     a_deployment_steps.append( ScriptDeployment( "apt-get -y install python-software-properties" ) )
     a_deployment_steps.append( ScriptDeployment( "add-apt-repository ppa:chmouel/rackspace-cloud-files" ) )
     a_deployment_steps.append( ScriptDeployment( "apt-get -y install python-rackspace-cloudfiles" ) )
@@ -133,6 +143,7 @@ if __name__ == '__main__' :
     a_node = a_libcloud_conn.deploy_node( name = a_node_name, image = images[ 9 ] , size = sizes[ 0 ], deploy = a_msd ) 
     print "a_node.public_ip[ 0 ] = '%s'" % a_node.public_ip[ 0 ]
 
+
     #---------------------------------------------------------------------------
     import paramiko
     a_ssh_client = paramiko.SSHClient()
@@ -141,12 +152,17 @@ if __name__ == '__main__' :
     stdin, stdout, stderr = a_ssh_client.exec_command( 'mkdir %s' % a_working_dir )
 
     a_sftp_client = a_ssh_client.open_sftp()
-    a_sftp_client.put( a_target_archive, a_target_archive )
+    a_sftp_client.put( a_control_archive, a_control_archive )
 
-    a_command = 'cd %s && tar -xzf %s' % ( a_working_dir, an_archive_name )
+    a_command = 'cd %s && tar -xzf %s' % ( a_working_dir, a_control_name )
     stdin, stdout, stderr = a_ssh_client.exec_command( a_command )
 
-    a_command = '%s/control/launch %s %s %s' % ( a_working_dir, RACKSPACE_USER, RACKSPACE_KEY, a_container_name )
+    a_command = '%s/control/launch %s %s %s %s %s' % ( a_working_dir, 
+                                                       RACKSPACE_USER, 
+                                                       RACKSPACE_KEY, 
+                                                       a_container_name, 
+                                                       a_data_name,
+                                                       a_working_dir )
     stdin, stdout, stderr = a_ssh_client.exec_command( a_command )
     for a_line in stderr.readlines() : print a_line,
     for a_line in stdout.readlines() : print a_line,
@@ -154,6 +170,8 @@ if __name__ == '__main__' :
 
     #---------------------------------------------------------------------------
     # a_cloudfiles_conn.delete_container( a_cloudfiles_container )
+    # [ a_cloudfiles_conn.delete_container( a_cloudfiles_container ) for a_cloudfiles_container in a_cloudfiles_conn.list_containers() ]
+    # [ node.destroy() for node in a_libcloud_conn.list_nodes() ]
     # a_node.destroy()
 
     import shutil
