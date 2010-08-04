@@ -169,13 +169,8 @@ if __name__ == '__main__' :
 
 
     #---------------------------------------------------------------------------
-    # a_cloudfiles_conn.delete_container( a_cloudfiles_container )
-    # [ a_cloudfiles_conn.delete_container( a_cloudfiles_container ) for a_cloudfiles_container in a_cloudfiles_conn.list_containers() ]
-    # [ node.destroy() for node in a_libcloud_conn.list_nodes() ]
-    # a_node.destroy()
-
     import shutil
-    # shutil.rmtree( a_working_dir )
+    shutil.rmtree( a_working_dir )
 
     import os
     print "OK"
