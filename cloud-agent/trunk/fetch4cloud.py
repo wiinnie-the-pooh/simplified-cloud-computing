@@ -29,15 +29,15 @@ from optparse import OptionParser
 a_option_parser = OptionParser( usage = an_usage, version="%prog 0.1", formatter = a_help_formatter )
 
 # Definition of the command line arguments
-a_option_parser.add_option( "--task-container-name",
+a_option_parser.add_option( "--container-name",
                             metavar = "< name of task container >",
                             action = "store",
-                            dest = "task_container_name" )
+                            dest = "container_name" )
 
-a_option_parser.add_option( "--task-output-dir",
+a_option_parser.add_option( "--output-dir",
                             metavar = "< location of the task defintion >",
                             action = "store",
-                            dest = "task_output_dir",
+                            dest = "output_dir",
                             help = "(\"%default\", by default)",
                             default = "." )
 
@@ -75,17 +75,17 @@ if __name__ == '__main__' :
     an_options, an_args = a_option_parser.parse_args()
 
     # Check command line arguments first
-    if an_options.task_container_name == None :
+    if an_options.container_name == None :
         print "Please, use '--task-container-name' to define corresponding value"
         os._exit( os.EX_USAGE )
         pass
 
     import os.path, shutil
-    an_options.task_output_dir = os.path.abspath( an_options.task_output_dir )
-    an_output_dir = os.path.join( an_options.task_output_dir, "output" )
+    an_options.output_dir = os.path.abspath( an_options.output_dir )
+    an_output_dir = os.path.join( an_options.output_dir, "output" )
     shutil.rmtree( an_output_dir, True )
     os.makedirs( an_output_dir )
-    if not os.path.isdir( an_options.task_output_dir ) :
+    if not os.path.isdir( an_output_dir ) :
         print "Couild not create output directory"
         os._exit( os.EX_USAGE )
         pass
@@ -99,7 +99,7 @@ if __name__ == '__main__' :
 
     #---------------------------------------------------------------------------
     import boto
-    a_container_name = an_options.task_container_name
+    a_container_name = an_options.container_name
     a_sqs_conn = boto.connect_sqs( AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY )
     a_sqs_queue = a_sqs_conn.create_queue( a_container_name )
     while True :

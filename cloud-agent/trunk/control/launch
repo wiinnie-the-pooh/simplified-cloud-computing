@@ -6,6 +6,10 @@ Callback script which is called automatically on delivering task to cloud
 """
 
 #--------------------------------------------------------------------------------------
+import os
+
+
+#--------------------------------------------------------------------------------------
 def push_message( the_sqs_queue, the_string ) :
     from boto.sqs.message import Message
     a_message = Message()
@@ -14,15 +18,83 @@ def push_message( the_sqs_queue, the_string ) :
 
 
 #--------------------------------------------------------------------------------------
+an_usage = \
+"""
+%prog \\
+      --container-name='tmpt7lweb' \\
+      --data-name='task_data.tgz' \\
+      --working-dir='/tmp/tmpt7lweb' \\
+      --rackspace-user=${RACKSPACE_USER} \\
+      --rackspace-key=${RACKSPACE_KEY} \\
+      --aws-access-key-id=${AWS_ACCESS_KEY_ID} \\
+      --aws-secret-access-key=${AWS_SECRET_ACCESS_KEY}
+
+"""
+
+from optparse import IndentedHelpFormatter
+a_help_formatter = IndentedHelpFormatter( width = 127 )
+
+from optparse import OptionParser
+a_option_parser = OptionParser( usage = an_usage, version="%prog 0.1", formatter = a_help_formatter )
+
+# Definition of the command line arguments
+a_option_parser.add_option( "--container-name",
+                            metavar = "< name of task dedicated Rackspace CloudFiles container >",
+                            action = "store",
+                            dest = "container_name" )
+
+a_option_parser.add_option( "--data-name",
+                            metavar = "< container file object representing initial task data >",
+                            action = "store",
+                            dest = "data_name" )
+    
+a_option_parser.add_option( "--working-dir",
+                            metavar = "< task working dir >",
+                            action = "store",
+                            dest = "working_dir" )
+    
+a_option_parser.add_option( "--rackspace-user",
+                            metavar = "< Rackspace user >",
+                            action = "store",
+                            dest = "rackspace_user",
+                            help = "(\"%default\", by default)",
+                            default = os.getenv( "RACKSPACE_USER" ) )
+    
+a_option_parser.add_option( "--rackspace-key",
+                            metavar = "< Rackspace key >",
+                            action = "store",
+                            dest = "rackspace_key",
+                            help = "(\"%default\", by default)",
+                            default = os.getenv( "RACKSPACE_KEY" ) )
+    
+a_option_parser.add_option( "--aws-access-key-id",
+                            metavar = "< Amazon key id >",
+                            action = "store",
+                            dest = "aws_access_key_id",
+                            help = "(\"%default\", by default)",
+                            default = os.getenv( "AWS_ACCESS_KEY_ID" ) )
+    
+a_option_parser.add_option( "--aws-secret-access-key",
+                            metavar = "< Amazon secret key >",
+                            action = "store",
+                            dest = "aws_secret_access_key",
+                            help = "(\"%default\", by default)",
+                            default = os.getenv( "AWS_SECRET_ACCESS_KEY" ) )
+    
+
+#--------------------------------------------------------------------------------------
 # Fetching the cloud provider security cridentials
-import sys
-RACKSPACE_USER = sys.argv[ 1 ]
-RACKSPACE_KEY = sys.argv[ 2 ]
-a_container_name = sys.argv[ 3 ]
-a_data_name = sys.argv[ 4 ]
-a_working_dir = sys.argv[ 5 ]
-AWS_ACCESS_KEY_ID = sys.argv[ 6 ]
-AWS_SECRET_ACCESS_KEY = sys.argv[ 7 ]
+an_options, an_args = a_option_parser.parse_args()
+
+a_container_name = an_options.container_name
+a_data_name = an_options.data_name
+a_working_dir = an_options.working_dir
+
+RACKSPACE_USER = an_options.rackspace_user
+RACKSPACE_KEY = an_options.rackspace_key
+
+AWS_ACCESS_KEY_ID = an_options.aws_access_key_id
+AWS_SECRET_ACCESS_KEY = an_options.aws_secret_access_key
 
 
 #--------------------------------------------------------------------------------------

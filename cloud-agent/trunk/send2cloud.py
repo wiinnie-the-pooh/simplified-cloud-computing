@@ -37,7 +37,10 @@ an_usage = \
 %prog \\
       --task-def-dir=~/rackspace \\
       --rackspace-user=${RACKSPACE_USER} \\
-      --rackspace-key=${RACKSPACE_KEY}
+      --rackspace-key=${RACKSPACE_KEY} \\
+      --aws-access-key-id=${AWS_ACCESS_KEY_ID} \\
+      --aws-secret-access-key=${AWS_SECRET_ACCESS_KEY}
+
 """
 
 from optparse import IndentedHelpFormatter
@@ -190,14 +193,14 @@ if __name__ == '__main__' :
     a_command = 'cd %s && tar -xzf %s' % ( a_working_dir, a_control_name )
     ssh_command( a_ssh_client, a_command )
 
-    a_command = '%s/control/launch %s %s %s %s %s %s %s' % ( a_working_dir, 
-                                                             RACKSPACE_USER, 
-                                                             RACKSPACE_KEY, 
-                                                             a_container_name, 
-                                                             a_data_name,
-                                                             a_working_dir,
-                                                             AWS_ACCESS_KEY_ID,
-                                                             AWS_SECRET_ACCESS_KEY )
+    a_command = '%s/control/launch' % ( a_working_dir ) 
+    a_command += " --container-name='%s'" % a_container_name
+    a_command += " --data-name='%s'" % a_data_name
+    a_command += " --working-dir='%s'" % a_working_dir
+    a_command += " --rackspace-user='%s'" % RACKSPACE_USER
+    a_command += " --rackspace-key='%s'" % RACKSPACE_KEY
+    a_command += " --aws-access-key-id='%s'" % AWS_ACCESS_KEY_ID
+    a_command += " --aws-secret-access-key='%s'" % AWS_SECRET_ACCESS_KEY
     ssh_command( a_ssh_client, a_command )
 
 
@@ -210,7 +213,7 @@ if __name__ == '__main__' :
     # This value could be used as unique identifier to check progress of the task execution
     import sys
     a_command = os.path.join( os.path.dirname( sys.argv[ 0 ] ), "fetch4cloud.py" )
-    a_command += " --task-container-name='%s'" % a_container_name
+    a_command += " --container-name='%s'" % a_container_name
     a_command += " --rackspace-user='%s'" % RACKSPACE_USER
     a_command += " --rackspace-key='%s'" % RACKSPACE_KEY
     a_command += " --aws-access-key-id='%s'" % AWS_ACCESS_KEY_ID
