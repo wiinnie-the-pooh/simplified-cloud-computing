@@ -23,6 +23,34 @@ This script is responsible for the task packaging and sending it for execution i
 
 
 #--------------------------------------------------------------------------------------
+def sh_command( the_command ) :
+    import os
+    if os.system( the_command ) != 0 :
+        from distutils.errors import DistutilsExecError
+        raise DistutilsExecError, "cannot execute '%s' need by dependcies" % the_command
+    
+    pass
+
+
+#--------------------------------------------------------------------------------------
+from distutils.command.install import install
+
+class InstallCmd( install ) :
+    def run( self ) :
+        sh_command( "apt-get -y install python-boto" )
+        sh_command( "apt-get -y install python-paramiko" )
+        sh_command( "apt-get -y install python-libcloud" )
+        sh_command( "apt-get -y install python-software-properties" )
+        sh_command( "add-apt-repository ppa:chmouel/rackspace-cloud-files" )
+        sh_command( "apt-get -y install python-rackspace-cloudfiles" )
+
+        install.run( self )
+        pass
+
+    pass
+
+
+#--------------------------------------------------------------------------------------
 from distutils.core import setup, Extension
 
 setup( name = 'balloon',
@@ -49,6 +77,7 @@ setup( name = 'balloon',
                        'Programming Language :: Python',
                        'Topic :: Scientific/Engineering',
                        'Topic :: Utilities' ],
+       cmdclass = { 'install': InstallCmd },
        packages = [ 'balloon' ],
        scripts = [ 'send2cloud.py', 'fetch4queue.py', 'clean_rackspace.py', 'clean_amazon.py' ] )
 
