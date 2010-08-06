@@ -113,6 +113,8 @@ if __name__ == '__main__' :
         if a_message_body == 'finish' :
             break;
         pass
+
+    a_sqs_queue.delete()
     
     
     #---------------------------------------------------------------------------

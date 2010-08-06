@@ -8,7 +8,7 @@ This script is responsible for the task packaging and sending it for execution i
 
 
 #--------------------------------------------------------------------------------------
-import os
+import os, os.path, uuid
 
 
 #--------------------------------------------------------------------------------------
@@ -141,7 +141,9 @@ if __name__ == '__main__' :
     # To upload the task into cloud
     import cloudfiles
     a_cloudfiles_conn = cloudfiles.get_connection( RACKSPACE_USER, RACKSPACE_KEY, timeout = 500 )
-    a_container_name = os.path.basename( a_working_dir )
+    print a_cloudfiles_conn
+
+    a_container_name = str( uuid.uuid4() )
     a_cloudfiles_container = a_cloudfiles_conn.create_container( a_container_name )
     print "a_cloudfiles_container =", a_cloudfiles_container
 
@@ -173,9 +175,9 @@ if __name__ == '__main__' :
     a_deployment_steps.append( ScriptDeployment( "apt-get -y install python-software-properties" ) )
     a_deployment_steps.append( ScriptDeployment( "add-apt-repository ppa:chmouel/rackspace-cloud-files" ) )
     a_deployment_steps.append( ScriptDeployment( "apt-get -y install python-rackspace-cloudfiles" ) )
-
     a_msd = MultiStepDeployment( a_deployment_steps ) 
-    a_node_name = os.path.basename( a_working_dir )
+
+    a_node_name = a_container_name
     a_node = a_libcloud_conn.deploy_node( name = a_node_name, image = an_images[ 9 ] , size = a_sizes[ 0 ], deploy = a_msd ) 
     print a_node
 
