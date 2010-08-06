@@ -26,8 +26,8 @@ def run_command( the_command ) :
 def ssh_command( the_ssh_client, the_command ) :
     print "[%s]" % the_command
     stdin, stdout, stderr = the_ssh_client.exec_command( the_command )
-    for a_line in stderr.readlines() : print a_line,
-    for a_line in stdout.readlines() : print a_line,
+    for a_line in stderr.readlines() : print "\t", a_line,
+    for a_line in stdout.readlines() : print "\t", a_line,
     pass
 
 
