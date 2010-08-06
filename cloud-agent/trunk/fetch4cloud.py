@@ -117,16 +117,6 @@ if __name__ == '__main__' :
         os._exit( os.EX_USAGE )
         pass
 
-    import os.path, shutil
-    an_options.output_dir = os.path.abspath( an_options.output_dir )
-    an_output_dir = os.path.join( an_options.output_dir, a_container_name )
-    shutil.rmtree( an_output_dir, True )
-    os.makedirs( an_output_dir )
-    if not os.path.isdir( an_output_dir ) :
-        print "Couild not create output directory"
-        os._exit( os.EX_USAGE )
-        pass
-
     RACKSPACE_USER = an_options.rackspace_user
     if RACKSPACE_USER == None :
         print "Define RACKSPACE_USER parameter through '--rackspace-user' option"
@@ -157,6 +147,20 @@ if __name__ == '__main__' :
     a_cloudfiles_conn = cloudfiles.get_connection( RACKSPACE_USER, RACKSPACE_KEY, timeout = 500 )
     a_cloudfiles_container = a_cloudfiles_conn[ a_container_name ]
 
+
+    #---------------------------------------------------------------------------
+    import os.path, shutil
+    an_options.output_dir = os.path.abspath( an_options.output_dir )
+    an_output_dir = os.path.join( an_options.output_dir, a_container_name )
+    shutil.rmtree( an_output_dir, True )
+    os.makedirs( an_output_dir )
+    if not os.path.isdir( an_output_dir ) :
+        print "Couild not create output directory"
+        os._exit( os.EX_USAGE )
+        pass
+
+
+    #---------------------------------------------------------------------------
     import boto
     a_queue_name = an_options.container_name
     a_sqs_conn = boto.connect_sqs( AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY )

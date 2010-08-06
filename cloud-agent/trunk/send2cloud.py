@@ -262,26 +262,11 @@ if __name__ == '__main__' :
 
 
     #---------------------------------------------------------------------------
-    # This value could be used as unique identifier to check progress of the task execution
-    import sys
-    a_command = os.path.join( os.path.dirname( sys.argv[ 0 ] ), "fetch4cloud.py" )
-    a_command += " --container-name='%s'" % a_container_name
-    a_command += " --rackspace-user='%s'" % RACKSPACE_USER
-    a_command += " --rackspace-key='%s'" % RACKSPACE_KEY
-    a_command += " --aws-access-key-id='%s'" % AWS_ACCESS_KEY_ID
-    a_command += " --aws-secret-access-key='%s'" % AWS_SECRET_ACCESS_KEY
-    run_command( a_command )
-
-    
-    #---------------------------------------------------------------------------
     # This refenrece value could be used further in cloud management pipeline
     print a_container_name
 
 
     #---------------------------------------------------------------------------
-    import os
-    os._exit( os.EX_OK )
-
     pass
 
 
