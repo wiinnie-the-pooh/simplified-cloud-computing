@@ -118,14 +118,6 @@ if AWS_SECRET_ACCESS_KEY == None :
 
 
 #--------------------------------------------------------------------------------------
-# Create an Amazon Simple Queue Service (SQS) queue to support notification
-# between cloud task execution process and remote client
-import boto
-a_sqs_conn = boto.connect_sqs( AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY )
-a_sqs_queue = a_sqs_conn.create_queue( a_container_name )
-
-
-#--------------------------------------------------------------------------------------
 # Creating corresponding cloudfile container
 import cloudfiles
 a_cloudfiles_conn = cloudfiles.get_connection( RACKSPACE_USER, RACKSPACE_KEY, timeout = 500 )
@@ -144,6 +136,7 @@ a_file_object.save_to_filename( a_data_archive )
 
 
 #---------------------------------------------------------------------------
+# Preparing file information to upload
 import os
 a_command = 'cd %s && tar -xzf %s' % ( a_working_dir, a_data_name )
 os.system( a_command )
@@ -151,23 +144,42 @@ os.system( a_command )
 a_data_dir = os.path.join( a_working_dir, 'data' )
 a_files = os.listdir( a_data_dir )
 a_files.sort()
+
+
+#--------------------------------------------------------------------------------------
+# Create an Amazon Simple Queue Service (SQS) queue to support notification
+# between cloud task execution process and remote client
+import boto
+a_sqs_conn = boto.connect_sqs( AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY )
+
+a_queue_suffix = ''
+a_queue_name = '%s___%s' % ( a_container_name, a_queue_suffix )
+
+
+#--------------------------------------------------------------------------------------
 for a_file in a_files :
     a_file_path = os.path.join( a_data_dir, a_file )
     a_file_object = a_cloudfiles_container.create_object( a_file )
     a_file_object.load_from_filename( a_file_path )
-    print a_file
+    print a_file_path
 
     # Define ( queue, message ) linked list
-    a_message_body = str( uuid.uuid4() )
+    a_sqs_queue = a_sqs_conn.create_queue( a_queue_name )
+    print a_queue_name
+
+    a_queue_suffix = str( uuid.uuid4() )
+    a_queue_name = '%s___%s' % ( a_container_name, a_queue_suffix )
+
+    a_message_body = '%s:%s' % ( a_file, a_queue_suffix )
     a_status = push_message( a_sqs_queue, a_message_body )
-    a_sqs_queue = a_sqs_conn.create_queue( a_message_body )
 
     pass
 
 
 #--------------------------------------------------------------------------------------
 # The terninal node for the ( queue, message ) linked list
-a_status = push_message( a_sqs_queue, '*' ) 
+a_sqs_queue = a_sqs_conn.create_queue( a_queue_name )
+a_status = push_message( a_sqs_queue, '*:*' ) 
 
 
 #--------------------------------------------------------------------------------------

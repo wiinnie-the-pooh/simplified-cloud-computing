@@ -12,11 +12,11 @@ import os
 
 
 #--------------------------------------------------------------------------------------
-def get_message( the_sqs_conn, the_container_name ) :
+def get_message( the_sqs_conn, the_queue_name ) :
     # Get the 'queue' first
     a_sqs_queue = None
     while True :
-        a_sqs_queue = the_sqs_conn.get_queue( the_container_name )
+        a_sqs_queue = the_sqs_conn.get_queue( the_queue_name )
         if a_sqs_queue != None :
             break
         pass
@@ -32,7 +32,9 @@ def get_message( the_sqs_conn, the_container_name ) :
 
     a_sqs_queue.delete()
 
-    return a_message_body
+    a_data_name, a_next_queue_suffix = a_message_body.split( ':' )
+
+    return a_data_name, a_next_queue_suffix
 
 
 #--------------------------------------------------------------------------------------
@@ -99,6 +101,7 @@ if __name__ == '__main__' :
     an_options, an_args = a_option_parser.parse_args()
 
     # Check command line arguments first
+    a_container_name = an_options.container_name
     if an_options.container_name == None :
         print "Please, use '--task-container-name' to define corresponding value"
         os._exit( os.EX_USAGE )
@@ -106,7 +109,7 @@ if __name__ == '__main__' :
 
     import os.path, shutil
     an_options.output_dir = os.path.abspath( an_options.output_dir )
-    an_output_dir = os.path.join( an_options.output_dir, "output" )
+    an_output_dir = os.path.join( an_options.output_dir, a_container_name )
     shutil.rmtree( an_output_dir, True )
     os.makedirs( an_output_dir )
     if not os.path.isdir( an_output_dir ) :
@@ -140,18 +143,32 @@ if __name__ == '__main__' :
 
 
     #---------------------------------------------------------------------------
-    import boto
-    a_container_name = an_options.container_name
-    a_sqs_conn = boto.connect_sqs( AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY )
-    a_sqs_queue = a_sqs_conn.create_queue( a_container_name )
-    while True :
-        a_message_body = get_message( a_sqs_conn, a_container_name )
-        print a_message_body
+    import cloudfiles
+    a_cloudfiles_conn = cloudfiles.get_connection( RACKSPACE_USER, RACKSPACE_KEY, timeout = 500 )
+    a_cloudfiles_container = a_cloudfiles_conn[ a_container_name ]
 
-        if a_message_body == '*' :
+    import boto
+    a_queue_name = an_options.container_name
+    a_sqs_conn = boto.connect_sqs( AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY )
+    a_queue_suffix = ''
+    while True :
+        a_queue_name = '%s___%s' % ( a_container_name, a_queue_suffix )
+        print a_queue_name, 
+        a_data_name, a_queue_suffix = get_message( a_sqs_conn, a_queue_name )
+        print a_data_name, a_queue_suffix
+
+        if a_data_name == '*' and a_queue_suffix == '*':
             break
 
-        a_container_name = a_message_body
+        # To secure the following 'save' operation
+        a_file_path = os.path.join( an_output_dir, a_data_name )
+        shutil.rmtree( a_file_path, True ) 
+        print not os.path.isfile( a_file_path ),
+
+        a_file_object = a_cloudfiles_container.get_object( a_data_name )
+        a_file_object.save_to_filename( a_file_path )
+        print a_file_path, os.path.isfile( a_file_path )
+
         pass
  
     
