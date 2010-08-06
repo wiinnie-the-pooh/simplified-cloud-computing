@@ -8,7 +8,7 @@ This script is responsible for the task packaging and sending it for execution i
 
 
 #--------------------------------------------------------------------------------------
-import os, os.path, uuid
+import sys, os, os.path, uuid
 
 
 #--------------------------------------------------------------------------------------
@@ -30,10 +30,10 @@ from optparse import OptionParser
 a_option_parser = OptionParser( usage = an_usage, version="%prog 0.1", formatter = a_help_formatter )
 
 # Definition of the command line arguments
-a_option_parser.add_option( "--pipe",
+a_option_parser.add_option( "--debug",
                             action = "store_true",
                             help = "prints only 'container name' as its output",
-                            dest = "enable_pipe",
+                            dest = "enable_debug",
                             default = False )
 
 a_option_parser.add_option( "--task-def-dir",
@@ -78,27 +78,31 @@ if __name__ == '__main__' :
 
     # Check command line arguments first
     #---------------------------------------------------------------------------
-    an_is_debug = not an_options.enable_pipe
+    an_is_debug = an_options.enable_debug
 
 
     #---------------------------------------------------------------------------
     def print_d( the_message ) :
         if an_is_debug : 
-            print the_message,
+            sys.stderr.write( the_message )
             pass
 
         pass
 
 
     #---------------------------------------------------------------------------
+    def print_e( the_message ) :
+        sys.stderr.write( the_message )
+
+        pass
+
+
+    #---------------------------------------------------------------------------
     def run_command( the_command ) :
-        if an_is_debug : 
-            print "(%s)" % the_command
-            pass
+        print_d( "(%s)\n" % the_command )
         
-        import os
         if os.system( the_command ) != 0 :
-            print "Can not execute command %s" % the_command
+            print_e( "Can not execute command %s\n" % the_command )
             os._exit( os.EX_USAGE )
             pass
         
@@ -107,16 +111,12 @@ if __name__ == '__main__' :
 
     #---------------------------------------------------------------------------
     def ssh_command( the_ssh_client, the_command ) :
-        if an_is_debug : 
-            print "[%s]" % the_command
-            pass
+        print_d( "[%s]\n" % the_command )
         
         stdin, stdout, stderr = the_ssh_client.exec_command( the_command )
         
-        if an_is_debug : 
-            for a_line in stderr.readlines() : print "\t", a_line,
-            for a_line in stdout.readlines() : print "\t", a_line,
-            pass
+        for a_line in stderr.readlines() : print_d( "\t%s" % a_line )
+        for a_line in stdout.readlines() : print_d( "\t%s" % a_line )
         
         pass
 
@@ -125,48 +125,48 @@ if __name__ == '__main__' :
     import os.path
     an_options.task_def_dir = os.path.abspath( an_options.task_def_dir )
     if not os.path.isdir( an_options.task_def_dir ) :
-        print "The task defintion should a directory"
+        print_e( "The task defintion should a directory\n" )
         os._exit( os.EX_USAGE )
         pass
 
     a_control_dir = os.path.join( an_options.task_def_dir, "control" )
     if not os.path.isdir( a_control_dir ) :
-        print "The task defintion directory should contain 'control' sub directory"
+        print_e( "The task defintion directory should contain 'control' sub directory\n" )
         os._exit( os.EX_USAGE )
         pass
 
     a_launch_script = os.path.join( a_control_dir, "launch" )
     if not os.path.isfile( a_launch_script ) :
-        print "The task definition 'control' sub directory should contain 'launch' start-up script"
+        print_e( "The task definition 'control' sub directory should contain 'launch' start-up script\n" )
         os._exit( os.EX_USAGE )
         pass
         
     if not os.path.isdir( os.path.join( an_options.task_def_dir, "data" ) ) :
-        print "The task defintion directory should contain 'data' sub directory"
+        print_e( "The task defintion directory should contain 'data' sub directory\n" )
         os._exit( os.EX_USAGE )
         pass
 
     RACKSPACE_USER = an_options.rackspace_user
     if RACKSPACE_USER == None :
-        print "Define RACKSPACE_USER parameter through '--rackspace-user' option"
+        print_e( "Define RACKSPACE_USER parameter through '--rackspace-user' option\n" )
         os._exit( os.EX_USAGE )
         pass
 
     RACKSPACE_KEY = an_options.rackspace_key
     if RACKSPACE_KEY == None :
-        print "Define RACKSPACE_KEY parameter through '--rackspace-key' option"
+        print_e( "Define RACKSPACE_KEY parameter through '--rackspace-key' option\n" )
         os._exit( os.EX_USAGE )
         pass
 
     AWS_ACCESS_KEY_ID = an_options.aws_access_key_id
     if AWS_ACCESS_KEY_ID == None :
-        print "Define AWS_ACCESS_KEY_ID parameter through '--aws-access-key-id' option"
+        print_e( "Define AWS_ACCESS_KEY_ID parameter through '--aws-access-key-id' option\n" )
         os._exit( os.EX_USAGE )
         pass
 
     AWS_SECRET_ACCESS_KEY = an_options.aws_secret_access_key
     if AWS_SECRET_ACCESS_KEY == None :
-        print "Define AWS_SECRET_ACCESS_KEY parameter through '--aws-secret-access-key' option"
+        print_e( "Define AWS_SECRET_ACCESS_KEY parameter through '--aws-secret-access-key' option\n" )
         os._exit( os.EX_USAGE )
         pass
 
@@ -220,8 +220,8 @@ if __name__ == '__main__' :
     from libcloud.deployment import MultiStepDeployment, ScriptDeployment, SSHKeyDeployment
     a_deployment_steps.append( SSHKeyDeployment( open( os.path.expanduser( "~/.ssh/id_rsa.pub") ).read() ) )
     a_deployment_steps.append( ScriptDeployment( "apt-get -y install python-boto" ) )
-    a_deployment_steps.append( ScriptDeployment( "apt-get -y install python-paramiko" ) )
-    a_deployment_steps.append( ScriptDeployment( "apt-get -y install python-libcloud" ) )
+    # a_deployment_steps.append( ScriptDeployment( "apt-get -y install python-paramiko" ) )
+    # a_deployment_steps.append( ScriptDeployment( "apt-get -y install python-libcloud" ) )
     a_deployment_steps.append( ScriptDeployment( "apt-get -y install python-software-properties" ) )
     a_deployment_steps.append( ScriptDeployment( "add-apt-repository ppa:chmouel/rackspace-cloud-files" ) )
     a_deployment_steps.append( ScriptDeployment( "apt-get -y install python-rackspace-cloudfiles" ) )
