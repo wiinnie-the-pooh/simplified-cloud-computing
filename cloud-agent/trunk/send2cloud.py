@@ -61,28 +61,28 @@ a_option_parser.add_option( "--rackspace-user",
                             metavar = "< Rackspace user >",
                             action = "store",
                             dest = "rackspace_user",
-                            help = "(\"%default\", by default)",
+                            help = "(${RACKSPACE_USER}, by default)",
                             default = os.getenv( "RACKSPACE_USER" ) )
     
 a_option_parser.add_option( "--rackspace-key",
                             metavar = "< Rackspace key >",
                             action = "store",
                             dest = "rackspace_key",
-                            help = "(\"%default\", by default)",
+                            help = "(${RACKSPACE_KEY}, by default)",
                             default = os.getenv( "RACKSPACE_KEY" ) )
     
 a_option_parser.add_option( "--aws-access-key-id",
                             metavar = "< Amazon key id >",
                             action = "store",
                             dest = "aws_access_key_id",
-                            help = "(\"%default\", by default)",
+                            help = "(${AWS_ACCESS_KEY_ID}, by default)",
                             default = os.getenv( "AWS_ACCESS_KEY_ID" ) )
     
 a_option_parser.add_option( "--aws-secret-access-key",
                             metavar = "< Amazon secret key >",
                             action = "store",
                             dest = "aws_secret_access_key",
-                            help = "(\"%default\", by default)",
+                            help = "(${AWS_SECRET_ACCESS_KEY}, by default)",
                             default = os.getenv( "AWS_SECRET_ACCESS_KEY" ) )
     
 
@@ -116,10 +116,28 @@ if __name__ == '__main__' :
         pass
 
     RACKSPACE_USER = an_options.rackspace_user
+    if RACKSPACE_USER == None :
+        print "Define RACKSPACE_USER parameter through '--rackspace-user' option"
+        os._exit( os.EX_USAGE )
+        pass
+
     RACKSPACE_KEY = an_options.rackspace_key
+    if RACKSPACE_KEY == None :
+        print "Define RACKSPACE_KEY parameter through '--rackspace-key' option"
+        os._exit( os.EX_USAGE )
+        pass
 
     AWS_ACCESS_KEY_ID = an_options.aws_access_key_id
+    if AWS_ACCESS_KEY_ID == None :
+        print "Define AWS_ACCESS_KEY_ID parameter through '--aws-access-key-id' option"
+        os._exit( os.EX_USAGE )
+        pass
+
     AWS_SECRET_ACCESS_KEY = an_options.aws_secret_access_key
+    if AWS_SECRET_ACCESS_KEY == None :
+        print "Define AWS_SECRET_ACCESS_KEY parameter through '--aws-secret-access-key' option"
+        os._exit( os.EX_USAGE )
+        pass
 
 
     #---------------------------------------------------------------------------
