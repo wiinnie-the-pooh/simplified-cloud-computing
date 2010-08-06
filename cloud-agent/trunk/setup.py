@@ -23,14 +23,34 @@ This script is responsible for the task packaging and sending it for execution i
 
 
 #--------------------------------------------------------------------------------------
-from distutils.core import setup
+from distutils.core import setup, Extension
 
 setup( name = 'balloon',
-       version = '0.5',
+       description = 'Set of cloud computing automation utilities',
+       long_description = 
+       """These utilities provide seemless mode for:
+        - accessing to cloud;
+        - deploying user specified data and functionality to be run on this data;
+        - launching of the cloud specified task;
+        - storing of output data into cloud;
+        - fectching of these output results from cloud;
+        - other miscellaneous functions""",
        author = 'Alexey Petrov',
-       author_email = 'alexey.petrov.nnov@gmail.com',       
-       version = '0.5',
-       scripts = [ 'send2cloud.py', 'fetch4queue.py' ] )
+       author_email = 'alexey.petrov.nnov@gmail.com', 
+       license = 'Apache License, Version 2.0',
+       url = 'http://www.simplified-cloud-computing.org',
+       platforms = [ 'linux' ],
+       version = '0.5-alfa',
+       classifiers = [ 'Development Status :: 3 - Alpha',
+                       'Environment :: Console',
+                       'Intended Audience :: Science/Research',
+                       'License :: OSI Approved :: Apache Software License',
+                       'Operating System :: POSIX',
+                       'Programming Language :: Python',
+                       'Topic :: Scientific/Engineering',
+                       'Topic :: Utilities' ],
+       packages = [ 'balloon' ],
+       scripts = [ 'send2cloud.py', 'fetch4queue.py', 'clean_rackspace.py', 'clean_amazon.py' ] )
 
 
 #--------------------------------------------------------------------------------------
