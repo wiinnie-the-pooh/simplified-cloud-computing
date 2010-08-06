@@ -1,0 +1,78 @@
+#!/usr/bin/env python
+
+#--------------------------------------------------------------------------------------
+"""
+Callback script which is called automatically on delivering task to cloud
+"""
+
+#--------------------------------------------------------------------------------------
+def push_message( the_sqs_queue, the_string ) :
+    from boto.sqs.message import Message
+    a_message = Message()
+    a_message.set_body( the_string )
+    return the_sqs_queue.write( a_message )
+
+
+#--------------------------------------------------------------------------------------
+# Fetching the cloud provider security cridentials
+import sys
+RACKSPACE_USER = sys.argv[ 1 ]
+RACKSPACE_KEY = sys.argv[ 2 ]
+a_container_name = sys.argv[ 3 ]
+a_data_name = sys.argv[ 4 ]
+a_working_dir = sys.argv[ 5 ]
+AWS_ACCESS_KEY_ID = sys.argv[ 6 ]
+AWS_SECRET_ACCESS_KEY = sys.argv[ 7 ]
+
+
+#--------------------------------------------------------------------------------------
+# Create an Amazon Simple Queue Service (SQS) queue to support notification
+# between cloud task execution process and remote client
+import boto
+a_sqs_conn = boto.connect_sqs( AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY )
+a_sqs_queue = a_sqs_conn.create_queue( a_container_name )
+a_status = push_message( a_sqs_queue, 'start' )
+
+
+#--------------------------------------------------------------------------------------
+# Creating corresponding cloudfile container
+import cloudfiles
+a_cloudfiles_conn = cloudfiles.get_connection( RACKSPACE_USER, RACKSPACE_KEY, timeout = 500 )
+a_cloudfiles_container = a_cloudfiles_conn[ a_container_name ]
+a_file_object = a_cloudfiles_container.get_object( a_data_name )
+
+
+#--------------------------------------------------------------------------------------
+# Defining a simple automatic context dependatent task:
+#  - downloading corresponding 'data' archive from cloudfiles
+#  - extracting its context into the working directory
+#  - uploading back all the data items as separate objects into initial cloudfile container
+import os.path
+a_data_archive = os.path.join( a_working_dir, a_data_name )
+a_file_object.save_to_filename( a_data_archive )
+
+
+#---------------------------------------------------------------------------
+import os
+a_command = 'cd %s && tar -xzf %s' % ( a_working_dir, a_data_name )
+os.system( a_command )
+
+a_data_dir = os.path.join( a_working_dir, 'data' )
+a_files = os.listdir( a_data_dir )
+a_files.sort()
+for a_file in a_files :
+    a_file_path = os.path.join( a_data_dir, a_file )
+    a_file_object = a_cloudfiles_container.create_object( a_file )
+    a_file_object.load_from_filename( a_file_path )
+    print a_file
+
+    # Publish new message in the queue to notify about completition of this step
+    a_status = push_message( a_sqs_queue, '%s' % a_file_path )
+    pass
+
+
+#--------------------------------------------------------------------------------------
+a_status = push_message( a_sqs_queue, 'finish' )
+
+
+#--------------------------------------------------------------------------------------
