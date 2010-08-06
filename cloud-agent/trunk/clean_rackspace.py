@@ -27,6 +27,8 @@ for a_container_name in a_cloudfiles_conn.list_containers() :
     a_cloudfiles_conn.delete_container( a_cloudfiles_container ) 
     pass
 
+print
+
 
 #--------------------------------------------------------------------------------------
 from libcloud.types import Provider 
@@ -38,6 +40,8 @@ for a_node in a_libcloud_conn.list_nodes() :
     a_node.destroy()
     print a_node.name
     pass
+
+print
 
 
 #--------------------------------------------------------------------------------------

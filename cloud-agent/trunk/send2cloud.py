@@ -23,6 +23,15 @@ def run_command( the_command ) :
 
 
 #--------------------------------------------------------------------------------------
+def ssh_command( the_ssh_client, the_command ) :
+    print "[%s]" % the_command
+    stdin, stdout, stderr = the_ssh_client.exec_command( the_command )
+    for a_line in stderr.readlines() : print a_line,
+    for a_line in stdout.readlines() : print a_line,
+    pass
+
+
+#--------------------------------------------------------------------------------------
 an_usage = \
 """
 %prog \\
@@ -114,6 +123,7 @@ if __name__ == '__main__' :
     # Packaging of the local data
     import os, tempfile
     a_working_dir = tempfile.mkdtemp()
+    print "a_working_dir =", a_working_dir
 
     a_control_name = "task_control.tgz"
     a_control_archive = os.path.join( a_working_dir, a_control_name )
@@ -130,8 +140,11 @@ if __name__ == '__main__' :
     a_cloudfiles_conn = cloudfiles.get_connection( RACKSPACE_USER, RACKSPACE_KEY, timeout = 500 )
     a_container_name = os.path.basename( a_working_dir )
     a_cloudfiles_container = a_cloudfiles_conn.create_container( a_container_name )
+    print "a_cloudfiles_container =", a_cloudfiles_container
+
     a_file_object = a_cloudfiles_container.create_object( a_data_name )
     a_file_object.load_from_filename( a_data_archive )
+    print "a_file_object =", a_file_object
 
 
     #---------------------------------------------------------------------------
@@ -141,9 +154,12 @@ if __name__ == '__main__' :
     
     Driver = get_driver( Provider.RACKSPACE ) 
     a_libcloud_conn = Driver( RACKSPACE_USER, RACKSPACE_KEY ) 
+    print a_libcloud_conn
 
-    images = a_libcloud_conn.list_images() 
-    sizes = a_libcloud_conn.list_sizes() 
+    an_images = a_libcloud_conn.list_images() 
+    print an_images
+    a_sizes = a_libcloud_conn.list_sizes() 
+    print a_sizes
 
     a_deployment_steps = []
     from libcloud.deployment import MultiStepDeployment, ScriptDeployment, SSHKeyDeployment
@@ -157,8 +173,8 @@ if __name__ == '__main__' :
 
     a_msd = MultiStepDeployment( a_deployment_steps ) 
     a_node_name = os.path.basename( a_working_dir )
-    a_node = a_libcloud_conn.deploy_node( name = a_node_name, image = images[ 9 ] , size = sizes[ 0 ], deploy = a_msd ) 
-    print "a_node.public_ip[ 0 ] = '%s'" % a_node.public_ip[ 0 ]
+    a_node = a_libcloud_conn.deploy_node( name = a_node_name, image = an_images[ 9 ] , size = a_sizes[ 0 ], deploy = a_msd ) 
+    print a_node
 
 
     #---------------------------------------------------------------------------
@@ -166,13 +182,13 @@ if __name__ == '__main__' :
     a_ssh_client = paramiko.SSHClient()
     a_ssh_client.set_missing_host_key_policy( paramiko.AutoAddPolicy() )
     a_ssh_client.connect( hostname = a_node.public_ip[ 0 ], port = 22, username = 'root')
-    stdin, stdout, stderr = a_ssh_client.exec_command( 'mkdir %s' % a_working_dir )
+    ssh_command( a_ssh_client, 'mkdir %s' % a_working_dir )
 
     a_sftp_client = a_ssh_client.open_sftp()
     a_sftp_client.put( a_control_archive, a_control_archive )
 
     a_command = 'cd %s && tar -xzf %s' % ( a_working_dir, a_control_name )
-    stdin, stdout, stderr = a_ssh_client.exec_command( a_command )
+    ssh_command( a_ssh_client, a_command )
 
     a_command = '%s/control/launch %s %s %s %s %s %s %s' % ( a_working_dir, 
                                                              RACKSPACE_USER, 
@@ -182,9 +198,7 @@ if __name__ == '__main__' :
                                                              a_working_dir,
                                                              AWS_ACCESS_KEY_ID,
                                                              AWS_SECRET_ACCESS_KEY )
-    stdin, stdout, stderr = a_ssh_client.exec_command( a_command )
-    for a_line in stderr.readlines() : print a_line,
-    for a_line in stdout.readlines() : print a_line,
+    ssh_command( a_ssh_client, a_command )
 
 
     #---------------------------------------------------------------------------
@@ -194,8 +208,8 @@ if __name__ == '__main__' :
 
     #---------------------------------------------------------------------------
     # This value could be used as unique identifier to check progress of the task execution
-    print a_container_name
-    a_command = "./fetch4cloud.py"
+    import sys
+    a_command = os.path.join( os.path.dirname( sys.argv[ 0 ] ), "fetch4cloud.py" )
     a_command += " --task-container-name='%s'" % a_container_name
     a_command += " --rackspace-user='%s'" % RACKSPACE_USER
     a_command += " --rackspace-key='%s'" % RACKSPACE_KEY
