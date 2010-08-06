@@ -55,6 +55,11 @@ from optparse import OptionParser
 a_option_parser = OptionParser( usage = an_usage, version="%prog 0.1", formatter = a_help_formatter )
 
 # Definition of the command line arguments
+a_option_parser.add_option( "--pipe",
+                            action = "store_true",
+                            help = "fetchs 'container name' from input stream",
+                            dest = "enable_pipe" )
+
 a_option_parser.add_option( "--container-name",
                             metavar = "< name of task container >",
                             action = "store",
@@ -101,6 +106,11 @@ if __name__ == '__main__' :
     an_options, an_args = a_option_parser.parse_args()
 
     # Check command line arguments first
+    #---------------------------------------------------------------------------
+    if an_options.enable_pipe :
+        an_options.container_name = raw_input()
+        pass
+
     a_container_name = an_options.container_name
     if an_options.container_name == None :
         print "Please, use '--task-container-name' to define corresponding value"
@@ -150,7 +160,7 @@ if __name__ == '__main__' :
     import boto
     a_queue_name = an_options.container_name
     a_sqs_conn = boto.connect_sqs( AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY )
-    a_queue_suffix = ''
+    a_queue_suffix = 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
     while True :
         a_queue_name = '%s___%s' % ( a_container_name, a_queue_suffix )
         print a_queue_name, 

@@ -12,26 +12,6 @@ import os, os.path, uuid
 
 
 #--------------------------------------------------------------------------------------
-def run_command( the_command ) :
-    import os
-    print "(%s)" % the_command
-    if os.system( the_command ) != 0 :
-        print "Can not execute command %s" % the_command
-        os._exit( os.EX_USAGE )
-        pass
-    pass
-
-
-#--------------------------------------------------------------------------------------
-def ssh_command( the_ssh_client, the_command ) :
-    print "[%s]" % the_command
-    stdin, stdout, stderr = the_ssh_client.exec_command( the_command )
-    for a_line in stderr.readlines() : print "\t", a_line,
-    for a_line in stdout.readlines() : print "\t", a_line,
-    pass
-
-
-#--------------------------------------------------------------------------------------
 an_usage = \
 """
 %prog \\
@@ -50,6 +30,12 @@ from optparse import OptionParser
 a_option_parser = OptionParser( usage = an_usage, version="%prog 0.1", formatter = a_help_formatter )
 
 # Definition of the command line arguments
+a_option_parser.add_option( "--pipe",
+                            action = "store_true",
+                            help = "prints only 'container name' as its output",
+                            dest = "enable_pipe",
+                            default = False )
+
 a_option_parser.add_option( "--task-def-dir",
                             metavar = "< location of the task defintion >",
                             action = "store",
@@ -91,6 +77,51 @@ if __name__ == '__main__' :
     an_options, an_args = a_option_parser.parse_args()
 
     # Check command line arguments first
+    #---------------------------------------------------------------------------
+    an_is_debug = not an_options.enable_pipe
+
+
+    #---------------------------------------------------------------------------
+    def print_d( the_message ) :
+        if an_is_debug : 
+            print the_message,
+            pass
+
+        pass
+
+
+    #---------------------------------------------------------------------------
+    def run_command( the_command ) :
+        if an_is_debug : 
+            print "(%s)" % the_command
+            pass
+        
+        import os
+        if os.system( the_command ) != 0 :
+            print "Can not execute command %s" % the_command
+            os._exit( os.EX_USAGE )
+            pass
+        
+        pass
+
+
+    #---------------------------------------------------------------------------
+    def ssh_command( the_ssh_client, the_command ) :
+        if an_is_debug : 
+            print "[%s]" % the_command
+            pass
+        
+        stdin, stdout, stderr = the_ssh_client.exec_command( the_command )
+        
+        if an_is_debug : 
+            for a_line in stderr.readlines() : print "\t", a_line,
+            for a_line in stdout.readlines() : print "\t", a_line,
+            pass
+        
+        pass
+
+
+    #---------------------------------------------------------------------------
     import os.path
     an_options.task_def_dir = os.path.abspath( an_options.task_def_dir )
     if not os.path.isdir( an_options.task_def_dir ) :
@@ -144,7 +175,7 @@ if __name__ == '__main__' :
     # Packaging of the local data
     import os, tempfile
     a_working_dir = tempfile.mkdtemp()
-    print "a_working_dir =", a_working_dir
+    print_d( "a_working_dir = %s\n" % a_working_dir )
 
     a_control_name = "task_control.tgz"
     a_control_archive = os.path.join( a_working_dir, a_control_name )
@@ -159,15 +190,15 @@ if __name__ == '__main__' :
     # To upload the task into cloud
     import cloudfiles
     a_cloudfiles_conn = cloudfiles.get_connection( RACKSPACE_USER, RACKSPACE_KEY, timeout = 500 )
-    print a_cloudfiles_conn
+    print_d( "a_cloudfiles_conn = %r\n" % a_cloudfiles_conn )
 
     a_container_name = str( uuid.uuid4() )
     a_cloudfiles_container = a_cloudfiles_conn.create_container( a_container_name )
-    print "a_cloudfiles_container =", a_cloudfiles_container
+    print_d( "a_cloudfiles_container = %r\n" % a_cloudfiles_container )
 
     a_file_object = a_cloudfiles_container.create_object( a_data_name )
     a_file_object.load_from_filename( a_data_archive )
-    print "a_file_object =", a_file_object
+    print_d( "a_file_object = %r\n" % a_file_object )
 
 
     #---------------------------------------------------------------------------
@@ -177,19 +208,20 @@ if __name__ == '__main__' :
     
     Driver = get_driver( Provider.RACKSPACE ) 
     a_libcloud_conn = Driver( RACKSPACE_USER, RACKSPACE_KEY ) 
-    print a_libcloud_conn
+    print_d( "a_libcloud_conn = %r\n" % a_libcloud_conn )
 
     an_images = a_libcloud_conn.list_images() 
-    print an_images
+    print_d( "an_images = %r\n" % an_images )
+
     a_sizes = a_libcloud_conn.list_sizes() 
-    print a_sizes
+    print_d( "a_sizes = %r\n" % a_sizes )
 
     a_deployment_steps = []
     from libcloud.deployment import MultiStepDeployment, ScriptDeployment, SSHKeyDeployment
     a_deployment_steps.append( SSHKeyDeployment( open( os.path.expanduser( "~/.ssh/id_rsa.pub") ).read() ) )
     a_deployment_steps.append( ScriptDeployment( "apt-get -y install python-boto" ) )
-    # a_deployment_steps.append( ScriptDeployment( "apt-get -y install python-paramiko" ) )
-    # a_deployment_steps.append( ScriptDeployment( "apt-get -y install python-libcloud" ) )
+    a_deployment_steps.append( ScriptDeployment( "apt-get -y install python-paramiko" ) )
+    a_deployment_steps.append( ScriptDeployment( "apt-get -y install python-libcloud" ) )
     a_deployment_steps.append( ScriptDeployment( "apt-get -y install python-software-properties" ) )
     a_deployment_steps.append( ScriptDeployment( "add-apt-repository ppa:chmouel/rackspace-cloud-files" ) )
     a_deployment_steps.append( ScriptDeployment( "apt-get -y install python-rackspace-cloudfiles" ) )
@@ -197,7 +229,7 @@ if __name__ == '__main__' :
 
     a_node_name = a_container_name
     a_node = a_libcloud_conn.deploy_node( name = a_node_name, image = an_images[ 9 ] , size = a_sizes[ 0 ], deploy = a_msd ) 
-    print a_node
+    print_d( "a_node = %r\n" % a_node )
 
 
     #---------------------------------------------------------------------------
@@ -242,8 +274,12 @@ if __name__ == '__main__' :
 
     
     #---------------------------------------------------------------------------
+    # This refenrece value could be used further in cloud management pipeline
+    print a_container_name
+
+
+    #---------------------------------------------------------------------------
     import os
-    print "OK"
     os._exit( os.EX_OK )
 
     pass

@@ -152,7 +152,7 @@ a_files.sort()
 import boto
 a_sqs_conn = boto.connect_sqs( AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY )
 
-a_queue_suffix = ''
+a_queue_suffix = 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
 a_queue_name = '%s___%s' % ( a_container_name, a_queue_suffix )
 
 
