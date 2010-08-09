@@ -24,28 +24,26 @@ This script is responsible for the task packaging and sending it for execution i
 
 #--------------------------------------------------------------------------------------
 import sys, os, os.path, uuid
+import balloon.rackspace as rackspace
+import balloon.amazon as amazon
 
 
 #--------------------------------------------------------------------------------------
-an_usage = \
-"""%prog \\
-      --task-def-dir=~/rackspace \\
-      --rackspace-user=${RACKSPACE_USER} \\
-      --rackspace-key=${RACKSPACE_KEY} \\
-      --aws-access-key-id=${AWS_ACCESS_KEY_ID} \\
-      --aws-secret-access-key=${AWS_SECRET_ACCESS_KEY}"""
+an_usage_description = "%prog --task-def-dir=~/rackspace"
+an_usage_description += rackspace.add_usage_description()
+an_usage_description += amazon.add_usage_description()
 
 from optparse import IndentedHelpFormatter
 a_help_formatter = IndentedHelpFormatter( width = 127 )
 
 from optparse import OptionParser
-a_option_parser = OptionParser( usage = an_usage, version="%prog 0.1", formatter = a_help_formatter )
+a_option_parser = OptionParser( usage = an_usage_description, version="%prog 0.1", formatter = a_help_formatter )
 
 # Definition of the command line arguments
 a_option_parser.add_option( "--debug",
                             action = "store_true",
-                            help = "prints only 'container name' as its output",
                             dest = "enable_debug",
+                            help = "print debug information",
                             default = True )
 
 a_option_parser.add_option( "--task-def-dir",
@@ -55,11 +53,9 @@ a_option_parser.add_option( "--task-def-dir",
                             help = "(\"%default\", by default)",
                             default = "." )
 
-import balloon.rackspace as rackspace
-rackspace.update_option_parser( a_option_parser )
-    
-import balloon.amazon as amazon
-amazon.update_option_parser( a_option_parser )
+rackspace.add_parser_options( a_option_parser )
+
+amazon.add_parser_options( a_option_parser )
     
 
 #--------------------------------------------------------------------------------------
