@@ -37,12 +37,12 @@ from distutils.command.install import install
 
 class InstallCmd( install ) :
     def run( self ) :
-        sh_command( "apt-get -y install python-boto" )
-        sh_command( "apt-get -y install python-paramiko" )
-        sh_command( "apt-get -y install python-libcloud" )
-        sh_command( "apt-get -y install python-software-properties" )
-        sh_command( "add-apt-repository ppa:chmouel/rackspace-cloud-files" )
-        sh_command( "apt-get -y install python-rackspace-cloudfiles" )
+        # sh_command( "apt-get -y install python-boto" )
+        # sh_command( "apt-get -y install python-paramiko" )
+        # sh_command( "apt-get -y install python-libcloud" )
+        # sh_command( "apt-get -y install python-software-properties" )
+        # sh_command( "add-apt-repository ppa:chmouel/rackspace-cloud-files" )
+        # sh_command( "apt-get -y install python-rackspace-cloudfiles" )
 
         install.run( self )
         pass
@@ -78,7 +78,7 @@ setup( name = 'balloon',
                        'Topic :: Scientific/Engineering',
                        'Topic :: Utilities' ],
        cmdclass = { 'install': InstallCmd },
-       packages = [ 'balloon' ],
+       packages = [ 'balloon', 'balloon/amazon', 'balloon/rackspace' ],
        scripts = [ 'send2cloud.py', 'fetch4queue.py', 'clean_rackspace.py', 'clean_amazon.py' ] )
 
 

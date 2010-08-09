@@ -28,15 +28,12 @@ import sys, os, os.path, uuid
 
 #--------------------------------------------------------------------------------------
 an_usage = \
-"""
-%prog \\
+"""%prog \\
       --task-def-dir=~/rackspace \\
       --rackspace-user=${RACKSPACE_USER} \\
       --rackspace-key=${RACKSPACE_KEY} \\
       --aws-access-key-id=${AWS_ACCESS_KEY_ID} \\
-      --aws-secret-access-key=${AWS_SECRET_ACCESS_KEY}
-
-"""
+      --aws-secret-access-key=${AWS_SECRET_ACCESS_KEY}"""
 
 from optparse import IndentedHelpFormatter
 a_help_formatter = IndentedHelpFormatter( width = 127 )
@@ -49,7 +46,7 @@ a_option_parser.add_option( "--debug",
                             action = "store_true",
                             help = "prints only 'container name' as its output",
                             dest = "enable_debug",
-                            default = False )
+                            default = True )
 
 a_option_parser.add_option( "--task-def-dir",
                             metavar = "< location of the task defintion >",
@@ -58,33 +55,11 @@ a_option_parser.add_option( "--task-def-dir",
                             help = "(\"%default\", by default)",
                             default = "." )
 
-a_option_parser.add_option( "--rackspace-user",
-                            metavar = "< Rackspace user >",
-                            action = "store",
-                            dest = "rackspace_user",
-                            help = "(${RACKSPACE_USER}, by default)",
-                            default = os.getenv( "RACKSPACE_USER" ) )
+import balloon.rackspace as rackspace
+rackspace.update_option_parser( a_option_parser )
     
-a_option_parser.add_option( "--rackspace-key",
-                            metavar = "< Rackspace key >",
-                            action = "store",
-                            dest = "rackspace_key",
-                            help = "(${RACKSPACE_KEY}, by default)",
-                            default = os.getenv( "RACKSPACE_KEY" ) )
-    
-a_option_parser.add_option( "--aws-access-key-id",
-                            metavar = "< Amazon key id >",
-                            action = "store",
-                            dest = "aws_access_key_id",
-                            help = "(${AWS_ACCESS_KEY_ID}, by default)",
-                            default = os.getenv( "AWS_ACCESS_KEY_ID" ) )
-    
-a_option_parser.add_option( "--aws-secret-access-key",
-                            metavar = "< Amazon secret key >",
-                            action = "store",
-                            dest = "aws_secret_access_key",
-                            help = "(${AWS_SECRET_ACCESS_KEY}, by default)",
-                            default = os.getenv( "AWS_SECRET_ACCESS_KEY" ) )
+import balloon.amazon as amazon
+amazon.update_option_parser( a_option_parser )
     
 
 #--------------------------------------------------------------------------------------
