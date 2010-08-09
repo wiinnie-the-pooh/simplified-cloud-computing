@@ -22,6 +22,12 @@ Callback script which is called automatically on delivering task to cloud
 """
 
 #--------------------------------------------------------------------------------------
+import balloon.common as common
+from balloon.common import print_d, print_e, sh_command
+
+import balloon.rackspace as rackspace
+import balloon.amazon as amazon
+
 import os, os.path, uuid
 
 
@@ -36,24 +42,18 @@ def push_message( the_sqs_queue, the_string ) :
 
 
 #--------------------------------------------------------------------------------------
-an_usage = \
-"""
-%prog \\
-      --container-name='tmpt7lweb' \\
-      --data-name='task_data.tgz' \\
-      --working-dir='/tmp/tmpt7lweb' \\
-      --rackspace-user=${RACKSPACE_USER} \\
-      --rackspace-key=${RACKSPACE_KEY} \\
-      --aws-access-key-id=${AWS_ACCESS_KEY_ID} \\
-      --aws-secret-access-key=${AWS_SECRET_ACCESS_KEY}
+# Defining utility command-line interface
 
-"""
+an_usage_description = "%prog --container-name=33f89d9d-5417-49c1-80c9-787e74cc7154 --data-name='task_data.tgz' --working-dir='/tmp/tmpt7lweb'"
+an_usage_description += common.add_usage_description()
+an_usage_description += rackspace.add_usage_description()
+an_usage_description += amazon.add_usage_description()
 
 from optparse import IndentedHelpFormatter
 a_help_formatter = IndentedHelpFormatter( width = 127 )
 
 from optparse import OptionParser
-a_option_parser = OptionParser( usage = an_usage, version="%prog 0.1", formatter = a_help_formatter )
+a_option_parser = OptionParser( usage = an_usage_description, version="%prog 0.1", formatter = a_help_formatter )
 
 # Definition of the command line arguments
 a_option_parser.add_option( "--container-name",
@@ -71,33 +71,11 @@ a_option_parser.add_option( "--working-dir",
                             action = "store",
                             dest = "working_dir" )
     
-a_option_parser.add_option( "--rackspace-user",
-                            metavar = "< Rackspace user >",
-                            action = "store",
-                            dest = "rackspace_user",
-                            help = "(${RACKSPACE_USER}, by default)",
-                            default = os.getenv( "RACKSPACE_USER" ) )
-    
-a_option_parser.add_option( "--rackspace-key",
-                            metavar = "< Rackspace key >",
-                            action = "store",
-                            dest = "rackspace_key",
-                            help = "(${RACKSPACE_KEY}, by default)",
-                            default = os.getenv( "RACKSPACE_KEY" ) )
-    
-a_option_parser.add_option( "--aws-access-key-id",
-                            metavar = "< Amazon key id >",
-                            action = "store",
-                            dest = "aws_access_key_id",
-                            help = "(${AWS_ACCESS_KEY_ID}, by default)",
-                            default = os.getenv( "AWS_ACCESS_KEY_ID" ) )
-    
-a_option_parser.add_option( "--aws-secret-access-key",
-                            metavar = "< Amazon secret key >",
-                            action = "store",
-                            dest = "aws_secret_access_key",
-                            help = "(${AWS_SECRET_ACCESS_KEY}, by default)",
-                            default = os.getenv( "AWS_SECRET_ACCESS_KEY" ) )
+common.add_parser_options( a_option_parser )
+
+rackspace.add_parser_options( a_option_parser )
+
+amazon.add_parser_options( a_option_parser )
      
 
 #--------------------------------------------------------------------------------------
@@ -108,33 +86,14 @@ a_container_name = an_options.container_name
 a_data_name = an_options.data_name
 a_working_dir = an_options.working_dir
 
-RACKSPACE_USER = an_options.rackspace_user
-if RACKSPACE_USER == None :
-    print "Define RACKSPACE_USER parameter through '--rackspace-user' option"
-    os._exit( os.EX_USAGE )
-    pass
+RACKSPACE_USER, RACKSPACE_KEY = rackspace.extract_options( an_options )
 
-RACKSPACE_KEY = an_options.rackspace_key
-if RACKSPACE_KEY == None :
-    print "Define RACKSPACE_KEY parameter through '--rackspace-key' option"
-    os._exit( os.EX_USAGE )
-    pass
-
-AWS_ACCESS_KEY_ID = an_options.aws_access_key_id
-if AWS_ACCESS_KEY_ID == None :
-    print "Define AWS_ACCESS_KEY_ID parameter through '--aws-access-key-id' option"
-    os._exit( os.EX_USAGE )
-    pass
-
-AWS_SECRET_ACCESS_KEY = an_options.aws_secret_access_key
-if AWS_SECRET_ACCESS_KEY == None :
-    print "Define AWS_SECRET_ACCESS_KEY parameter through '--aws-secret-access-key' option"
-    os._exit( os.EX_USAGE )
-    pass
+AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY = amazon.extract_options( an_options )
 
 
 #--------------------------------------------------------------------------------------
 # Creating corresponding cloudfile container
+
 import cloudfiles
 a_cloudfiles_conn = cloudfiles.get_connection( RACKSPACE_USER, RACKSPACE_KEY, timeout = 500 )
 a_cloudfiles_container = a_cloudfiles_conn[ a_container_name ]
@@ -146,6 +105,7 @@ a_file_object = a_cloudfiles_container.get_object( a_data_name )
 #  - downloading corresponding 'data' archive from cloudfiles
 #  - extracting its context into the working directory
 #  - uploading back all the data items as separate objects into initial cloudfile container
+
 import os.path
 a_data_archive = os.path.join( a_working_dir, a_data_name )
 a_file_object.save_to_filename( a_data_archive )
@@ -153,9 +113,8 @@ a_file_object.save_to_filename( a_data_archive )
 
 #---------------------------------------------------------------------------
 # Preparing file information to upload
-import os
-a_command = 'cd %s && tar -xzf %s' % ( a_working_dir, a_data_name )
-os.system( a_command )
+
+sh_command( 'cd %s && tar -xzf %s' % ( a_working_dir, a_data_name ) )
 
 a_data_dir = os.path.join( a_working_dir, 'data' )
 a_files = os.listdir( a_data_dir )
@@ -165,6 +124,7 @@ a_files.sort()
 #--------------------------------------------------------------------------------------
 # Create an Amazon Simple Queue Service (SQS) queue to support notification
 # between cloud task execution process and remote client
+
 import boto
 a_sqs_conn = boto.connect_sqs( AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY )
 
@@ -196,6 +156,10 @@ for a_file in a_files :
 # The terninal node for the ( queue, message ) linked list
 a_sqs_queue = a_sqs_conn.create_queue( a_queue_name )
 a_status = push_message( a_sqs_queue, '*:*' ) 
+
+
+#--------------------------------------------------------------------------------------
+print_d( 'OK\n' )
 
 
 #--------------------------------------------------------------------------------------
