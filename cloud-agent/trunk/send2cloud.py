@@ -23,15 +23,20 @@ This script is responsible for the task packaging and sending it for execution i
 
 
 #--------------------------------------------------------------------------------------
-import sys, os, os.path, uuid
+import balloon.common as common
+from balloon.common import print_d
+
 import balloon.rackspace as rackspace
 import balloon.amazon as amazon
+
+import sys, os, os.path, uuid
 
 
 #--------------------------------------------------------------------------------------
 # Define command line interface
 
 an_usage_description = "%prog --task-def-dir=~/rackspace"
+an_usage_description += common.add_usage_description()
 an_usage_description += rackspace.add_usage_description()
 an_usage_description += amazon.add_usage_description()
 
@@ -42,18 +47,14 @@ from optparse import OptionParser
 a_option_parser = OptionParser( usage = an_usage_description, version="%prog 0.1", formatter = a_help_formatter )
 
 # Definition of the command line arguments
-a_option_parser.add_option( "--debug",
-                            action = "store_true",
-                            dest = "enable_debug",
-                            help = "print debug information",
-                            default = True )
-
 a_option_parser.add_option( "--task-def-dir",
                             metavar = "< location of the task defintion >",
                             action = "store",
                             dest = "task_def_dir",
                             help = "(\"%default\", by default)",
                             default = "." )
+
+common.add_parser_options( a_option_parser )
 
 rackspace.add_parser_options( a_option_parser )
 
@@ -66,16 +67,7 @@ if __name__ == '__main__' :
 
     # Check command line arguments first
     #---------------------------------------------------------------------------
-    an_is_debug = an_options.enable_debug
-
-
-    #---------------------------------------------------------------------------
-    def print_d( the_message ) :
-        if an_is_debug : 
-            sys.stderr.write( the_message )
-            pass
-
-        pass
+    common.extract_options( an_options )
 
 
     #---------------------------------------------------------------------------
@@ -141,6 +133,7 @@ if __name__ == '__main__' :
 
     #---------------------------------------------------------------------------
     # Packaging of the local data
+
     import os, tempfile
     a_working_dir = tempfile.mkdtemp()
     print_d( "a_working_dir = %s\n" % a_working_dir )
@@ -155,7 +148,8 @@ if __name__ == '__main__' :
 
 
     #---------------------------------------------------------------------------
-    # To upload the task into cloud
+    # Uploading task data into cloud
+
     import cloudfiles
     a_cloudfiles_conn = cloudfiles.get_connection( RACKSPACE_USER, RACKSPACE_KEY, timeout = 500 )
     print_d( "a_cloudfiles_conn = %r\n" % a_cloudfiles_conn )
@@ -170,7 +164,8 @@ if __name__ == '__main__' :
 
 
     #---------------------------------------------------------------------------
-    # To boot a node in cloud
+    # Instanciating node in cloud
+
     from libcloud.types import Provider 
     from libcloud.providers import get_driver 
     
@@ -201,6 +196,8 @@ if __name__ == '__main__' :
 
 
     #---------------------------------------------------------------------------
+    # Uploading and running 'control' scripts into cloud
+
     import paramiko
     a_ssh_client = paramiko.SSHClient()
     a_ssh_client.set_missing_host_key_policy( paramiko.AutoAddPolicy() )
@@ -225,6 +222,7 @@ if __name__ == '__main__' :
 
 
     #---------------------------------------------------------------------------
+    # Cleaning tempral working folder
     import shutil
     shutil.rmtree( a_working_dir )
 
