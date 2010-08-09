@@ -18,6 +18,7 @@
 
 #--------------------------------------------------------------------------------------
 import os, sys
+from subprocess import *
 
 
 #--------------------------------------------------------------------------------------
@@ -72,8 +73,15 @@ def sh_command( the_command ) :
     "Execution of shell command"
     print_d( "(%s)\n" % the_command )
     
-    if os.system( the_command ) != 0 :
-        print_e( "Can not execute command %s\n" % the_command )
+    a_pipe = Popen( the_command, stdout = PIPE, stderr = PIPE, shell = True )
+
+    a_return_code = os.waitpid( a_pipe.pid, 0 )[ 1 ]
+
+    for a_line in a_pipe.stderr.readlines() : print_d( "\t%s" % a_line )
+    for a_line in a_pipe.stdout.readlines() : print_d( "\t%s" % a_line )
+
+    if a_return_code != 0 :
+        os._exit( os.EX_USAGE )
         pass
     
     pass

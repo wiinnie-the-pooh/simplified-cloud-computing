@@ -102,13 +102,22 @@ if __name__ == '__main__' :
     a_working_dir = tempfile.mkdtemp()
     print_d( "a_working_dir = %s\n" % a_working_dir )
 
+    # Packaging the 'control' scripts
     a_control_name = "task_control.tgz"
     a_control_archive = os.path.join( a_working_dir, a_control_name )
     sh_command( "cd %s && tar --exclude-vcs -czf %s ./control" % ( an_options.task_def_dir, a_control_archive ) )
 
+    # Packaging the task data
     a_data_name = "task_data.tgz"
     a_data_archive = os.path.join( a_working_dir, a_data_name )
     sh_command( "cd %s && tar --exclude-vcs -czf %s ./data" % ( an_options.task_def_dir, a_data_archive ) )
+
+    # Packaging Python engine (itself)
+    sh_command( "cd %s && ./setup.py sdist" % an_options.task_def_dir )
+    a_balloon_name = "balloon-0.5-alfa"
+    a_balloon_archive_name = a_balloon_name + os.extsep + "tar.gz"
+    a_balloon_source_archive = os.path.join( an_options.task_def_dir, 'dist', a_balloon_archive_name )
+    a_balloon_target_archive = os.path.join( a_working_dir, a_balloon_archive_name )
 
 
     #---------------------------------------------------------------------------
@@ -162,18 +171,28 @@ if __name__ == '__main__' :
     #---------------------------------------------------------------------------
     # Uploading and running 'control' scripts into cloud
 
+    # Instantiating ssh connection with root access
     import paramiko
     a_ssh_client = paramiko.SSHClient()
     a_ssh_client.set_missing_host_key_policy( paramiko.AutoAddPolicy() )
     a_ssh_client.connect( hostname = a_node.public_ip[ 0 ], port = 22, username = 'root')
+
+    # Preparing corresponding cloud 'working dir'
     ssh_command( a_ssh_client, 'mkdir %s' % a_working_dir )
 
+    # Instantiating a sftp client
     a_sftp_client = a_ssh_client.open_sftp()
+
+    # Uploading and installing into the cloud corresponding Python engine (itself)
+    a_sftp_client.put( a_balloon_source_archive, a_balloon_target_archive )
+    a_balloon_setup_name = os.path.join( a_working_dir, a_balloon_name, 'setup.py' )
+    ssh_command( a_ssh_client, '%s install' % ( a_balloon_setup_name ) )
+
+    # Uploading and unpacking into the cloud 'control' scripts
     a_sftp_client.put( a_control_archive, a_control_archive )
+    ssh_command( a_ssh_client, 'cd %s && tar -xzf %s' % ( a_working_dir, a_control_name ) )
 
-    a_command = 'cd %s && tar -xzf %s' % ( a_working_dir, a_control_name )
-    ssh_command( a_ssh_client, a_command )
-
+    # Executing into the cloud 'control' scripts
     a_command = '%s/control/launch' % ( a_working_dir ) 
     a_command += " --container-name='%s'" % a_container_name
     a_command += " --data-name='%s'" % a_data_name
