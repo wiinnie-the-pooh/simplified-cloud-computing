@@ -21,7 +21,12 @@ import os
 
 
 #--------------------------------------------------------------------------------------
-def update_option_parser( the_option_parser ) :
+def add_usage_description() :
+    return " --rackspace-user=${RACKSPACE_USER} --rackspace-key=${RACKSPACE_KEY}"
+
+
+#--------------------------------------------------------------------------------------
+def add_parser_options( the_option_parser ) :
     the_option_parser.add_option( "--rackspace-user",
                                   metavar = "< Rackspace user >",
                                   action = "store",
@@ -36,6 +41,23 @@ def update_option_parser( the_option_parser ) :
                                   help = "(${RACKSPACE_KEY}, by default)",
                                   default = os.getenv( "RACKSPACE_KEY" ) )
     pass
+
+
+#--------------------------------------------------------------------------------------
+def extract_options( the_options ) :
+    RACKSPACE_USER = the_options.rackspace_user
+    if RACKSPACE_USER == None :
+        print_e( "Define RACKSPACE_USER parameter through '--rackspace-user' option\n" )
+        os._exit( os.EX_USAGE )
+        pass
+
+    RACKSPACE_KEY = the_options.rackspace_key
+    if RACKSPACE_KEY == None :
+        print_e( "Define RACKSPACE_KEY parameter through '--rackspace-key' option\n" )
+        os._exit( os.EX_USAGE )
+        pass
+
+    return RACKSPACE_USER, RACKSPACE_KEY
 
 
 #--------------------------------------------------------------------------------------

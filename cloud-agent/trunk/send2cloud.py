@@ -29,6 +29,8 @@ import balloon.amazon as amazon
 
 
 #--------------------------------------------------------------------------------------
+# Define command line interface
+
 an_usage_description = "%prog --task-def-dir=~/rackspace"
 an_usage_description += rackspace.add_usage_description()
 an_usage_description += amazon.add_usage_description()
@@ -132,29 +134,9 @@ if __name__ == '__main__' :
         os._exit( os.EX_USAGE )
         pass
 
-    RACKSPACE_USER = an_options.rackspace_user
-    if RACKSPACE_USER == None :
-        print_e( "Define RACKSPACE_USER parameter through '--rackspace-user' option\n" )
-        os._exit( os.EX_USAGE )
-        pass
+    RACKSPACE_USER, RACKSPACE_KEY = rackspace.extract_options( an_options )
 
-    RACKSPACE_KEY = an_options.rackspace_key
-    if RACKSPACE_KEY == None :
-        print_e( "Define RACKSPACE_KEY parameter through '--rackspace-key' option\n" )
-        os._exit( os.EX_USAGE )
-        pass
-
-    AWS_ACCESS_KEY_ID = an_options.aws_access_key_id
-    if AWS_ACCESS_KEY_ID == None :
-        print_e( "Define AWS_ACCESS_KEY_ID parameter through '--aws-access-key-id' option\n" )
-        os._exit( os.EX_USAGE )
-        pass
-
-    AWS_SECRET_ACCESS_KEY = an_options.aws_secret_access_key
-    if AWS_SECRET_ACCESS_KEY == None :
-        print_e( "Define AWS_SECRET_ACCESS_KEY parameter through '--aws-secret-access-key' option\n" )
-        os._exit( os.EX_USAGE )
-        pass
+    AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY = amazon.extract_options( an_options )
 
 
     #---------------------------------------------------------------------------

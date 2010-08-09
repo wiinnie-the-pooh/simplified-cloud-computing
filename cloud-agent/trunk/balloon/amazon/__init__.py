@@ -21,7 +21,12 @@ import os
 
 
 #--------------------------------------------------------------------------------------
-def update_option_parser( the_option_parser ) :
+def add_usage_description() :
+    return " --aws-access-key-id=${AWS_ACCESS_KEY_ID} --aws-secret-access-key=${AWS_SECRET_ACCESS_KEY}"
+
+
+#--------------------------------------------------------------------------------------
+def add_parser_options( the_option_parser ) :
     the_option_parser.add_option( "--aws-access-key-id",
                                   metavar = "< Amazon key id >",
                                   action = "store",
@@ -36,6 +41,23 @@ def update_option_parser( the_option_parser ) :
                                   help = "(${AWS_SECRET_ACCESS_KEY}, by default)",
                                   default = os.getenv( "AWS_SECRET_ACCESS_KEY" ) )
     pass
+
+
+#--------------------------------------------------------------------------------------
+def extract_options( the_options ) :
+    AWS_ACCESS_KEY_ID = the_options.aws_access_key_id
+    if AWS_ACCESS_KEY_ID == None :
+        print_e( "Define AWS_ACCESS_KEY_ID parameter through '--aws-access-key-id' option\n" )
+        os._exit( os.EX_USAGE )
+        pass
+
+    AWS_SECRET_ACCESS_KEY = the_options.aws_secret_access_key
+    if AWS_SECRET_ACCESS_KEY == None :
+        print_e( "Define AWS_SECRET_ACCESS_KEY parameter through '--aws-secret-access-key' option\n" )
+        os._exit( os.EX_USAGE )
+        pass
+
+    return AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
 
 
 #--------------------------------------------------------------------------------------
