@@ -24,7 +24,7 @@ This script is responsible for the task packaging and sending it for execution i
 
 #--------------------------------------------------------------------------------------
 import balloon.common as common
-from balloon.common import print_d
+from balloon.common import print_d, print_e, sh_command, ssh_command
 
 import balloon.rackspace as rackspace
 import balloon.amazon as amazon
@@ -33,7 +33,7 @@ import sys, os, os.path, uuid
 
 
 #--------------------------------------------------------------------------------------
-# Define command line interface
+# Defining utility command-line interface
 
 an_usage_description = "%prog --task-def-dir=~/rackspace"
 an_usage_description += common.add_usage_description()
@@ -63,67 +63,31 @@ amazon.add_parser_options( a_option_parser )
 
 #--------------------------------------------------------------------------------------
 if __name__ == '__main__' :
+    #---------------------------------------------------------------------------
+    # Extracting and verifying command-line arguments
+
     an_options, an_args = a_option_parser.parse_args()
 
-    # Check command line arguments first
-    #---------------------------------------------------------------------------
     common.extract_options( an_options )
 
-
-    #---------------------------------------------------------------------------
-    def print_e( the_message ) :
-        sys.stderr.write( the_message )
-
-        pass
-
-
-    #---------------------------------------------------------------------------
-    def run_command( the_command ) :
-        print_d( "(%s)\n" % the_command )
-        
-        if os.system( the_command ) != 0 :
-            print_e( "Can not execute command %s\n" % the_command )
-            os._exit( os.EX_USAGE )
-            pass
-        
-        pass
-
-
-    #---------------------------------------------------------------------------
-    def ssh_command( the_ssh_client, the_command ) :
-        print_d( "[%s]\n" % the_command )
-        
-        stdin, stdout, stderr = the_ssh_client.exec_command( the_command )
-        
-        for a_line in stderr.readlines() : print_d( "\t%s" % a_line )
-        for a_line in stdout.readlines() : print_d( "\t%s" % a_line )
-        
-        pass
-
-
-    #---------------------------------------------------------------------------
     import os.path
     an_options.task_def_dir = os.path.abspath( an_options.task_def_dir )
     if not os.path.isdir( an_options.task_def_dir ) :
         print_e( "The task defintion should a directory\n" )
-        os._exit( os.EX_USAGE )
         pass
 
     a_control_dir = os.path.join( an_options.task_def_dir, "control" )
     if not os.path.isdir( a_control_dir ) :
         print_e( "The task defintion directory should contain 'control' sub directory\n" )
-        os._exit( os.EX_USAGE )
         pass
 
     a_launch_script = os.path.join( a_control_dir, "launch" )
     if not os.path.isfile( a_launch_script ) :
         print_e( "The task definition 'control' sub directory should contain 'launch' start-up script\n" )
-        os._exit( os.EX_USAGE )
         pass
         
     if not os.path.isdir( os.path.join( an_options.task_def_dir, "data" ) ) :
         print_e( "The task defintion directory should contain 'data' sub directory\n" )
-        os._exit( os.EX_USAGE )
         pass
 
     RACKSPACE_USER, RACKSPACE_KEY = rackspace.extract_options( an_options )
@@ -140,11 +104,11 @@ if __name__ == '__main__' :
 
     a_control_name = "task_control.tgz"
     a_control_archive = os.path.join( a_working_dir, a_control_name )
-    run_command( "cd %s && tar --exclude-vcs -czf %s ./control" % ( an_options.task_def_dir, a_control_archive ) )
+    sh_command( "cd %s && tar --exclude-vcs -czf %s ./control" % ( an_options.task_def_dir, a_control_archive ) )
 
     a_data_name = "task_data.tgz"
     a_data_archive = os.path.join( a_working_dir, a_data_name )
-    run_command( "cd %s && tar --exclude-vcs -czf %s ./data" % ( an_options.task_def_dir, a_data_archive ) )
+    sh_command( "cd %s && tar --exclude-vcs -czf %s ./data" % ( an_options.task_def_dir, a_data_archive ) )
 
 
     #---------------------------------------------------------------------------
