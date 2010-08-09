@@ -32,16 +32,6 @@ import os, os.path, uuid
 
 
 #--------------------------------------------------------------------------------------
-def push_message( the_sqs_queue, the_string ) :
-    from boto.sqs.message import Message
-
-    a_message = Message()
-    a_message.set_body( the_string )
-
-    return the_sqs_queue.write( a_message )
-
-
-#--------------------------------------------------------------------------------------
 # Defining utility command-line interface
 
 an_usage_description = "%prog --container-name=33f89d9d-5417-49c1-80c9-787e74cc7154 --data-name='task_data.tgz' --working-dir='/tmp/tmpt7lweb'"
@@ -127,9 +117,7 @@ a_files.sort()
 
 import boto
 a_sqs_conn = boto.connect_sqs( AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY )
-
-a_queue_suffix = 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
-a_queue_name = '%s___%s' % ( a_container_name, a_queue_suffix )
+a_queue_name = common.generate_initial_queue_name( a_container_name )
 
 
 #--------------------------------------------------------------------------------------
@@ -137,25 +125,29 @@ for a_file in a_files :
     a_file_path = os.path.join( a_data_dir, a_file )
     a_file_object = a_cloudfiles_container.create_object( a_file )
     a_file_object.load_from_filename( a_file_path )
-    print a_file_path
+    print_d( '%s\n' % a_file_path )
 
     # Define ( queue, message ) linked list
     a_sqs_queue = a_sqs_conn.create_queue( a_queue_name )
-    print a_queue_name
+    print_d( '%s\n' % a_queue_name )
 
     a_queue_suffix = str( uuid.uuid4() )
-    a_queue_name = '%s___%s' % ( a_container_name, a_queue_suffix )
+    a_queue_name = common.generate_queue_name( a_container_name, a_queue_suffix )
 
-    a_message_body = '%s:%s' % ( a_file, a_queue_suffix )
-    a_status = push_message( a_sqs_queue, a_message_body )
+    a_message_body = common.generate_message_body( a_file, a_queue_suffix )
+    a_status = common.push_message( a_sqs_queue, a_message_body )
 
     pass
 
 
 #--------------------------------------------------------------------------------------
-# The terninal node for the ( queue, message ) linked list
+# The terminal node for the ( queue, message ) linked list
 a_sqs_queue = a_sqs_conn.create_queue( a_queue_name )
-a_status = push_message( a_sqs_queue, '*:*' ) 
+a_status = common.push_message( a_sqs_queue, common.generate_final_message_body() ) 
+
+# Publishing "final" object marker in the 'cloudfiles'
+a_file_object = a_cloudfiles_container.create_object( a_container_name )
+a_file_object.write( '' )
 
 
 #--------------------------------------------------------------------------------------

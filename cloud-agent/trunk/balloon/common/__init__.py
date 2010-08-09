@@ -100,4 +100,44 @@ def ssh_command( the_ssh_client, the_command ) :
     pass
 
 
+#---------------------------------------------------------------------------
+def generate_queue_name( the_container_name, the_queue_suffix ) :
+    "Generating composite queue name"
+    
+    return '%s___%s' % ( the_container_name, the_queue_suffix )
+
+
+#---------------------------------------------------------------------------
+def generate_initial_queue_name( the_container_name ) :
+    "Defining the initial queue name"
+    a_queue_suffix = 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
+    
+    return generate_queue_name( the_container_name, a_queue_suffix )
+
+
+#---------------------------------------------------------------------------
+def generate_message_body( the_file_name, the_next_queue_suffix ) :
+    "Generating specially formatted message"
+    
+    return '%s:%s' % ( the_file_name, the_next_queue_suffix )
+
+
+#---------------------------------------------------------------------------
+def generate_final_message_body() :
+    "Defining the final message"
+    
+    return generate_message_body( '*', '*' )
+
+
+#--------------------------------------------------------------------------------------
+def push_message( the_sqs_queue, the_string ) :
+    "Publishing message through Amazon SQS"
+    from boto.sqs.message import Message
+
+    a_message = Message()
+    a_message.set_body( the_string )
+
+    return the_sqs_queue.write( a_message )
+
+
 #--------------------------------------------------------------------------------------
