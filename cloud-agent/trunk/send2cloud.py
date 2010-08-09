@@ -185,8 +185,9 @@ if __name__ == '__main__' :
 
     # Uploading and installing into the cloud corresponding Python engine (itself)
     a_sftp_client.put( a_balloon_source_archive, a_balloon_target_archive )
-    a_balloon_setup_name = os.path.join( a_working_dir, a_balloon_name, 'setup.py' )
-    ssh_command( a_ssh_client, '%s install' % ( a_balloon_setup_name ) )
+    ssh_command( a_ssh_client, 'cd %s && tar -xzf %s' % ( a_working_dir, a_balloon_archive_name ) )
+    a_balloon_setup_dir = os.path.join( a_working_dir, a_balloon_name )
+    ssh_command( a_ssh_client, 'cd %s && python ./setup.py install' % ( a_balloon_setup_dir ) )
 
     # Uploading and unpacking into the cloud 'control' scripts
     a_sftp_client.put( a_control_archive, a_control_archive )
