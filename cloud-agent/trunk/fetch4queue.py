@@ -33,32 +33,6 @@ import os
 
 
 #--------------------------------------------------------------------------------------
-def get_message( the_sqs_conn, the_queue_name ) :
-    # Get the 'queue' first
-    a_sqs_queue = None
-    while True :
-        a_sqs_queue = the_sqs_conn.get_queue( the_queue_name )
-        if a_sqs_queue != None :
-            break
-        pass
-
-    # Now, get message
-    a_message_body = ''
-    while True :
-        a_message = a_sqs_queue.read()
-        if a_message != None :
-            a_message_body = a_message.get_body()
-            break
-        pass
-
-    a_sqs_queue.delete()
-
-    a_data_name, a_next_queue_suffix = a_message_body.split( ':' )
-
-    return a_data_name, a_next_queue_suffix
-
-
-#--------------------------------------------------------------------------------------
 # Defining utility command-line interface
 
 an_usage_description = "%prog --container-name=33f89d9d-5417-49c1-80c9-787e74cc7154 --output-dir=."
@@ -136,17 +110,14 @@ if __name__ == '__main__' :
     # Downloding the data from cloud according to the queue
 
     import boto
-    a_queue_name = an_options.container_name
     a_sqs_conn = boto.connect_sqs( AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY )
-    a_queue_suffix = 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
+    a_queue_name = common.generate_initial_queue_name( a_container_name )
     while True :
-        a_queue_name = '%s___%s' % ( a_container_name, a_queue_suffix )
         print_d( '%s\n' % a_queue_name ) 
-        a_data_name, a_queue_suffix = get_message( a_sqs_conn, a_queue_name )
+        an_is_final, a_data_name, a_queue_suffix = common.get_message( a_sqs_conn, a_queue_name )
         print_d( '%s %s\n' % ( a_data_name, a_queue_suffix ) )
 
-        if a_data_name == '*' and a_queue_suffix == '*':
-            break
+        a_queue_name = common.generate_queue_name( a_container_name, a_queue_suffix )
 
         # To secure the following 'save' operation
         a_file_path = os.path.join( an_output_dir, a_data_name )
@@ -156,6 +127,9 @@ if __name__ == '__main__' :
         a_file_object = a_cloudfiles_container.get_object( a_data_name )
         a_file_object.save_to_filename( a_file_path )
         print_d( '%s %s\n' % ( a_file_path, os.path.isfile( a_file_path ) ) )
+
+        if an_is_final:
+            break
 
         pass
  

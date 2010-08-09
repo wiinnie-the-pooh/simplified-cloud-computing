@@ -123,10 +123,10 @@ def generate_message_body( the_file_name, the_next_queue_suffix ) :
 
 
 #---------------------------------------------------------------------------
-def generate_final_message_body() :
+def generate_final_message_body( the_container_name ) :
     "Defining the final message"
     
-    return generate_message_body( '*', '*' )
+    return generate_message_body( the_container_name, '*' )
 
 
 #--------------------------------------------------------------------------------------
@@ -138,6 +138,39 @@ def push_message( the_sqs_queue, the_string ) :
     a_message.set_body( the_string )
 
     return the_sqs_queue.write( a_message )
+
+
+#--------------------------------------------------------------------------------------
+def get_message( the_sqs_conn, the_queue_name ) :
+    "Receiving and parsing the incoming Amazon SQS message"
+
+    # Get the 'queue' first
+    a_sqs_queue = None
+    while True :
+        a_sqs_queue = the_sqs_conn.get_queue( the_queue_name )
+        if a_sqs_queue != None :
+            break
+        pass
+
+    # Now, get message
+    a_message_body = ''
+    while True :
+        a_message = a_sqs_queue.read()
+        if a_message != None :
+            a_message_body = a_message.get_body()
+            break
+        pass
+
+    a_sqs_queue.delete()
+
+    a_data_name, a_next_queue_suffix = a_message_body.split( ':' )
+
+    an_is_final = False
+    if a_next_queue_suffix == '*':
+        an_is_final = True
+        pass
+
+    return an_is_final, a_data_name, a_next_queue_suffix
 
 
 #--------------------------------------------------------------------------------------
