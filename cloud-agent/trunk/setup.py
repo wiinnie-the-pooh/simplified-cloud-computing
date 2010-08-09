@@ -78,7 +78,7 @@ setup( name = 'balloon',
                        'Topic :: Scientific/Engineering',
                        'Topic :: Utilities' ],
        cmdclass = { 'install': InstallCmd },
-       packages = [ 'balloon', 'balloon/amazon', 'balloon/rackspace' ],
+       packages = [ 'balloon', 'balloon/common', 'balloon/amazon', 'balloon/rackspace' ],
        scripts = [ 'send2cloud.py', 'fetch4queue.py', 'clean_rackspace.py', 'clean_amazon.py' ] )
 
 

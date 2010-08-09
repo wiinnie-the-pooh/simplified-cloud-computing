@@ -50,6 +50,7 @@ def extract_options( the_options ) :
 
 #---------------------------------------------------------------------------
 def print_d( the_message ) :
+    "Optional printing of debug messages"
     if ENABLE_DEBUG : 
         sys.stderr.write( the_message )
         pass
@@ -59,6 +60,7 @@ def print_d( the_message ) :
 
 #---------------------------------------------------------------------------
 def print_e( the_message ) :
+    "Printing of error message and quit"
     sys.stderr.write( the_message )
     
     os._exit( os.EX_USAGE )
@@ -67,6 +69,7 @@ def print_e( the_message ) :
 
 #---------------------------------------------------------------------------
 def sh_command( the_command ) :
+    "Execution of shell command"
     print_d( "(%s)\n" % the_command )
     
     if os.system( the_command ) != 0 :
@@ -78,6 +81,7 @@ def sh_command( the_command ) :
 
 #---------------------------------------------------------------------------
 def ssh_command( the_ssh_client, the_command ) :
+    "Execution of secure shell command"
     print_d( "[%s]\n" % the_command )
     
     stdin, stdout, stderr = the_ssh_client.exec_command( the_command )

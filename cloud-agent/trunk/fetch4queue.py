@@ -23,6 +23,12 @@ This script is responsible for fetching of the task resulting data from the clou
 
 
 #--------------------------------------------------------------------------------------
+import balloon.common as common
+from balloon.common import print_d, print_e
+
+import balloon.rackspace as rackspace
+import balloon.amazon as amazon
+
 import os
 
 
@@ -53,28 +59,20 @@ def get_message( the_sqs_conn, the_queue_name ) :
 
 
 #--------------------------------------------------------------------------------------
-an_usage = \
-"""
-%prog \\
-      --task-def-dir=~/rackspace \\
-      --rackspace-user=${RACKSPACE_USER} \\
-      --rackspace-key=${RACKSPACE_KEY} \\
-      --aws-access-key-id=${AWS_ACCESS_KEY_ID} \\
-      --aws-secret-access-key=${AWS_SECRET_ACCESS_KEY}
-"""
+# Defining utility command-line interface
+
+an_usage_description = "%prog --container-name=33f89d9d-5417-49c1-80c9-787e74cc7154 --output-dir=."
+an_usage_description += common.add_usage_description()
+an_usage_description += rackspace.add_usage_description()
+an_usage_description += amazon.add_usage_description()
 
 from optparse import IndentedHelpFormatter
 a_help_formatter = IndentedHelpFormatter( width = 127 )
 
 from optparse import OptionParser
-a_option_parser = OptionParser( usage = an_usage, version="%prog 0.1", formatter = a_help_formatter )
+a_option_parser = OptionParser( usage = an_usage_description, version="%prog 0.1", formatter = a_help_formatter )
 
 # Definition of the command line arguments
-a_option_parser.add_option( "--pipe",
-                            action = "store_true",
-                            help = "fetchs 'container name' from input stream",
-                            dest = "enable_pipe" )
-
 a_option_parser.add_option( "--container-name",
                             metavar = "< name of task container >",
                             action = "store",
@@ -87,104 +85,65 @@ a_option_parser.add_option( "--output-dir",
                             help = "(\"%default\", by default)",
                             default = "." )
 
-a_option_parser.add_option( "--rackspace-user",
-                            metavar = "< Rackspace user >",
-                            action = "store",
-                            dest = "rackspace_user",
-                            help = "(${RACKSPACE_USER}, by default)",
-                            default = os.getenv( "RACKSPACE_USER" ) )
-    
-a_option_parser.add_option( "--rackspace-key",
-                            metavar = "< Rackspace key >",
-                            action = "store",
-                            dest = "rackspace_key",
-                            help = "(${RACKSPACE_KEY}, by default)",
-                            default = os.getenv( "RACKSPACE_KEY" ) )
-    
-a_option_parser.add_option( "--aws-access-key-id",
-                            metavar = "< Amazon key id >",
-                            action = "store",
-                            dest = "aws_access_key_id",
-                            help = "(${AWS_ACCESS_KEY_ID}, by default)",
-                            default = os.getenv( "AWS_ACCESS_KEY_ID" ) )
-    
-a_option_parser.add_option( "--aws-secret-access-key",
-                            metavar = "< Amazon secret key >",
-                            action = "store",
-                            dest = "aws_secret_access_key",
-                            help = "(${AWS_SECRET_ACCESS_KEY}, by default)",
-                            default = os.getenv( "AWS_SECRET_ACCESS_KEY" ) )
+common.add_parser_options( a_option_parser )
+
+rackspace.add_parser_options( a_option_parser )
+
+amazon.add_parser_options( a_option_parser )
     
 
 #--------------------------------------------------------------------------------------
 if __name__ == '__main__' :
+    #---------------------------------------------------------------------------
+    # Extracting and verifying command-line arguments
+
     an_options, an_args = a_option_parser.parse_args()
 
-    # Check command line arguments first
-    #---------------------------------------------------------------------------
-    if an_options.enable_pipe :
-        an_options.container_name = raw_input()
-        pass
+    common.extract_options( an_options )
 
     a_container_name = an_options.container_name
-    if an_options.container_name == None :
-        print "Please, use '--task-container-name' to define corresponding value"
-        os._exit( os.EX_USAGE )
+    if a_container_name == None :
+        a_container_name = raw_input()
         pass
 
-    RACKSPACE_USER = an_options.rackspace_user
-    if RACKSPACE_USER == None :
-        print "Define RACKSPACE_USER parameter through '--rackspace-user' option"
-        os._exit( os.EX_USAGE )
-        pass
+    RACKSPACE_USER, RACKSPACE_KEY = rackspace.extract_options( an_options )
 
-    RACKSPACE_KEY = an_options.rackspace_key
-    if RACKSPACE_KEY == None :
-        print "Define RACKSPACE_KEY parameter through '--rackspace-key' option"
-        os._exit( os.EX_USAGE )
-        pass
-
-    AWS_ACCESS_KEY_ID = an_options.aws_access_key_id
-    if AWS_ACCESS_KEY_ID == None :
-        print "Define AWS_ACCESS_KEY_ID parameter through '--aws-access-key-id' option"
-        os._exit( os.EX_USAGE )
-        pass
-
-    AWS_SECRET_ACCESS_KEY = an_options.aws_secret_access_key
-    if AWS_SECRET_ACCESS_KEY == None :
-        print "Define AWS_SECRET_ACCESS_KEY parameter through '--aws-secret-access-key' option"
-        os._exit( os.EX_USAGE )
-        pass
+    AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY = amazon.extract_options( an_options )
 
 
     #---------------------------------------------------------------------------
+    # Trying to access to the container with the appointed name
+
     import cloudfiles
     a_cloudfiles_conn = cloudfiles.get_connection( RACKSPACE_USER, RACKSPACE_KEY, timeout = 500 )
     a_cloudfiles_container = a_cloudfiles_conn[ a_container_name ]
 
 
     #---------------------------------------------------------------------------
+    # Creating an output directory
+
     import os.path, shutil
     an_options.output_dir = os.path.abspath( an_options.output_dir )
     an_output_dir = os.path.join( an_options.output_dir, a_container_name )
     shutil.rmtree( an_output_dir, True )
     os.makedirs( an_output_dir )
     if not os.path.isdir( an_output_dir ) :
-        print "Couild not create output directory"
-        os._exit( os.EX_USAGE )
+        print_e( "Couild not create output directory - '%s'\n" % an_output_dir )
         pass
 
 
     #---------------------------------------------------------------------------
+    # Downloding the data from cloud according to the queue
+
     import boto
     a_queue_name = an_options.container_name
     a_sqs_conn = boto.connect_sqs( AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY )
     a_queue_suffix = 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
     while True :
         a_queue_name = '%s___%s' % ( a_container_name, a_queue_suffix )
-        print a_queue_name, 
+        print_d( '%s\n' % a_queue_name ) 
         a_data_name, a_queue_suffix = get_message( a_sqs_conn, a_queue_name )
-        print a_data_name, a_queue_suffix
+        print_d( '%s %s\n' % ( a_data_name, a_queue_suffix ) )
 
         if a_data_name == '*' and a_queue_suffix == '*':
             break
@@ -192,19 +151,17 @@ if __name__ == '__main__' :
         # To secure the following 'save' operation
         a_file_path = os.path.join( an_output_dir, a_data_name )
         shutil.rmtree( a_file_path, True ) 
-        print not os.path.isfile( a_file_path ),
+        print_d( '%s ' % ( not os.path.isfile( a_file_path ) ) )
 
         a_file_object = a_cloudfiles_container.get_object( a_data_name )
         a_file_object.save_to_filename( a_file_path )
-        print a_file_path, os.path.isfile( a_file_path )
+        print_d( '%s %s\n' % ( a_file_path, os.path.isfile( a_file_path ) ) )
 
         pass
  
     
     #---------------------------------------------------------------------------
-    import os
-    os._exit( os.EX_OK )
-
+    print_d( 'OK\n' )
     pass
 
 
