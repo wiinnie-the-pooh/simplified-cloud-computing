@@ -57,6 +57,8 @@ if __name__ == '__main__' :
 
     an_options, an_args = a_option_parser.parse_args()
 
+    common.extract_options( an_options )
+
     AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY = amazon.extract_options( an_options )
 
 
