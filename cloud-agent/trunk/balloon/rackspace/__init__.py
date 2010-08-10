@@ -17,6 +17,8 @@
 
 
 #--------------------------------------------------------------------------------------
+from balloon.common import print_e
+
 import os
 
 
@@ -48,13 +50,11 @@ def extract_options( the_options ) :
     RACKSPACE_USER = the_options.rackspace_user
     if RACKSPACE_USER == None :
         print_e( "Define RACKSPACE_USER parameter through '--rackspace-user' option\n" )
-        os._exit( os.EX_USAGE )
         pass
 
     RACKSPACE_KEY = the_options.rackspace_key
     if RACKSPACE_KEY == None :
         print_e( "Define RACKSPACE_KEY parameter through '--rackspace-key' option\n" )
-        os._exit( os.EX_USAGE )
         pass
 
     return RACKSPACE_USER, RACKSPACE_KEY

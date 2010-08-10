@@ -17,6 +17,8 @@
 
 
 #--------------------------------------------------------------------------------------
+from balloon.common import print_e
+
 import os
 
 
@@ -48,13 +50,11 @@ def extract_options( the_options ) :
     AWS_ACCESS_KEY_ID = the_options.aws_access_key_id
     if AWS_ACCESS_KEY_ID == None :
         print_e( "Define AWS_ACCESS_KEY_ID parameter through '--aws-access-key-id' option\n" )
-        os._exit( os.EX_USAGE )
         pass
 
     AWS_SECRET_ACCESS_KEY = the_options.aws_secret_access_key
     if AWS_SECRET_ACCESS_KEY == None :
         print_e( "Define AWS_SECRET_ACCESS_KEY parameter through '--aws-secret-access-key' option\n" )
-        os._exit( os.EX_USAGE )
         pass
 
     return AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
