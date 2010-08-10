@@ -63,6 +63,35 @@ if __name__ == '__main__' :
 
 
     #---------------------------------------------------------------------------
+    import logging
+    logging.basicConfig( filename = "boto.log", level = logging.DEBUG )
+
+    import boto
+    an_ec2_conn = boto.connect_ec2()
+    print_d( '%r\n' % an_ec2_conn )
+
+    an_images = an_ec2_conn.get_all_images( image_ids = "ami-2d4aa444" )
+    an_image = an_images[ 0 ]
+    print_d( '%s\n' % an_image.location )
+
+    import uuid
+    a_key_pair_name = 'id_rsa_%s' % str( uuid.uuid4() )
+    a_key_pair = an_ec2_conn.create_key_pair( a_key_pair_name )
+
+    a_reservation = an_image.run( min_count = 1, max_count = 1, key_name = a_key_pair_name )
+    an_instance = a_reservation.instances[ 0 ]
+
+    while an_instance.update() != 'running' :
+        print_d( '%s\n' % an_instance.update() )
+        pass
+
+
+    #---------------------------------------------------------------------------
+    an_ec2_conn.delete_key_pair( a_key_pair_name )
+    a_reservation.stop_all()
+
+
+    #---------------------------------------------------------------------------
     print_d( 'OK\n' )
     pass
 
