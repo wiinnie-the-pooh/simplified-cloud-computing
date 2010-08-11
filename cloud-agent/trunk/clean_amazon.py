@@ -39,7 +39,7 @@ for a_reservation in an_ec2_conn.get_all_instances() :
     for an_instance in a_reservation.instances :
         a_status = an_instance.update()
         if a_status != 'terminated' :
-            print "\t%s : %s : '%s'" % ( an_instance, a_status, an_instance.dns_name )
+            print "%s : %s : '%s'" % ( an_instance, a_status, an_instance.dns_name )
             an_instance.stop()
             pass
         pass

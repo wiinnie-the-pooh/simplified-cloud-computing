@@ -101,8 +101,13 @@ a_reservation = an_image.run( instance_type = 'm1.small', min_count = 1, max_cou
 an_instance = a_reservation.instances[ 0 ]
 print_d( '%s ' % an_instance.update() )
 
-while an_instance.update() != 'running' :
-    print_d( '.' )
+while True :
+    try :
+        if an_instance.update() == 'running' :
+            break
+        print_d( '.' )
+    except :
+        continue
     pass
 
 print_d( ' %s\n' % an_instance.update() )
@@ -124,6 +129,8 @@ while True :
     pass
 
 ssh_command( a_ssh_client, 'ls -l /' )
+
+print_d( 'ssh -i %s %s@%s\n' ( a_key_pair_file, a_username, an_instance.dns_name ))
 
 
 #---------------------------------------------------------------------------
