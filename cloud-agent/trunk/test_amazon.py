@@ -99,12 +99,13 @@ a_security_group.authorize( 'tcp', 22, 22, '0.0.0.0/0' )
 
 a_reservation = an_image.run( instance_type = 'm1.small', min_count = 1, max_count = 1, key_name = a_key_pair_name, security_groups = [ a_security_group.name ] )
 an_instance = a_reservation.instances[ 0 ]
+print_d( '%s ' % an_instance.update() )
 
 while an_instance.update() != 'running' :
-    print_d( '%s ' % an_instance.update() )
+    print_d( '.' )
     pass
 
-print_d( '%s\n' % an_instance.update() )
+print_d( ' %s\n' % an_instance.update() )
 print_d( '%s\n' % an_instance.dns_name )
 
 import paramiko
@@ -114,17 +115,21 @@ a_rsa_key = paramiko.RSAKey( filename = a_key_pair_file )
 
 while True :
     try :
-        a_ssh_client.connect( hostname = an_instance.dns_name, port = 22, username = 'root', pkey = a_rsa_key )
+        a_username = 'ubuntu'
+        a_ssh_client.connect( hostname = an_instance.dns_name, port = 22, username = a_username, pkey = a_rsa_key )
         ssh_command( a_ssh_client, 'echo  > /dev/null' )
         break
     except :
         continue
     pass
 
-ssh_command( a_ssh_client, 'll /' )
+ssh_command( a_ssh_client, 'ls -l /' )
 
 
 #---------------------------------------------------------------------------
+a_ssh_client.close()
+
+# an_ec2_conn.delete_security_group( a_security_group.name )
 # an_ec2_conn.delete_key_pair( a_key_pair_name )
 # os.remove( a_key_pair_file )
 # a_reservation.stop_all()

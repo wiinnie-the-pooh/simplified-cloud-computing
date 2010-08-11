@@ -35,11 +35,11 @@ import boto
 print "---------------- Delete EC2 instances ---------------"
 an_ec2_conn = boto.connect_ec2( AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY )
 for a_reservation in an_ec2_conn.get_all_instances() :
-    print "%s" % ( a_reservation )
+    # print "%s" % ( a_reservation )
     for an_instance in a_reservation.instances :
         a_status = an_instance.update()
-        print "\t%s : %s : '%s'" % ( an_instance, a_status, an_instance.dns_name )
         if a_status != 'terminated' :
+            print "\t%s : %s : '%s'" % ( an_instance, a_status, an_instance.dns_name )
             an_instance.stop()
             pass
         pass
@@ -67,8 +67,8 @@ print
 
 print "---------------- Delete EC2 security groups ---------------"
 for a_security_group in an_ec2_conn.get_all_security_groups() :
-    print a_security_group.name
     if a_security_group.name != 'default' :
+        print a_security_group.name
         an_ec2_conn.delete_security_group( a_security_group.name )
         pass
     pass

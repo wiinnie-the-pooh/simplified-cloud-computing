@@ -206,6 +206,9 @@ if __name__ == '__main__' :
 
 
     #---------------------------------------------------------------------------
+    # Closing SSH connection
+    a_ssh_client.close()
+
     # Cleaning tempral working folder
     import shutil
     shutil.rmtree( a_working_dir )
