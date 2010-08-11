@@ -29,6 +29,27 @@ AWS_SECRET_ACCESS_KEY = os.getenv( "AWS_SECRET_ACCESS_KEY" )
 
 #--------------------------------------------------------------------------------------
 import boto
+
+
+#--------------------------------------------------------------------------------------
+print "---------------- Delete EC2 instances ---------------"
+an_ec2_conn = boto.connect_ec2( AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY )
+for a_reservation in an_ec2_conn.get_all_instances() :
+    print "%s" % ( a_reservation )
+    for an_instance in a_reservation.instances :
+        a_status = an_instance.update()
+        print "\t%s : %s : '%s'" % ( an_instance, a_status, an_instance.dns_name )
+        if a_status != 'terminated' :
+            an_instance.stop()
+            pass
+        pass
+    a_reservation.stop_all()
+    pass
+
+print
+
+
+#--------------------------------------------------------------------------------------
 print "---------------- Delete SQS queues ---------------"
 a_sqs_conn = boto.connect_sqs( AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY )
 for a_queue in a_sqs_conn.get_all_queues() :
