@@ -49,6 +49,33 @@ for a_reservation in an_ec2_conn.get_all_instances() :
 print
 
 
+print "---------------- Delete EC2 key pairs ---------------"
+for a_key_pair in an_ec2_conn.get_all_key_pairs() :
+    print a_key_pair.name
+    an_ec2_conn.delete_key_pair( a_key_pair )
+
+    a_key_pair_dir = os.path.expanduser( "~/.ssh")
+    a_key_pair_file = os.path.join( a_key_pair_dir, a_key_pair.name ) + os.path.extsep + "pem"
+
+    if os.path.isfile( a_key_pair_file ) :
+        os.remove( a_key_pair_file )
+        pass
+    pass
+
+print
+
+
+print "---------------- Delete EC2 security groups ---------------"
+for a_security_group in an_ec2_conn.get_all_security_groups() :
+    print a_security_group.name
+    if a_security_group.name != 'default' :
+        an_ec2_conn.delete_security_group( a_security_group.name )
+        pass
+    pass
+
+print
+
+
 #--------------------------------------------------------------------------------------
 print "---------------- Delete SQS queues ---------------"
 a_sqs_conn = boto.connect_sqs( AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY )

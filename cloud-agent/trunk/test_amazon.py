@@ -77,9 +77,10 @@ print_d( '%s\n' % an_image.location )
 # a_key_pair_name = 'id_rsa_%s' % str( uuid.uuid4() )
 
 import tempfile
-an_unique_file = tempfile.mkstemp( prefix = 'id_rsa_' )[ 1 ]
+an_unique_file = tempfile.mkstemp()[ 1 ]
 an_unique_name = os.path.basename( an_unique_file )
 os.remove( an_unique_file )
+print an_unique_name
 
 a_key_pair_name = an_unique_name
 a_key_pair = an_ec2_conn.create_key_pair( a_key_pair_name )
@@ -87,6 +88,7 @@ a_key_pair = an_ec2_conn.create_key_pair( a_key_pair_name )
 a_key_pair_dir = os.path.expanduser( "~/.ssh")
 a_key_pair.save( a_key_pair_dir )
 a_key_pair_file = os.path.join( a_key_pair_dir, a_key_pair.name ) + os.path.extsep + "pem"
+print a_key_pair_file
 
 import stat
 os.chmod( a_key_pair_file, stat.S_IRUSR )
@@ -94,10 +96,6 @@ os.chmod( a_key_pair_file, stat.S_IRUSR )
 a_security_group = an_ec2_conn.create_security_group( an_unique_name, 'temporaly generated' )
 a_security_group.authorize( 'tcp', 80, 80, '0.0.0.0/0' )
 a_security_group.authorize( 'tcp', 22, 22, '0.0.0.0/0' )
-
-# a_security_groups = an_ec2_conn.get_all_security_groups()
-# a_deafult_security_groups = a_security_groups[ 0 ]
-# a_deafult_security_groups.authorize( 'tcp', 22, 22, '0.0.0.0/0' )
 
 a_reservation = an_image.run( instance_type = 'm1.small', min_count = 1, max_count = 1, key_name = a_key_pair_name, security_groups = [ a_security_group.name ] )
 an_instance = a_reservation.instances[ 0 ]
@@ -127,8 +125,9 @@ ssh_command( a_ssh_client, 'll /' )
 
 
 #---------------------------------------------------------------------------
-an_ec2_conn.delete_key_pair( a_key_pair_name )
-a_reservation.stop_all()
+# an_ec2_conn.delete_key_pair( a_key_pair_name )
+# os.remove( a_key_pair_file )
+# a_reservation.stop_all()
 
 
 #---------------------------------------------------------------------------
