@@ -65,7 +65,7 @@ for a_key_pair in an_ec2_conn.get_all_key_pairs() :
 print
 
 
-print "---------------- Delete EC2 security groups ---------------"
+print "-------------- Delete EC2 security groups ------------"
 for a_security_group in an_ec2_conn.get_all_security_groups() :
     if a_security_group.name != 'default' :
         print a_security_group.name
