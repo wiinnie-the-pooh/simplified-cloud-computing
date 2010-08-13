@@ -24,7 +24,7 @@ This script is responsible for the task packaging and sending it for execution i
 
 #--------------------------------------------------------------------------------------
 import balloon.common as common
-from balloon.common import print_d, print_e, sh_command, ssh_command
+from balloon.common import print_d, print_e, sh_command, ssh_command, Timer
 
 import balloon.rackspace as rackspace
 import balloon.amazon as amazon
@@ -126,17 +126,21 @@ a_balloon_target_archive = os.path.join( a_working_dir, a_balloon_archive_name )
 #---------------------------------------------------------------------------
 # Uploading task data into cloud
 
+a_data_loading_time = Timer()
+
 import cloudfiles
 a_cloudfiles_conn = cloudfiles.get_connection( RACKSPACE_USER, RACKSPACE_KEY, timeout = 500 )
 print_d( "a_cloudfiles_conn = %r\n" % a_cloudfiles_conn )
 
 a_container_name = str( uuid.uuid4() )
 a_cloudfiles_container = a_cloudfiles_conn.create_container( a_container_name )
-print_d( "a_cloudfiles_container = %r\n" % a_cloudfiles_container )
+print_d( "a_cloudfiles_container = %s\n" % a_cloudfiles_container.name )
 
 a_file_object = a_cloudfiles_container.create_object( a_data_name )
 a_file_object.load_from_filename( a_data_archive )
-print_d( "a_file_object = %r\n" % a_file_object )
+print_d( "a_file_object = %s\n" % a_file_object.name )
+
+print_d( "a_data_loading_time = %s, sec\n" % a_data_loading_time )
 
 
 #---------------------------------------------------------------------------

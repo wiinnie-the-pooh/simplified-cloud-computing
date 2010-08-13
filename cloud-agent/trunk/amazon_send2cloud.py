@@ -24,7 +24,7 @@ This script is responsible for the task packaging and sending it for execution i
 
 #--------------------------------------------------------------------------------------
 import balloon.common as common
-from balloon.common import print_d, print_e, sh_command, ssh_command
+from balloon.common import print_d, print_e, sh_command, ssh_command, Timer
 
 import balloon.amazon as amazon
 
@@ -120,19 +120,23 @@ a_balloon_target_archive = os.path.join( a_working_dir, a_balloon_archive_name )
 #---------------------------------------------------------------------------
 # Uploading task data into cloud
 
+a_data_loading_time = Timer()
+
 import boto
 a_s3_conn = boto.connect_s3( AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY )
 print_d( "a_s3_conn = %r\n" % a_s3_conn )
 
 a_bucket_name = str( uuid.uuid4() )
 a_s3_bucket = a_s3_conn.create_bucket( a_bucket_name )
-print_d( "a_s3_bucket = %r\n" % a_s3_bucket )
+print_d( "a_s3_bucket = %s\n" % a_s3_bucket.name )
 
 from boto.s3.key import Key
 a_s3_bucket_key = Key( a_s3_bucket )
 a_s3_bucket_key.key = a_data_name
 a_s3_bucket_key.set_contents_from_filename( a_data_archive )
-print_d( "a_s3_bucket_key = %r\n" % a_s3_bucket_key )
+print_d( "a_s3_bucket_key = %s\n" % a_s3_bucket_key.name )
+
+print_d( "a_data_loading_time = %s, sec\n" % a_data_loading_time )
 
 os._exit( os.EX_OK )
 
