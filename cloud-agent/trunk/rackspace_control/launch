@@ -106,7 +106,7 @@ a_file_object.save_to_filename( a_data_archive )
 
 sh_command( 'cd %s && tar -xzf %s' % ( a_working_dir, a_data_name ) )
 
-a_data_dir = os.path.join( a_working_dir, 'data' )
+a_data_dir = a_working_dir
 a_files = os.listdir( a_data_dir )
 a_files.sort()
 
@@ -123,6 +123,8 @@ a_queue_name = common.generate_initial_queue_name( a_container_name )
 #--------------------------------------------------------------------------------------
 for a_file in a_files :
     a_file_path = os.path.join( a_data_dir, a_file )
+    if os.path.isdir( a_file_path ) :
+        continue
     a_file_object = a_cloudfiles_container.create_object( a_file )
     a_file_object.load_from_filename( a_file_path )
     print_d( '%s\n' % a_file_path )
