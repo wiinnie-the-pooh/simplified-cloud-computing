@@ -130,7 +130,7 @@ while True :
 
 ssh_command( a_ssh_client, 'ls -l /' )
 
-print_d( 'ssh -i %s %s@%s\n' ( a_key_pair_file, a_username, an_instance.dns_name ))
+print_d( 'ssh -i %s %s@%s\n' % ( a_key_pair_file, a_username, an_instance.dns_name ) )
 
 
 #---------------------------------------------------------------------------
