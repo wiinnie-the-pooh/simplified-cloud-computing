@@ -140,7 +140,7 @@ print_d( "a_data_loading_time = %s, sec\n" % a_data_loading_time )
 
 print_d( "\n---------------------------------------------------------------------------\n" )
 # Instanciating node in cloud
-a_instance_reservation_time = Timer()
+an_instance_reservation_time = Timer()
 
 import boto
 # Establish an connection with EC2
@@ -181,27 +181,6 @@ a_security_group.authorize( 'tcp', 22, 22, '0.0.0.0/0' )
 # Creating a EC2 "reservation" with all the parameters mentioned above
 a_reservation = an_image.run( instance_type = 'm1.small', min_count = 1, max_count = 1, key_name = a_key_pair_name, security_groups = [ a_security_group.name ] )
 an_instance = a_reservation.instances[ 0 ]
-print_d( '%s ' % an_instance.update() )
-
-# Making sure that corresponding instances are ready to use
-while True :
-    try :
-        if an_instance.update() == 'running' :
-            break
-        print_d( '.' )
-    except :
-        continue
-    pass
-
-print_d( ' %s\n' % an_instance.update() )
-print_d( '%s\n' % an_instance.dns_name )
-
-print_d( "a_instance_reservation_time = %s, sec\n" % a_instance_reservation_time )
-
-
-print_d( "\n---------------------------------------------------------------------------\n" )
-# Uploading and running 'control' scripts into cloud
-a_task_execution_time = Timer()
 
 # Instantiating ssh connection with root access
 import paramiko
@@ -210,8 +189,19 @@ a_ssh_client.set_missing_host_key_policy( paramiko.AutoAddPolicy() )
 a_rsa_key = paramiko.RSAKey( filename = a_key_pair_file )
 
 a_username = 'ubuntu'
-a_ssh_client.connect( hostname = an_instance.dns_name, port = 22, username = a_username, pkey = a_rsa_key )
+a_ssh_connect = lambda : a_ssh_client.connect( hostname = an_instance.dns_name, port = 22, username = a_username, pkey = a_rsa_key )
+
+# Making sure that corresponding instances are ready to use
+from balloon.amazon import wait_activation
+wait_activation( an_instance, a_ssh_connect, a_ssh_client )
 print_d( 'ssh -i %s %s@%s\n' % ( a_key_pair_file, a_username, an_instance.dns_name ) )
+
+print_d( "an_instance_reservation_time = %s, sec\n" % an_instance_reservation_time )
+
+
+print_d( "\n---------------------------------------------------------------------------\n" )
+# Uploading and running 'control' scripts into cloud
+a_task_execution_time = Timer()
 
 # Preparing corresponding cloud 'working dir'
 ssh_command( a_ssh_client, 'mkdir %s' % a_working_dir )
@@ -234,8 +224,6 @@ a_command = '%s/launch' % ( a_working_dir )
 a_command += " --bucket-name='%s'" % a_bucket_name
 a_command += " --data-name='%s'" % a_data_name
 a_command += " --working-dir='%s'" % a_working_dir
-a_command += " --rackspace-user='%s'" % RACKSPACE_USER
-a_command += " --rackspace-key='%s'" % RACKSPACE_KEY
 a_command += " --aws-access-key-id='%s'" % AWS_ACCESS_KEY_ID
 a_command += " --aws-secret-access-key='%s'" % AWS_SECRET_ACCESS_KEY
 # ssh_command( a_ssh_client, a_command )

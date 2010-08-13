@@ -17,7 +17,7 @@
 
 
 #--------------------------------------------------------------------------------------
-from balloon.common import print_e
+from balloon.common import print_e, print_d, ssh_command
 
 import os
 
@@ -58,6 +58,34 @@ def extract_options( the_options ) :
         pass
 
     return AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
+
+
+#--------------------------------------------------------------------------------------
+def wait_activation( the_instance, the_ssh_connect, the_ssh_client ) :
+    print_d( '%s ' % the_instance.update() )
+    
+    # Making sure that corresponding instances are ready to use
+    while True :
+        try :
+            if the_instance.update() == 'running' :
+                break
+            print_d( '.' )
+        except :
+            continue
+        pass
+    
+    print_d( ' %s\n' % the_instance.update() )
+
+    while True :
+        try :
+            the_ssh_connect()
+            ssh_command( the_ssh_client, 'echo  > /dev/null' )
+            break
+        except :
+            continue
+        pass
+
+    pass
 
 
 #--------------------------------------------------------------------------------------

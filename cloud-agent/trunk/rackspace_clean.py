@@ -29,7 +29,7 @@ RACKSPACE_KEY = os.getenv( "RACKSPACE_KEY" )
 
 #--------------------------------------------------------------------------------------
 import cloudfiles
-print "-------------- Delete CloudFiles --------------"
+print "---------------- Delete CloudFiles ---------------"
 a_cloudfiles_conn = cloudfiles.get_connection( RACKSPACE_USER, RACKSPACE_KEY, timeout = 500 )
 for a_container_name in a_cloudfiles_conn.list_containers() :
     print a_container_name

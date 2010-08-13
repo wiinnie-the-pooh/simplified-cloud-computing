@@ -145,7 +145,7 @@ print_d( "a_data_loading_time = %s, sec\n" % a_data_loading_time )
 
 print_d( "\n---------------------------------------------------------------------------\n" )
 # Instanciating node in cloud
-a_instance_reservation_time = Timer()
+an_instance_reservation_time = Timer()
 
 from libcloud.types import Provider 
 from libcloud.providers import get_driver 
@@ -176,7 +176,7 @@ a_node_name = a_container_name
 a_node = a_libcloud_conn.deploy_node( name = a_node_name, image = an_images[ 9 ] , size = a_sizes[ 0 ], deploy = a_msd ) 
 print_d( "a_node = %r\n" % a_node )
 
-print_d( "a_instance_reservation_time = %s, sec\n" % a_instance_reservation_time )
+print_d( "an_instance_reservation_time = %s, sec\n" % an_instance_reservation_time )
 
 
 print_d( "\n---------------------------------------------------------------------------\n" )
