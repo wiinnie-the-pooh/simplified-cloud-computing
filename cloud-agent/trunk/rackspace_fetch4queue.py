@@ -67,76 +67,73 @@ amazon.add_parser_options( a_option_parser )
     
 
 #--------------------------------------------------------------------------------------
-if __name__ == '__main__' :
-    #---------------------------------------------------------------------------
-    # Extracting and verifying command-line arguments
+# Extracting and verifying command-line arguments
 
-    an_options, an_args = a_option_parser.parse_args()
+an_options, an_args = a_option_parser.parse_args()
 
-    common.extract_options( an_options )
+common.extract_options( an_options )
 
-    a_container_name = an_options.container_name
-    if a_container_name == None :
-        a_container_name = raw_input()
-        pass
-
-    RACKSPACE_USER, RACKSPACE_KEY = rackspace.extract_options( an_options )
-
-    AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY = amazon.extract_options( an_options )
-
-
-    #---------------------------------------------------------------------------
-    # Trying to access to the container with the appointed name
-
-    import cloudfiles
-    a_cloudfiles_conn = cloudfiles.get_connection( RACKSPACE_USER, RACKSPACE_KEY, timeout = 500 )
-    a_cloudfiles_container = a_cloudfiles_conn[ a_container_name ]
-
-
-    #---------------------------------------------------------------------------
-    # Creating an output directory
-
-    import os.path, shutil
-    an_options.output_dir = os.path.abspath( an_options.output_dir )
-    an_output_dir = os.path.join( an_options.output_dir, a_container_name )
-    shutil.rmtree( an_output_dir, True )
-    os.makedirs( an_output_dir )
-    if not os.path.isdir( an_output_dir ) :
-        print_e( "Couild not create output directory - '%s'\n" % an_output_dir )
-        pass
-
-
-    #---------------------------------------------------------------------------
-    # Downloding the data from cloud according to the queue
-
-    import boto
-    a_sqs_conn = boto.connect_sqs( AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY )
-    a_queue_name = common.generate_initial_queue_name( a_container_name )
-    while True :
-        print_d( '%s\n' % a_queue_name ) 
-        an_is_final, a_data_name, a_queue_suffix = common.get_message( a_sqs_conn, a_queue_name )
-        print_d( '%s %s\n' % ( a_data_name, a_queue_suffix ) )
-
-        a_queue_name = common.generate_queue_name( a_container_name, a_queue_suffix )
-
-        # To secure the following 'save' operation
-        a_file_path = os.path.join( an_output_dir, a_data_name )
-        shutil.rmtree( a_file_path, True ) 
-        print_d( '%s ' % ( not os.path.isfile( a_file_path ) ) )
-
-        a_file_object = a_cloudfiles_container.get_object( a_data_name )
-        a_file_object.save_to_filename( a_file_path )
-        print_d( '%s %s\n' % ( a_file_path, os.path.isfile( a_file_path ) ) )
-
-        if an_is_final:
-            break
-
-        pass
- 
-    
-    #---------------------------------------------------------------------------
-    print_d( 'OK\n' )
+a_container_name = an_options.container_name
+if a_container_name == None :
+    a_container_name = raw_input()
     pass
+
+RACKSPACE_USER, RACKSPACE_KEY = rackspace.extract_options( an_options )
+
+AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY = amazon.extract_options( an_options )
+
+
+#---------------------------------------------------------------------------
+# Trying to access to the container with the appointed name
+
+import cloudfiles
+a_cloudfiles_conn = cloudfiles.get_connection( RACKSPACE_USER, RACKSPACE_KEY, timeout = 500 )
+a_cloudfiles_container = a_cloudfiles_conn[ a_container_name ]
+
+
+#---------------------------------------------------------------------------
+# Creating an output directory
+
+import os.path, shutil
+an_options.output_dir = os.path.abspath( an_options.output_dir )
+an_output_dir = os.path.join( an_options.output_dir, a_container_name )
+shutil.rmtree( an_output_dir, True )
+os.makedirs( an_output_dir )
+if not os.path.isdir( an_output_dir ) :
+    print_e( "Couild not create output directory - '%s'\n" % an_output_dir )
+    pass
+
+
+#---------------------------------------------------------------------------
+# Downloding the data from cloud according to the queue
+
+import boto
+a_sqs_conn = boto.connect_sqs( AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY )
+a_queue_name = common.generate_initial_queue_name( a_container_name )
+while True :
+    print_d( '%s\n' % a_queue_name ) 
+    an_is_final, a_data_name, a_queue_suffix = common.get_message( a_sqs_conn, a_queue_name )
+    print_d( '%s %s\n' % ( a_data_name, a_queue_suffix ) )
+    
+    a_queue_name = common.generate_queue_name( a_container_name, a_queue_suffix )
+    
+    # To secure the following 'save' operation
+    a_file_path = os.path.join( an_output_dir, a_data_name )
+    shutil.rmtree( a_file_path, True ) 
+    print_d( '%s ' % ( not os.path.isfile( a_file_path ) ) )
+    
+    a_file_object = a_cloudfiles_container.get_object( a_data_name )
+    a_file_object.save_to_filename( a_file_path )
+    print_d( '%s %s\n' % ( a_file_path, os.path.isfile( a_file_path ) ) )
+    
+    if an_is_final:
+        break
+    
+    pass
+
+
+#---------------------------------------------------------------------------
+print_d( 'OK\n' )
 
 
 #--------------------------------------------------------------------------------------
