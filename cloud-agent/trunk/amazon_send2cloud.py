@@ -66,7 +66,7 @@ amazon.add_parser_options( a_option_parser )
 an_engine_dir = os.path.abspath( os.path.dirname( sys.argv[ 0 ] ) )
 
 
-#--------------------------------------------------------------------------------------
+print_d( "\n---------------------------------------------------------------------------\n" )
 # Extracting and verifying command-line arguments
 
 an_options, an_args = a_option_parser.parse_args()
@@ -92,7 +92,7 @@ if not os.path.isdir( a_task_data_dir ) :
 AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY = amazon.extract_options( an_options )
 
 
-#---------------------------------------------------------------------------
+print_d( "\n---------------------------------------------------------------------------\n" )
 # Packaging of the local data
 
 import os, tempfile
@@ -117,9 +117,8 @@ a_balloon_source_archive = os.path.join( an_engine_dir, 'dist', a_balloon_archiv
 a_balloon_target_archive = os.path.join( a_working_dir, a_balloon_archive_name )
 
 
-#---------------------------------------------------------------------------
+print_d( "\n---------------------------------------------------------------------------\n" )
 # Uploading task data into cloud
-
 a_data_loading_time = Timer()
 
 import boto
@@ -138,12 +137,92 @@ print_d( "a_s3_bucket_key = %s\n" % a_s3_bucket_key.name )
 
 print_d( "a_data_loading_time = %s, sec\n" % a_data_loading_time )
 
+
+print_d( "\n---------------------------------------------------------------------------\n" )
+# Instanciating node in cloud
+a_instance_reservation_time = Timer()
+
+import boto
+# Establish an connection with EC2
+an_ec2_conn = boto.connect_ec2()
+print_d( '%r\n' % an_ec2_conn )
+
+# Choose an image to be run
+an_images = an_ec2_conn.get_all_images( image_ids = "ami-2d4aa444" )
+an_image = an_images[ 0 ]
+print_d( '%s\n' % an_image.location )
+
+# Generating an unique name to be used for corresponding
+# ssh "key pair" & EC2 "security group"
+import tempfile
+an_unique_file = tempfile.mkstemp()[ 1 ]
+an_unique_name = os.path.basename( an_unique_file )
+os.remove( an_unique_file )
+print_d( 'an_unique_name = %s\n' % an_unique_name )
+
+# Asking EC2 to generate a new ssh "key pair"
+a_key_pair_name = an_unique_name
+a_key_pair = an_ec2_conn.create_key_pair( a_key_pair_name )
+
+# Saving the generated ssh "key pair" locally
+a_key_pair_dir = os.path.expanduser( "~/.ssh")
+a_key_pair.save( a_key_pair_dir )
+a_key_pair_file = os.path.join( a_key_pair_dir, a_key_pair.name ) + os.path.extsep + "pem"
+print_d( 'a_key_pair_file = %s\n' % a_key_pair_file )
+
+import stat
+os.chmod( a_key_pair_file, stat.S_IRUSR )
+
+# Asking EC2 to generate a new "sequirity group" & apply corresponding firewall permissions
+a_security_group = an_ec2_conn.create_security_group( an_unique_name, 'temporaly generated' )
+a_security_group.authorize( 'tcp', 80, 80, '0.0.0.0/0' )
+a_security_group.authorize( 'tcp', 22, 22, '0.0.0.0/0' )
+
+# Creating a EC2 "reservation" with all the parameters mentioned above
+a_reservation = an_image.run( instance_type = 'm1.small', min_count = 1, max_count = 1, key_name = a_key_pair_name, security_groups = [ a_security_group.name ] )
+an_instance = a_reservation.instances[ 0 ]
+print_d( '%s ' % an_instance.update() )
+
+# Making sure that corresponding instances are ready to use
+while True :
+    try :
+        if an_instance.update() == 'running' :
+            break
+        print_d( '.' )
+    except :
+        continue
+    pass
+
+print_d( ' %s\n' % an_instance.update() )
+print_d( '%s\n' % an_instance.dns_name )
+print_d( 'ssh -i %s %s@%s\n' % ( a_key_pair_file, a_username, an_instance.dns_name ) )
+
+print_d( "a_instance_reservation_time = %s, sec\n" % a_instance_reservation_time )
+
+
+print_d( "\n---------------------------------------------------------------------------\n" )
+
+
+import paramiko
+a_ssh_client = paramiko.SSHClient()
+a_ssh_client.set_missing_host_key_policy( paramiko.AutoAddPolicy() )
+a_rsa_key = paramiko.RSAKey( filename = a_key_pair_file )
+
+while True :
+    try :
+        a_username = 'ubuntu'
+        a_ssh_client.connect( hostname = an_instance.dns_name, port = 22, username = a_username, pkey = a_rsa_key )
+        ssh_command( a_ssh_client, 'echo  > /dev/null' )
+        break
+    except :
+        continue
+    pass
+
+# ssh_command( a_ssh_client, 'ls -l /' )
+
 os._exit( os.EX_OK )
 
-
-#---------------------------------------------------------------------------
-# Instanciating node in cloud
-
+print_d( "\n---------------------------------------------------------------------------\n" )
 from libcloud.types import Provider 
 from libcloud.providers import get_driver 
 

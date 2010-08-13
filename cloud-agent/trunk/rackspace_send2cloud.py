@@ -70,7 +70,7 @@ amazon.add_parser_options( a_option_parser )
 an_engine_dir = os.path.abspath( os.path.dirname( sys.argv[ 0 ] ) )
 
 
-#--------------------------------------------------------------------------------------
+print_d( "\n---------------------------------------------------------------------------\n" )
 # Extracting and verifying command-line arguments
 
 an_options, an_args = a_option_parser.parse_args()
@@ -98,7 +98,7 @@ RACKSPACE_USER, RACKSPACE_KEY = rackspace.extract_options( an_options )
 AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY = amazon.extract_options( an_options )
 
 
-#---------------------------------------------------------------------------
+print_d( "\n---------------------------------------------------------------------------\n" )
 # Packaging of the local data
 
 import os, tempfile
@@ -123,7 +123,7 @@ a_balloon_source_archive = os.path.join( an_engine_dir, 'dist', a_balloon_archiv
 a_balloon_target_archive = os.path.join( a_working_dir, a_balloon_archive_name )
 
 
-#---------------------------------------------------------------------------
+print_d( "\n---------------------------------------------------------------------------\n" )
 # Uploading task data into cloud
 
 a_data_loading_time = Timer()
@@ -143,8 +143,9 @@ print_d( "a_file_object = %s\n" % a_file_object.name )
 print_d( "a_data_loading_time = %s, sec\n" % a_data_loading_time )
 
 
-#---------------------------------------------------------------------------
+print_d( "\n---------------------------------------------------------------------------\n" )
 # Instanciating node in cloud
+a_instance_reservation_time = Timer()
 
 from libcloud.types import Provider 
 from libcloud.providers import get_driver 
@@ -162,20 +163,22 @@ print_d( "a_sizes = %r\n" % a_sizes )
 a_deployment_steps = []
 from libcloud.deployment import MultiStepDeployment, ScriptDeployment, SSHKeyDeployment
 a_deployment_steps.append( SSHKeyDeployment( open( os.path.expanduser( "~/.ssh/id_rsa.pub") ).read() ) )
-a_deployment_steps.append( ScriptDeployment( "apt-get -y install python-boto" ) )
+# a_deployment_steps.append( ScriptDeployment( "apt-get -y install python-boto" ) )
 # a_deployment_steps.append( ScriptDeployment( "apt-get -y install python-paramiko" ) )
 # a_deployment_steps.append( ScriptDeployment( "apt-get -y install python-libcloud" ) )
-a_deployment_steps.append( ScriptDeployment( "apt-get -y install python-software-properties" ) )
-a_deployment_steps.append( ScriptDeployment( "add-apt-repository ppa:chmouel/rackspace-cloud-files" ) )
-a_deployment_steps.append( ScriptDeployment( "apt-get -y install python-rackspace-cloudfiles" ) )
+# a_deployment_steps.append( ScriptDeployment( "apt-get -y install python-software-properties" ) )
+# a_deployment_steps.append( ScriptDeployment( "add-apt-repository ppa:chmouel/rackspace-cloud-files" ) )
+# a_deployment_steps.append( ScriptDeployment( "apt-get -y install python-rackspace-cloudfiles" ) )
 a_msd = MultiStepDeployment( a_deployment_steps ) 
 
 a_node_name = a_container_name
 a_node = a_libcloud_conn.deploy_node( name = a_node_name, image = an_images[ 9 ] , size = a_sizes[ 0 ], deploy = a_msd ) 
 print_d( "a_node = %r\n" % a_node )
 
+print_d( "a_instance_reservation_time = %s, sec\n" % a_instance_reservation_time )
 
-#---------------------------------------------------------------------------
+
+print_d( "\n---------------------------------------------------------------------------\n" )
 # Uploading and running 'control' scripts into cloud
 
 # Instantiating ssh connection with root access
@@ -212,7 +215,7 @@ a_command += " --aws-secret-access-key='%s'" % AWS_SECRET_ACCESS_KEY
 ssh_command( a_ssh_client, a_command )
 
 
-#---------------------------------------------------------------------------
+print_d( "\n---------------------------------------------------------------------------\n" )
 # Closing SSH connection
 a_ssh_client.close()
 
@@ -226,7 +229,7 @@ shutil.rmtree( a_working_dir )
 print a_container_name
 
 
-#---------------------------------------------------------------------------
+print_d( "\n---------------------------------------------------------------------------\n" )
 print_d( 'OK\n' )
 
 
