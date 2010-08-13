@@ -162,7 +162,8 @@ print_d( "a_sizes = %r\n" % a_sizes )
 
 a_deployment_steps = []
 from libcloud.deployment import MultiStepDeployment, ScriptDeployment, SSHKeyDeployment
-a_deployment_steps.append( SSHKeyDeployment( open( os.path.expanduser( "~/.ssh/id_rsa.pub") ).read() ) )
+a_key_pair_file = os.path.expanduser( "~/.ssh/id_rsa.pub")
+a_deployment_steps.append( SSHKeyDeployment( open( a_key_pair_file ).read() ) )
 # a_deployment_steps.append( ScriptDeployment( "apt-get -y install python-boto" ) )
 # a_deployment_steps.append( ScriptDeployment( "apt-get -y install python-paramiko" ) )
 # a_deployment_steps.append( ScriptDeployment( "apt-get -y install python-libcloud" ) )
@@ -180,12 +181,15 @@ print_d( "a_instance_reservation_time = %s, sec\n" % a_instance_reservation_time
 
 print_d( "\n---------------------------------------------------------------------------\n" )
 # Uploading and running 'control' scripts into cloud
+a_task_execution_time = Timer()
 
 # Instantiating ssh connection with root access
 import paramiko
 a_ssh_client = paramiko.SSHClient()
 a_ssh_client.set_missing_host_key_policy( paramiko.AutoAddPolicy() )
-a_ssh_client.connect( hostname = a_node.public_ip[ 0 ], port = 22, username = 'root')
+a_username = 'root'
+a_ssh_client.connect( hostname = a_node.public_ip[ 0 ], port = 22, username = a_username )
+print_d( 'ssh -i %s %s@%s\n' % ( a_key_pair_file, a_username, a_node.public_ip[ 0 ] ) )
 
 # Preparing corresponding cloud 'working dir'
 ssh_command( a_ssh_client, 'mkdir %s' % a_working_dir )
@@ -213,6 +217,8 @@ a_command += " --rackspace-key='%s'" % RACKSPACE_KEY
 a_command += " --aws-access-key-id='%s'" % AWS_ACCESS_KEY_ID
 a_command += " --aws-secret-access-key='%s'" % AWS_SECRET_ACCESS_KEY
 ssh_command( a_ssh_client, a_command )
+
+print_d( "a_task_execution_time = %s, sec\n" % a_task_execution_time )
 
 
 print_d( "\n---------------------------------------------------------------------------\n" )

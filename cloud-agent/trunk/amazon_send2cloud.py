@@ -195,71 +195,23 @@ while True :
 
 print_d( ' %s\n' % an_instance.update() )
 print_d( '%s\n' % an_instance.dns_name )
-print_d( 'ssh -i %s %s@%s\n' % ( a_key_pair_file, a_username, an_instance.dns_name ) )
 
 print_d( "a_instance_reservation_time = %s, sec\n" % a_instance_reservation_time )
 
 
 print_d( "\n---------------------------------------------------------------------------\n" )
-
-
-import paramiko
-a_ssh_client = paramiko.SSHClient()
-a_ssh_client.set_missing_host_key_policy( paramiko.AutoAddPolicy() )
-a_rsa_key = paramiko.RSAKey( filename = a_key_pair_file )
-
-while True :
-    try :
-        a_username = 'ubuntu'
-        a_ssh_client.connect( hostname = an_instance.dns_name, port = 22, username = a_username, pkey = a_rsa_key )
-        ssh_command( a_ssh_client, 'echo  > /dev/null' )
-        break
-    except :
-        continue
-    pass
-
-# ssh_command( a_ssh_client, 'ls -l /' )
-
-os._exit( os.EX_OK )
-
-print_d( "\n---------------------------------------------------------------------------\n" )
-from libcloud.types import Provider 
-from libcloud.providers import get_driver 
-
-Driver = get_driver( Provider.RACKSPACE ) 
-a_libcloud_conn = Driver( RACKSPACE_USER, RACKSPACE_KEY ) 
-print_d( "a_libcloud_conn = %r\n" % a_libcloud_conn )
-
-an_images = a_libcloud_conn.list_images() 
-print_d( "an_images = %r\n" % an_images )
-
-a_sizes = a_libcloud_conn.list_sizes() 
-print_d( "a_sizes = %r\n" % a_sizes )
-
-a_deployment_steps = []
-from libcloud.deployment import MultiStepDeployment, ScriptDeployment, SSHKeyDeployment
-a_deployment_steps.append( SSHKeyDeployment( open( os.path.expanduser( "~/.ssh/id_rsa.pub") ).read() ) )
-a_deployment_steps.append( ScriptDeployment( "apt-get -y install python-boto" ) )
-# a_deployment_steps.append( ScriptDeployment( "apt-get -y install python-paramiko" ) )
-# a_deployment_steps.append( ScriptDeployment( "apt-get -y install python-libcloud" ) )
-a_deployment_steps.append( ScriptDeployment( "apt-get -y install python-software-properties" ) )
-a_deployment_steps.append( ScriptDeployment( "add-apt-repository ppa:chmouel/rackspace-cloud-files" ) )
-a_deployment_steps.append( ScriptDeployment( "apt-get -y install python-rackspace-cloudfiles" ) )
-a_msd = MultiStepDeployment( a_deployment_steps ) 
-
-a_node_name = a_container_name
-a_node = a_libcloud_conn.deploy_node( name = a_node_name, image = an_images[ 9 ] , size = a_sizes[ 0 ], deploy = a_msd ) 
-print_d( "a_node = %r\n" % a_node )
-
-
-#---------------------------------------------------------------------------
 # Uploading and running 'control' scripts into cloud
+a_task_execution_time = Timer()
 
 # Instantiating ssh connection with root access
 import paramiko
 a_ssh_client = paramiko.SSHClient()
 a_ssh_client.set_missing_host_key_policy( paramiko.AutoAddPolicy() )
-a_ssh_client.connect( hostname = a_node.public_ip[ 0 ], port = 22, username = 'root')
+a_rsa_key = paramiko.RSAKey( filename = a_key_pair_file )
+
+a_username = 'ubuntu'
+a_ssh_client.connect( hostname = an_instance.dns_name, port = 22, username = a_username, pkey = a_rsa_key )
+print_d( 'ssh -i %s %s@%s\n' % ( a_key_pair_file, a_username, an_instance.dns_name ) )
 
 # Preparing corresponding cloud 'working dir'
 ssh_command( a_ssh_client, 'mkdir %s' % a_working_dir )
@@ -271,7 +223,7 @@ a_sftp_client = a_ssh_client.open_sftp()
 a_sftp_client.put( a_balloon_source_archive, a_balloon_target_archive )
 ssh_command( a_ssh_client, 'cd %s && tar -xzf %s' % ( a_working_dir, a_balloon_archive_name ) )
 a_balloon_setup_dir = os.path.join( a_working_dir, a_balloon_name )
-ssh_command( a_ssh_client, 'cd %s && python ./setup.py install' % ( a_balloon_setup_dir ) )
+ssh_command( a_ssh_client, 'cd %s && sudo python ./setup.py install' % ( a_balloon_setup_dir ) )
 
 # Uploading and unpacking into the cloud 'control' scripts
 a_sftp_client.put( a_control_archive, a_control_archive )
@@ -279,17 +231,19 @@ ssh_command( a_ssh_client, 'cd %s && tar -xzf %s' % ( a_working_dir, a_control_n
 
 # Executing into the cloud 'control' scripts
 a_command = '%s/launch' % ( a_working_dir ) 
-a_command += " --container-name='%s'" % a_container_name
+a_command += " --bucket-name='%s'" % a_bucket_name
 a_command += " --data-name='%s'" % a_data_name
 a_command += " --working-dir='%s'" % a_working_dir
 a_command += " --rackspace-user='%s'" % RACKSPACE_USER
 a_command += " --rackspace-key='%s'" % RACKSPACE_KEY
 a_command += " --aws-access-key-id='%s'" % AWS_ACCESS_KEY_ID
 a_command += " --aws-secret-access-key='%s'" % AWS_SECRET_ACCESS_KEY
-ssh_command( a_ssh_client, a_command )
+# ssh_command( a_ssh_client, a_command )
+
+print_d( "a_task_execution_time = %s, sec\n" % a_task_execution_time )
 
 
-#---------------------------------------------------------------------------
+print_d( "\n---------------------------------------------------------------------------\n" )
 # Closing SSH connection
 a_ssh_client.close()
 
@@ -300,10 +254,10 @@ shutil.rmtree( a_working_dir )
 
 #---------------------------------------------------------------------------
 # This refenrece value could be used further in cloud management pipeline
-print a_container_name
+print a_bucket_name
 
 
-#---------------------------------------------------------------------------
+print_d( "\n---------------------------------------------------------------------------\n" )
 print_d( 'OK\n' )
 
 
