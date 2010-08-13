@@ -35,7 +35,7 @@ import sys, os, os.path, uuid
 #--------------------------------------------------------------------------------------
 # Defining utility command-line interface
 
-an_usage_description = "%prog --task-def-dir=~/rackspace"
+an_usage_description = "%prog --task-control-dir=~/rackspace/control --task-control-dir=~/rackspace/data"
 an_usage_description += common.add_usage_description()
 an_usage_description += rackspace.add_usage_description()
 an_usage_description += amazon.add_usage_description()
@@ -47,12 +47,19 @@ from optparse import OptionParser
 a_option_parser = OptionParser( usage = an_usage_description, version="%prog 0.1", formatter = a_help_formatter )
 
 # Definition of the command line arguments
-a_option_parser.add_option( "--task-def-dir",
-                            metavar = "< location of the task defintion >",
+a_option_parser.add_option( "--task-control-dir",
+                            metavar = "< location of the task 'control' scripts >",
                             action = "store",
-                            dest = "task_def_dir",
+                            dest = "task_control_dir",
                             help = "(\"%default\", by default)",
-                            default = "." )
+                            default = "./rackspace_control" )
+
+a_option_parser.add_option( "--task-data-dir",
+                            metavar = "< location of the task 'data' >",
+                            action = "store",
+                            dest = "task_data_dir",
+                            help = "(\"%default\", by default)",
+                            default = "./data" )
 
 common.add_parser_options( a_option_parser )
 
@@ -60,6 +67,8 @@ rackspace.add_parser_options( a_option_parser )
 
 amazon.add_parser_options( a_option_parser )
     
+an_engine_dir = os.path.abspath( os.path.dirname( sys.argv[ 0 ] ) )
+
 
 #--------------------------------------------------------------------------------------
 if __name__ == '__main__' :
@@ -71,23 +80,19 @@ if __name__ == '__main__' :
     common.extract_options( an_options )
 
     import os.path
-    an_options.task_def_dir = os.path.abspath( an_options.task_def_dir )
-    if not os.path.isdir( an_options.task_def_dir ) :
-        print_e( "The task defintion should a directory\n" )
+    a_task_control_dir = os.path.abspath( an_options.task_control_dir )
+    if not os.path.isdir( a_task_control_dir ) :
+        print_e( "The task 'control' should a be directory\n" )
         pass
 
-    a_control_dir = os.path.join( an_options.task_def_dir, "control" )
-    if not os.path.isdir( a_control_dir ) :
-        print_e( "The task defintion directory should contain 'control' sub directory\n" )
-        pass
-
-    a_launch_script = os.path.join( a_control_dir, "launch" )
+    a_launch_script = os.path.join( a_task_control_dir, "launch" )
     if not os.path.isfile( a_launch_script ) :
-        print_e( "The task definition 'control' sub directory should contain 'launch' start-up script\n" )
+        print_e( "The task 'control' should contain 'launch' start-up script\n" )
         pass
         
-    if not os.path.isdir( os.path.join( an_options.task_def_dir, "data" ) ) :
-        print_e( "The task defintion directory should contain 'data' sub directory\n" )
+    a_task_data_dir = os.path.abspath( an_options.task_data_dir )
+    if not os.path.isdir( a_task_data_dir ) :
+        print_e( "The task 'data' should a be directory\n" )
         pass
 
     RACKSPACE_USER, RACKSPACE_KEY = rackspace.extract_options( an_options )
@@ -105,18 +110,18 @@ if __name__ == '__main__' :
     # Packaging the 'control' scripts
     a_control_name = "task_control.tgz"
     a_control_archive = os.path.join( a_working_dir, a_control_name )
-    sh_command( "cd %s && tar --exclude-vcs -czf %s ./control" % ( an_options.task_def_dir, a_control_archive ) )
+    sh_command( "cd %s && tar --exclude-vcs -czf %s *" % ( a_task_control_dir, a_control_archive ) )
 
     # Packaging the task data
     a_data_name = "task_data.tgz"
     a_data_archive = os.path.join( a_working_dir, a_data_name )
-    sh_command( "cd %s && tar --exclude-vcs -czf %s ./data" % ( an_options.task_def_dir, a_data_archive ) )
+    sh_command( "cd %s && tar --exclude-vcs -czf %s *" % ( a_task_data_dir, a_data_archive ) )
 
     # Packaging Python engine (itself)
-    sh_command( "cd %s && ./setup.py sdist" % an_options.task_def_dir )
+    sh_command( "cd %s && ./setup.py sdist" % an_engine_dir )
     a_balloon_name = "balloon-0.5-alfa"
     a_balloon_archive_name = a_balloon_name + os.extsep + "tar.gz"
-    a_balloon_source_archive = os.path.join( an_options.task_def_dir, 'dist', a_balloon_archive_name )
+    a_balloon_source_archive = os.path.join( an_engine_dir, 'dist', a_balloon_archive_name )
     a_balloon_target_archive = os.path.join( a_working_dir, a_balloon_archive_name )
 
 
@@ -194,7 +199,7 @@ if __name__ == '__main__' :
     ssh_command( a_ssh_client, 'cd %s && tar -xzf %s' % ( a_working_dir, a_control_name ) )
 
     # Executing into the cloud 'control' scripts
-    a_command = '%s/control/launch' % ( a_working_dir ) 
+    a_command = '%s/launch' % ( a_working_dir ) 
     a_command += " --container-name='%s'" % a_container_name
     a_command += " --data-name='%s'" % a_data_name
     a_command += " --working-dir='%s'" % a_working_dir
