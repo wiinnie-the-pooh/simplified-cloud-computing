@@ -32,7 +32,7 @@ import boto
 
 
 #--------------------------------------------------------------------------------------
-print "---------------- Delete EC2 instances ---------------"
+print "-------------- Delete EC2 instances --------------"
 an_ec2_conn = boto.connect_ec2( AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY )
 for a_reservation in an_ec2_conn.get_all_instances() :
     # print "%s" % ( a_reservation )
@@ -49,7 +49,7 @@ for a_reservation in an_ec2_conn.get_all_instances() :
 print
 
 
-print "---------------- Delete EC2 key pairs ---------------"
+print "-------------- Delete EC2 key pairs --------------"
 for a_key_pair in an_ec2_conn.get_all_key_pairs() :
     print a_key_pair.name
     # an_ec2_conn.delete_key_pair( a_key_pair ) # Does not work (bug)
@@ -66,12 +66,28 @@ for a_key_pair in an_ec2_conn.get_all_key_pairs() :
 print
 
 
-print "-------------- Delete EC2 security groups ------------"
+print "----------- Delete EC2 security groups -----------"
 for a_security_group in an_ec2_conn.get_all_security_groups() :
     if a_security_group.name != 'default' :
         print a_security_group.name
         an_ec2_conn.delete_security_group( a_security_group.name )
         pass
+    pass
+
+print
+
+
+#--------------------------------------------------------------------------------------
+print "--------------- Delete S3 buckets ----------------"
+a_s3_conn = boto.connect_s3( AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY )
+for a_bucket in a_s3_conn.get_all_buckets() :
+    a_s3_bucket_keys = a_bucket.get_all_keys()
+    print "'%s' : %d" % ( a_bucket.name, len( a_s3_bucket_keys ) )
+    for a_s3_bucket_key in a_s3_bucket_keys :
+        print "\t'%s'" % ( a_s3_bucket_key.name )
+        a_s3_bucket_key.delete()
+        pass
+    a_bucket.delete()
     pass
 
 print

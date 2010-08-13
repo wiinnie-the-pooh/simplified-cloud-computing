@@ -89,8 +89,6 @@ if not os.path.isdir( a_task_data_dir ) :
     print_e( "The task 'data' should a be directory\n" )
     pass
 
-RACKSPACE_USER, RACKSPACE_KEY = rackspace.extract_options( an_options )
-
 AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY = amazon.extract_options( an_options )
 
 
@@ -122,17 +120,21 @@ a_balloon_target_archive = os.path.join( a_working_dir, a_balloon_archive_name )
 #---------------------------------------------------------------------------
 # Uploading task data into cloud
 
-import cloudfiles
-a_cloudfiles_conn = cloudfiles.get_connection( RACKSPACE_USER, RACKSPACE_KEY, timeout = 500 )
-print_d( "a_cloudfiles_conn = %r\n" % a_cloudfiles_conn )
+import boto
+a_s3_conn = boto.connect_s3( AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY )
+print_d( "a_s3_conn = %r\n" % a_s3_conn )
 
-a_container_name = str( uuid.uuid4() )
-a_cloudfiles_container = a_cloudfiles_conn.create_container( a_container_name )
-print_d( "a_cloudfiles_container = %r\n" % a_cloudfiles_container )
+a_bucket_name = str( uuid.uuid4() )
+a_s3_bucket = a_s3_conn.create_bucket( a_bucket_name )
+print_d( "a_s3_bucket = %r\n" % a_s3_bucket )
 
-a_file_object = a_cloudfiles_container.create_object( a_data_name )
-a_file_object.load_from_filename( a_data_archive )
-print_d( "a_file_object = %r\n" % a_file_object )
+from boto.s3.key import Key
+a_s3_bucket_key = Key( a_s3_bucket )
+a_s3_bucket_key.key = a_data_name
+a_s3_bucket_key.set_contents_from_filename( a_data_archive )
+print_d( "a_s3_bucket_key = %r\n" % a_s3_bucket_key )
+
+os._exit( os.EX_OK )
 
 
 #---------------------------------------------------------------------------
