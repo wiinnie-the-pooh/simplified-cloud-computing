@@ -137,7 +137,8 @@ print_d( 'ssh -i %s %s@%s\n' ( a_key_pair_file, a_username, an_instance.dns_name
 a_ssh_client.close()
 
 # an_ec2_conn.delete_security_group( a_security_group.name )
-# an_ec2_conn.delete_key_pair( a_key_pair_name )
+# an_ec2_conn.delete_key_pair( a_key_pair_name ) # Does not work (bug)
+# a_key_pair.delete()
 # os.remove( a_key_pair_file )
 # a_reservation.stop_all()
 

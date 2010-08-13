@@ -52,7 +52,8 @@ print
 print "---------------- Delete EC2 key pairs ---------------"
 for a_key_pair in an_ec2_conn.get_all_key_pairs() :
     print a_key_pair.name
-    an_ec2_conn.delete_key_pair( a_key_pair )
+    # an_ec2_conn.delete_key_pair( a_key_pair ) # Does not work (bug)
+    a_key_pair.delete()
 
     a_key_pair_dir = os.path.expanduser( "~/.ssh")
     a_key_pair_file = os.path.join( a_key_pair_dir, a_key_pair.name ) + os.path.extsep + "pem"
