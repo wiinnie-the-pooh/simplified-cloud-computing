@@ -174,3 +174,17 @@ def get_message( the_sqs_conn, the_queue_name ) :
 
 
 #--------------------------------------------------------------------------------------
+class Timer :
+    def __init__( self ) :
+        import time
+        self.initial = time.time()
+        pass
+
+    def __str__( self ) :
+        import time
+        return str( "%f" % ( time.time() - self.initial ))
+
+    pass
+
+
+#--------------------------------------------------------------------------------------
