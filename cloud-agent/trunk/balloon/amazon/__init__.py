@@ -62,7 +62,13 @@ def extract_options( the_options ) :
 
 #--------------------------------------------------------------------------------------
 def wait_activation( the_instance, the_ssh_connect, the_ssh_client ) :
-    print_d( '%s ' % the_instance.update() )
+    while True :
+        try :
+            print_d( '%s ' % the_instance.update() )
+            break
+        except :
+            continue
+        pass
     
     # Making sure that corresponding instances are ready to use
     while True :
