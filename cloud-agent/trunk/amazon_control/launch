@@ -25,7 +25,6 @@ Callback script which is called automatically on delivering task to cloud
 import balloon.common as common
 from balloon.common import print_d, print_e, sh_command
 
-import balloon.rackspace as rackspace
 import balloon.amazon as amazon
 
 import os, os.path, uuid
@@ -34,9 +33,8 @@ import os, os.path, uuid
 #--------------------------------------------------------------------------------------
 # Defining utility command-line interface
 
-an_usage_description = "%prog --container-name=33f89d9d-5417-49c1-80c9-787e74cc7154 --data-name='task_data.tgz' --working-dir='/tmp/tmpt7lweb'"
+an_usage_description = "%prog --bucket-name=33f89d9d-5417-49c1-80c9-787e74cc7154 --data-name='task_data.tgz' --working-dir='/tmp/tmpt7lweb'"
 an_usage_description += common.add_usage_description()
-an_usage_description += rackspace.add_usage_description()
 an_usage_description += amazon.add_usage_description()
 
 from optparse import IndentedHelpFormatter
@@ -46,10 +44,10 @@ from optparse import OptionParser
 a_option_parser = OptionParser( usage = an_usage_description, version="%prog 0.1", formatter = a_help_formatter )
 
 # Definition of the command line arguments
-a_option_parser.add_option( "--container-name",
-                            metavar = "< name of task dedicated Rackspace CloudFiles container >",
+a_option_parser.add_option( "--bucket-name",
+                            metavar = "< name of task dedicated Amazon S3 bucket >",
                             action = "store",
-                            dest = "container_name" )
+                            dest = "bucket_name" )
 
 a_option_parser.add_option( "--data-name",
                             metavar = "< container file object representing initial task data >",
@@ -63,8 +61,6 @@ a_option_parser.add_option( "--working-dir",
     
 common.add_parser_options( a_option_parser )
 
-rackspace.add_parser_options( a_option_parser )
-
 amazon.add_parser_options( a_option_parser )
      
 
@@ -72,22 +68,27 @@ amazon.add_parser_options( a_option_parser )
 # Fetching the cloud provider security cridentials
 an_options, an_args = a_option_parser.parse_args()
 
-a_container_name = an_options.container_name
+a_bucket_name = an_options.bucket_name
 a_data_name = an_options.data_name
 a_working_dir = an_options.working_dir
-
-RACKSPACE_USER, RACKSPACE_KEY = rackspace.extract_options( an_options )
 
 AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY = amazon.extract_options( an_options )
 
 
-#--------------------------------------------------------------------------------------
-# Creating corresponding cloudfile container
+print_d( "\n---------------------------------------------------------------------------\n" )
+# Getting access to corresponding cloudfile container
+a_data_loading_time = Timer()
 
-import cloudfiles
-a_cloudfiles_conn = cloudfiles.get_connection( RACKSPACE_USER, RACKSPACE_KEY, timeout = 500 )
-a_cloudfiles_container = a_cloudfiles_conn[ a_container_name ]
-a_file_object = a_cloudfiles_container.get_object( a_data_name )
+import boto
+a_s3_conn = boto.connect_s3( AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY )
+print_d( "a_s3_conn = %r\n" % a_s3_conn )
+
+a_s3_bucket = a_s3_conn.get_bucket( a_bucket_name )
+print_d( "a_s3_bucket = %s\n" % a_s3_bucket.name )
+
+from boto.s3.key import Key
+a_s3_bucket_key = a_s3_bucket.get_key( a_data_name )
+print_d( "a_s3_bucket_key = %s\n" % a_s3_bucket_key.name )
 
 
 #--------------------------------------------------------------------------------------
@@ -98,7 +99,9 @@ a_file_object = a_cloudfiles_container.get_object( a_data_name )
 
 import os.path
 a_data_archive = os.path.join( a_working_dir, a_data_name )
-a_file_object.save_to_filename( a_data_archive )
+a_s3_bucket_key.get_contents_from_filename( a_data_archive )
+
+print_d( "a_data_loading_time = %s, sec\n" % a_data_loading_time )
 
 
 #---------------------------------------------------------------------------

@@ -148,7 +148,9 @@ an_ec2_conn = boto.connect_ec2()
 print_d( '%r\n' % an_ec2_conn )
 
 # Choose an image to be run
-an_images = an_ec2_conn.get_all_images( image_ids = "ami-2d4aa444" )
+an_image_ids = "ami-2d4aa444"
+# an_image_ids = "ami-fd4aa494" # 64-bit version
+an_images = an_ec2_conn.get_all_images( image_ids = an_image_ids )
 an_image = an_images[ 0 ]
 print_d( '%s\n' % an_image.location )
 
@@ -179,7 +181,9 @@ a_security_group.authorize( 'tcp', 80, 80, '0.0.0.0/0' )
 a_security_group.authorize( 'tcp', 22, 22, '0.0.0.0/0' )
 
 # Creating a EC2 "reservation" with all the parameters mentioned above
-a_reservation = an_image.run( instance_type = 'm1.small', min_count = 1, max_count = 1, key_name = a_key_pair_name, security_groups = [ a_security_group.name ] )
+an_instance_type = 'm1.small'
+# an_instance_type = 'm1.large' # 64-bit version
+a_reservation = an_image.run( instance_type = an_instance_type, min_count = 1, max_count = 1, key_name = a_key_pair_name, security_groups = [ a_security_group.name ] )
 an_instance = a_reservation.instances[ 0 ]
 
 # Instantiating ssh connection with root access
@@ -227,6 +231,11 @@ a_command += " --working-dir='%s'" % a_working_dir
 a_command += " --aws-access-key-id='%s'" % AWS_ACCESS_KEY_ID
 a_command += " --aws-secret-access-key='%s'" % AWS_SECRET_ACCESS_KEY
 # ssh_command( a_ssh_client, a_command )
+
+# ssh_command( a_ssh_client, 'sudo add-apt-repository ppa:cae-team/ppa' )
+# ssh_command( a_ssh_client, 'sudo apt-get update' )
+# ssh_command( a_ssh_client, 'sudo apt-get upgrade' )
+# ssh_command( a_ssh_client, 'sudo apt-get install openfoam-dev-1.5' )
 
 print_d( "a_task_execution_time = %s, sec\n" % a_task_execution_time )
 
