@@ -124,6 +124,7 @@ a_data_loading_time = Timer()
 import boto
 a_s3_conn = boto.connect_s3( AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY )
 print_d( "a_s3_conn = %r\n" % a_s3_conn )
+print_d( "a_s3_conn.get_canonical_user_id() = %s\n" % a_s3_conn.get_canonical_user_id() )
 
 a_bucket_name = str( uuid.uuid4() )
 a_s3_bucket = a_s3_conn.create_bucket( a_bucket_name )
