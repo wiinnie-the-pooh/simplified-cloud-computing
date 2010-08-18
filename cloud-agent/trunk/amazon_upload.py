@@ -27,14 +27,15 @@ import balloon.common as common
 from balloon.common import print_d, print_e, sh_command, ssh_command, Timer
 
 import balloon.amazon as amazon
+import boto
 
-import sys, os, os.path, uuid
+import sys, os, os.path, uuid, hashlib
 
 
 #--------------------------------------------------------------------------------------
 # Defining utility command-line interface
 
-an_usage_description = "%prog"
+an_usage_description = "%prog --study-name='my favorite study'"
 an_usage_description += common.add_usage_description()
 an_usage_description += amazon.add_usage_description()
 an_usage_description += " <source 1> <source 2> ..."
@@ -46,6 +47,13 @@ from optparse import OptionParser
 a_option_parser = OptionParser( usage = an_usage_description, version="%prog 0.1", formatter = a_help_formatter )
 
 # Definition of the command line arguments
+a_option_parser.add_option( "--study-name",
+                            metavar = "< an unique name of the user study >",
+                            action = "store",
+                            dest = "study_name",
+                            help = "(UUID generated, by default)",
+                            default = str( uuid.uuid4() ) )
+
 common.add_parser_options( a_option_parser )
 
 amazon.add_parser_options( a_option_parser )
@@ -60,6 +68,9 @@ an_options, an_args = a_option_parser.parse_args()
 
 common.extract_options( an_options )
 
+a_study_name = an_options.study_name
+print_d( "a_study_name = '%s'\n" % a_study_name )
+    
 a_sources = list()
 for an_arg in an_args :
     if not os.path.exists( an_arg ) :
@@ -71,6 +82,17 @@ for an_arg in an_args :
 print_d( "a_sources = %r\n" % a_sources )
 
 AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY = amazon.extract_options( an_options )
+
+
+print_d( "\n---------------------------------------------------------------------------\n" )
+import boto
+a_s3_conn = boto.connect_s3( AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY )
+print_d( "a_s3_conn = %r\n" % a_s3_conn )
+print_d( "a_s3_conn.get_canonical_user_id() = %s\n" % a_s3_conn.get_canonical_user_id() )
+
+a_bucket_name = hashlib.md5( a_study_name ).hexdigest()
+a_s3_bucket = a_s3_conn.create_bucket( a_bucket_name )
+print_d( "a_s3_bucket.name = '%s'\n" % a_s3_bucket.name )
 
 
 print_d( "\n---------------------------------------------------------------------------\n" )
