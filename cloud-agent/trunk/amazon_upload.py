@@ -24,7 +24,7 @@ This script is responsible for efficient uploading of multi file data
 
 #--------------------------------------------------------------------------------------
 import balloon.common as common
-from balloon.common import print_d, print_e, sh_command, ssh_command, Timer
+from balloon.common import print_d, init_printing, print_e, sh_command, ssh_command, Timer
 
 import balloon.amazon as amazon
 
@@ -117,6 +117,8 @@ print_d( "\n======================= Registering study files ====================
 print_d( "\n---------------------------------------------------------------------------\n" )
 
 for a_file in a_files :
+    an_init_printing = init_printing()
+
     a_file_dirname = os.path.dirname( a_file )
     a_file_basename = os.path.basename( a_file )
 
@@ -136,6 +138,8 @@ for a_file in a_files :
     a_dir_contents = os.listdir( a_file_dirname )
 
     for a_file_item in a_dir_contents :
+        an_init_printing2 = init_printing()
+
         if not a_file_item.startswith( "%s.tgz-" % a_file_basename ) :
             continue
 
@@ -156,6 +160,7 @@ for a_file in a_files :
 
 print_d( "\n================================== OK =====================================" )
 print_d( "\n---------------------------------------------------------------------------\n" )
+print a_study_name
 
 
 #--------------------------------------------------------------------------------------

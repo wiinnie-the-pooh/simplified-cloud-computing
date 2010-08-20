@@ -50,10 +50,41 @@ def extract_options( the_options ) :
 
 
 #---------------------------------------------------------------------------
+PRINTING_DEPTH = 0
+
+class init_printing :
+    "To provide hierarchical 'pretty' printing"
+    def __init__( self ) :
+        global PRINTING_DEPTH
+
+        PRINTING_DEPTH += 1
+
+        pass
+
+    def __del__( self ) :
+        global PRINTING_DEPTH
+
+        PRINTING_DEPTH -= 1
+
+        pass
+
+    pass
+
+def get_preffix( the_preffix ) :
+    "Calaculate a preffix identation according to the current printing stack depth"
+    a_preffix = ""
+    for id in range( PRINTING_DEPTH ) :
+        a_preffix += the_preffix
+        pass
+
+    return a_preffix
+
+
+#---------------------------------------------------------------------------
 def print_d( the_message ) :
     "Optional printing of debug messages"
     if ENABLE_DEBUG : 
-        sys.stderr.write( the_message )
+        sys.stderr.write( get_preffix( "  " ) + the_message )
         pass
     
     pass
