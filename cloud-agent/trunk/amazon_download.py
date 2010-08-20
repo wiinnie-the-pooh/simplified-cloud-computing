@@ -54,15 +54,12 @@ a_option_parser.add_option( "--study-name",
                             action = "store",
                             dest = "study_name",
                             help = "(intialized from input, otherwise)" )
-
 a_option_parser.add_option( "--output-dir",
                             metavar = "< location of the task defintion >",
                             action = "store",
                             dest = "output_dir",
                             help = "(the same a 'study' name, by default)" )
-
 common.add_parser_options( a_option_parser )
-
 amazon.add_parser_options( a_option_parser )
     
 an_engine_dir = os.path.abspath( os.path.dirname( sys.argv[ 0 ] ) )

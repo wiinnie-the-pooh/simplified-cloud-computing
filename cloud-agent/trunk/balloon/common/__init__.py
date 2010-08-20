@@ -57,14 +57,14 @@ class init_printing :
     def __init__( self ) :
         global PRINTING_DEPTH
 
-        PRINTING_DEPTH += 1
+        # PRINTING_DEPTH += 1
 
         pass
 
     def __del__( self ) :
         global PRINTING_DEPTH
 
-        PRINTING_DEPTH -= 1
+        # PRINTING_DEPTH -= 1
 
         pass
 
