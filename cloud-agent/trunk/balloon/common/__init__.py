@@ -73,7 +73,7 @@ class init_printing :
 def get_preffix( the_preffix, the_printing_depth ) :
     "Calaculate a preffix identation according to the current printing stack depth"
     a_preffix = ""
-    for id in range( the_printing_depth + 1 ) :
+    for id in range( the_printing_depth ) :
         a_preffix += the_preffix
         pass
 
@@ -81,17 +81,17 @@ def get_preffix( the_preffix, the_printing_depth ) :
 
 
 #---------------------------------------------------------------------------
-def print_d( the_message, the_printing_depth = -1 ) :
+def print_d( the_message, the_printing_depth = 0 ) :
     "Optional printing of debug messages"
     if ENABLE_DEBUG : 
-        sys.stderr.write( get_preffix( "  ", the_printing_depth ) + the_message )
+        sys.stderr.write( get_preffix( "    ", the_printing_depth ) + the_message )
         pass
     
     pass
 
 
 #---------------------------------------------------------------------------
-def print_i( the_message, the_printing_depth = -1 ) :
+def print_i( the_message, the_printing_depth = 0 ) :
     "Optional printing of debug messages"
 
     print_d( "\n" )
@@ -116,7 +116,7 @@ def print_e( the_message ) :
 
 
 #---------------------------------------------------------------------------
-def sh_command( the_command, the_printing_depth = -1 ) :
+def sh_command( the_command, the_printing_depth = 0 ) :
     "Execution of shell command"
     print_d( "(%s)\n" % the_command, the_printing_depth )
     

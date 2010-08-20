@@ -37,7 +37,7 @@ import sys, os, os.path, uuid, hashlib
 def read_items( the_file_bucket, the_printing_depth ) :
     "Reading the file items"
     for an_item_key in the_file_bucket.get_all_keys() :
-        print_d( "'%s'\n" % an_item_key.name, the_printing_depth )
+        print_d( "'%s' - %s\n" % ( an_item_key.name, an_item_key ), the_printing_depth )
 
         pass
 
@@ -140,7 +140,7 @@ print_d( "a_root_bucket = %s\n" % a_root_bucket )
 
 print_i( "---------------------------- Reading the studies --------------------------------\n" )
 #------------------------------------------------------------------------------------------
-read_studies( a_root_bucket, a_canonical_user_id, 0 )
+read_studies( a_root_bucket, a_canonical_user_id, 1 )
 
 
 print_i( "-------------------------------------- OK ---------------------------------------\n" )

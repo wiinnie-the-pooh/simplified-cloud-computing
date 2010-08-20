@@ -35,7 +35,7 @@ import sys, os, os.path, uuid, hashlib
 
 
 #------------------------------------------------------------------------------------------
-def upload_file_items( the_file_bucket, the_file_dirname, the_file_basename, the_printing_depth ) :
+def upload_items( the_file_bucket, the_file_dirname, the_file_basename, the_printing_depth ) :
     "Uploading file items"
     import tempfile
     a_working_dir = tempfile.mkdtemp()
@@ -58,6 +58,33 @@ def upload_file_items( the_file_bucket, the_file_dirname, the_file_basename, the
 
     import shutil
     shutil.rmtree( a_working_dir, True )
+
+    pass
+
+
+
+
+#------------------------------------------------------------------------------------------
+def upload_files( the_study_bucket, the_study_id, the_files, the_printing_depth ) :
+    for a_file in the_files :
+        a_file_dirname = os.path.dirname( a_file )
+        a_file_basename = os.path.basename( a_file )
+
+        a_file_key = Key( a_study_bucket )
+        a_file_key.key = '%s/%s' % ( a_file_dirname, a_file_basename )
+        a_file_key.set_contents_from_string( 'dummy' )
+        print_d( "a_file_key = %s\n" % a_file_key, the_printing_depth )
+
+        a_file_id = '%s%s' % ( the_study_id, a_file_key.name )
+        a_file_bucket_name = hashlib.md5( a_file_id ).hexdigest()
+        print_d( "a_file_id = '%s'\n" % a_file_id, the_printing_depth )
+    
+        a_file_bucket = a_s3_conn.create_bucket( a_file_bucket_name )
+        print_d( "a_file_bucket = %s\n" % a_file_bucket, the_printing_depth )
+
+        upload_items( a_file_bucket, a_file_dirname, a_file_basename, the_printing_depth + 1 )
+
+        pass
 
     pass
 
@@ -159,27 +186,7 @@ print_d( "a_study_bucket = '%s'\n" % a_study_bucket )
 
 print_i( "--------------------------- Registering study files -----------------------------\n" )
 #------------------------------------------------------------------------------------------
-for a_file in a_files :
-    an_init_printing = init_printing()
-
-    a_file_dirname = os.path.dirname( a_file )
-    a_file_basename = os.path.basename( a_file )
-
-    a_file_key = Key( a_study_bucket )
-    a_file_key.key = '%s/%s' % ( a_file_dirname, a_file_basename )
-    a_file_key.set_contents_from_string( 'dummy' )
-    print_d( "a_file_key = %s\n" % a_file_key )
-
-    a_file_id = '%s%s' % ( a_study_id, a_file_key.name )
-    a_file_bucket_name = hashlib.md5( a_file_id ).hexdigest()
-    print_d( "a_file_id = '%s'\n" % a_file_id )
-    
-    a_file_bucket = a_s3_conn.create_bucket( a_file_bucket_name )
-    print_d( "a_file_bucket = %s\n" % a_file_bucket )
-
-    upload_file_items( a_file_bucket, a_file_dirname, a_file_basename, 1 )
-
-    pass
+upload_files( a_study_bucket, a_study_id, a_files, 1 )
 
 
 print_i( "-------------------------------------- OK ---------------------------------------\n" )
