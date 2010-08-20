@@ -18,7 +18,7 @@
 
 #--------------------------------------------------------------------------------------
 """
-This script is responsible for efficient uploading of multi source data
+This script is responsible for efficient uploading of multi file data
 """
 
 
@@ -40,7 +40,7 @@ import sys, os, os.path, uuid, hashlib
 an_usage_description = "%prog --study-name='my favorite study'"
 an_usage_description += common.add_usage_description()
 an_usage_description += amazon.add_usage_description()
-an_usage_description += " <source 1> <source 2> ..."
+an_usage_description += " <file 1> <file 2> ..."
 
 from optparse import IndentedHelpFormatter
 a_help_formatter = IndentedHelpFormatter( width = 127 )
@@ -73,19 +73,19 @@ common.extract_options( an_options )
 a_study_name = an_options.study_name
 print_d( "a_study_name = '%s'\n" % a_study_name )
     
-a_sources = list()
+a_files = list()
 for an_arg in an_args :
     if not os.path.exists( an_arg ) :
-        print_e( "The given source should exists\n" )
+        print_e( "The given file should exists\n" )
         pass
-    a_sources.append( os.path.abspath( an_arg ) )
+    a_files.append( os.path.abspath( an_arg ) )
     pass
 
-if len( a_sources ) == 0 :
-    print_e( "You should define one valid 'source' at least\n" )
+if len( a_files ) == 0 :
+    print_e( "You should define one valid 'file' at least\n" )
     pass
 
-print_d( "a_sources = %r\n" % a_sources )
+print_d( "a_files = %r\n" % a_files )
 
 AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY = amazon.extract_options( an_options )
 
@@ -96,9 +96,9 @@ a_s3_conn = boto.connect_s3( AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY )
 print_d( "a_s3_conn = %r\n" % a_s3_conn )
 
 a_canonical_user_id = a_s3_conn.get_canonical_user_id()
-print_d( "a_canonical_user_id = %s\n" % a_canonical_user_id )
+print_d( "a_canonical_user_id = '%s'\n" % a_canonical_user_id )
 
-a_study_id = a_canonical_user_id + a_study_name
+a_study_id = '%s/%s' % ( a_canonical_user_id, a_study_name )
 a_bucket_name = hashlib.md5( a_study_id ).hexdigest()
 
 try :
@@ -113,20 +113,43 @@ a_study_bucket = a_s3_conn.create_bucket( a_bucket_name )
 print_d( "a_study_bucket = '%s'\n" % a_study_bucket.name )
 
 
-print_d( "\n====================== Registering study sources ==========================" )
+print_d( "\n======================= Registering study files ===========================" )
 print_d( "\n---------------------------------------------------------------------------\n" )
 
-for a_source in a_sources :
-    a_source_key = Key( a_study_bucket )
-    a_source_key.key = a_source
-    a_source_key.set_contents_from_string( 'dummy' )
-    print_d( "a_study_bucket_key = %s\n" % a_source_key.name )
+for a_file in a_files :
+    a_file_dirname = os.path.dirname( a_file )
+    a_file_basename = os.path.basename( a_file )
 
-    a_source_id = a_study_id + a_source
-    a_bucket_name = hashlib.md5( a_source_id ).hexdigest()
+    a_file_key = Key( a_study_bucket )
+    a_file_key.key = '%s/%s' % ( a_file_dirname, a_file_basename )
+    a_file_key.set_contents_from_string( 'dummy' )
+    print_d( "a_file_key = %s\n" % a_file_key.name )
 
-    a_source_bucket = a_s3_conn.create_bucket( a_bucket_name )
-    print_d( "a_source_bucket = '%s'\n" % a_source_bucket.name )
+    a_file_id = '%s/%s' % ( a_study_id, a_file_key.key )
+    a_bucket_name = hashlib.md5( a_file_id ).hexdigest()
+
+    a_file_bucket = a_s3_conn.create_bucket( a_bucket_name )
+    print_d( "a_file_bucket = '%s'\n" % a_file_bucket.name )
+
+    sh_command( "cd '%s' &&  tar -czf - '%s' | split --bytes=1024 --suffix-length=5 - %s.tgz-" % ( a_file_dirname, a_file_basename, a_file_basename ) )
+
+    a_dir_contents = os.listdir( a_file_dirname )
+
+    for a_file_item in a_dir_contents :
+        if not a_file_item.startswith( "%s.tgz-" % a_file_basename ) :
+            continue
+
+        a_file_path = os.path.join( a_file_dirname, a_file_item )
+        print_d( "a_file_item = %s\n" % a_file_path )
+
+        a_part_key = Key( a_file_bucket )
+        a_part_key.key = a_file_item
+        a_part_key.set_contents_from_filename( a_file_path )
+        print_d( "a_part_key = %s\n" % a_part_key.name )
+
+        os.remove( a_file_item )
+
+        pass
 
     pass
 
