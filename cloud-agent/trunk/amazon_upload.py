@@ -97,8 +97,8 @@ try :
     a_s3_bucket = a_s3_conn.get_bucket( a_bucket_name )
     print_e( "You already have a study with this name ('%s')\n" % a_study_name )
 except :
-    import sys, traceback
-    traceback.print_exc( file = sys.stderr )
+    # import sys, traceback
+    # traceback.print_exc( file = sys.stderr )
     pass
 
 a_s3_bucket = a_s3_conn.create_bucket( a_bucket_name )
