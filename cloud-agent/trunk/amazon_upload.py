@@ -27,7 +27,9 @@ import balloon.common as common
 from balloon.common import print_d, print_e, sh_command, ssh_command, Timer
 
 import balloon.amazon as amazon
+
 import boto
+from boto.s3.key import Key
 
 import sys, os, os.path, uuid, hashlib
 
@@ -79,11 +81,16 @@ for an_arg in an_args :
     a_sources.append( os.path.abspath( an_arg ) )
     pass
 
+if len( a_sources ) == 0 :
+    print_e( "You should define one valid 'source' at least\n" )
+    pass
+
 print_d( "a_sources = %r\n" % a_sources )
 
 AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY = amazon.extract_options( an_options )
 
 
+print_d( "\n======================= Creating a study bucket ===========================" )
 print_d( "\n---------------------------------------------------------------------------\n" )
 a_s3_conn = boto.connect_s3( AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY )
 print_d( "a_s3_conn = %r\n" % a_s3_conn )
@@ -91,22 +98,41 @@ print_d( "a_s3_conn = %r\n" % a_s3_conn )
 a_canonical_user_id = a_s3_conn.get_canonical_user_id()
 print_d( "a_canonical_user_id = %s\n" % a_canonical_user_id )
 
-a_bucket_name = hashlib.md5( a_canonical_user_id + a_study_name ).hexdigest()
+a_study_id = a_canonical_user_id + a_study_name
+a_bucket_name = hashlib.md5( a_study_id ).hexdigest()
 
 try :
-    a_s3_bucket = a_s3_conn.get_bucket( a_bucket_name )
+    a_s3_conn.get_bucket( a_bucket_name )
     print_e( "You already have a study with this name ('%s')\n" % a_study_name )
 except :
     # import sys, traceback
     # traceback.print_exc( file = sys.stderr )
     pass
 
-a_s3_bucket = a_s3_conn.create_bucket( a_bucket_name )
-print_d( "create_bucket.name = '%s'\n" % a_s3_bucket.name )
+a_study_bucket = a_s3_conn.create_bucket( a_bucket_name )
+print_d( "a_study_bucket = '%s'\n" % a_study_bucket.name )
 
 
+print_d( "\n====================== Registering study sources ==========================" )
 print_d( "\n---------------------------------------------------------------------------\n" )
-print_d( 'OK\n' )
+
+for a_source in a_sources :
+    a_source_key = Key( a_study_bucket )
+    a_source_key.key = a_source
+    a_source_key.set_contents_from_string( 'dummy' )
+    print_d( "a_study_bucket_key = %s\n" % a_source_key.name )
+
+    a_source_id = a_study_id + a_source
+    a_bucket_name = hashlib.md5( a_source_id ).hexdigest()
+
+    a_source_bucket = a_s3_conn.create_bucket( a_bucket_name )
+    print_d( "a_source_bucket = '%s'\n" % a_source_bucket.name )
+
+    pass
+
+
+print_d( "\n================================== OK =====================================" )
+print_d( "\n---------------------------------------------------------------------------\n" )
 
 
 #--------------------------------------------------------------------------------------
