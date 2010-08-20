@@ -55,9 +55,7 @@ a_option_parser.add_option( "--study-name",
                             dest = "study_name",
                             help = "(UUID generated, by default)",
                             default = str( uuid.uuid4() ) )
-
 common.add_parser_options( a_option_parser )
-
 amazon.add_parser_options( a_option_parser )
     
 an_engine_dir = os.path.abspath( os.path.dirname( sys.argv[ 0 ] ) )

@@ -16,13 +16,13 @@
 ## limitations under the License.
 
 
-#--------------------------------------------------------------------------------------
+#------------------------------------------------------------------------------------------
 """
 This script is responsible for efficient downloading of multi file data
 """
 
 
-#--------------------------------------------------------------------------------------
+#------------------------------------------------------------------------------------------
 import balloon.common as common
 from balloon.common import print_d, init_printing, print_i, print_e, sh_command, ssh_command, Timer
 
@@ -34,7 +34,7 @@ from boto.s3.key import Key
 import sys, os, os.path, uuid, hashlib
 
 
-#--------------------------------------------------------------------------------------
+#------------------------------------------------------------------------------------------
 # Defining utility command-line interface
 
 an_usage_description = "%prog --study-name='my favorite study'"
@@ -68,7 +68,7 @@ amazon.add_parser_options( a_option_parser )
 an_engine_dir = os.path.abspath( os.path.dirname( sys.argv[ 0 ] ) )
 
 
-#--------------------------------------------------------------------------------------
+#------------------------------------------------------------------------------------------
 # Extracting and verifying command-line arguments
 
 an_options, an_args = a_option_parser.parse_args()
@@ -97,7 +97,7 @@ AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY = amazon.extract_options( an_options )
 
 
 print_d( "\n----------------------- Connecting to Amazon S3 ---------------------------\n" )
-#--------------------------------------------------------------------------------------
+#------------------------------------------------------------------------------------------
 a_s3_conn = boto.connect_s3( AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY )
 print_d( "a_s3_conn = %r\n" % a_s3_conn )
 
@@ -106,7 +106,7 @@ print_d( "a_canonical_user_id = '%s'\n" % a_canonical_user_id )
 
 
 print_d( "\n-------------------- Looking for the study bucket -------------------------\n" )
-#--------------------------------------------------------------------------------------
+#------------------------------------------------------------------------------------------
 a_study_id = '%s/%s' % ( a_canonical_user_id, a_study_name )
 a_study_bucket_name = hashlib.md5( a_study_id ).hexdigest()
 
@@ -121,7 +121,7 @@ print_d( "a_study_bucket = '%s'\n" % a_study_bucket.name )
 
 
 print_i( "\n----------------------- Reading the study files ---------------------------\n" )
-#--------------------------------------------------------------------------------------
+#------------------------------------------------------------------------------------------
 for a_file_key in a_study_bucket.get_all_keys() :
     an_init_printing = init_printing()
 
@@ -163,7 +163,5 @@ for a_file_key in a_study_bucket.get_all_keys() :
 
 
 print_d( "\n---------------------------------- OK -------------------------------------\n" )
-#--------------------------------------------------------------------------------------
+#------------------------------------------------------------------------------------------
 
-
-#--------------------------------------------------------------------------------------
