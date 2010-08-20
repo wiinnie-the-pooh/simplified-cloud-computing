@@ -24,7 +24,7 @@ This script is responsible for efficient uploading of multi file data
 
 #--------------------------------------------------------------------------------------
 import balloon.common as common
-from balloon.common import print_d, init_printing, print_e, sh_command, ssh_command, Timer
+from balloon.common import print_d, init_printing, print_i, print_e, sh_command, ssh_command, Timer
 
 import balloon.amazon as amazon
 
@@ -90,7 +90,7 @@ print_d( "a_files = %r\n" % a_files )
 AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY = amazon.extract_options( an_options )
 
 
-print_d( "\n======================= Creating a study bucket ===========================" )
+print_d( "\n======================= Connecting to Amazon S3 ===========================" )
 print_d( "\n---------------------------------------------------------------------------\n" )
 a_s3_conn = boto.connect_s3( AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY )
 print_d( "a_s3_conn = %r\n" % a_s3_conn )
@@ -98,23 +98,26 @@ print_d( "a_s3_conn = %r\n" % a_s3_conn )
 a_canonical_user_id = a_s3_conn.get_canonical_user_id()
 print_d( "a_canonical_user_id = '%s'\n" % a_canonical_user_id )
 
+
+print_d( "\n======================= Creating a study bucket ===========================" )
+print_d( "\n---------------------------------------------------------------------------\n" )
 a_study_id = '%s/%s' % ( a_canonical_user_id, a_study_name )
-a_bucket_name = hashlib.md5( a_study_id ).hexdigest()
+a_study_bucket_name = hashlib.md5( a_study_id ).hexdigest()
 
 try :
-    a_s3_conn.get_bucket( a_bucket_name )
+    a_s3_conn.get_bucket( a_study_bucket_name )
     print_e( "You already have a study with this name ('%s')\n" % a_study_name )
 except :
     # import sys, traceback
     # traceback.print_exc( file = sys.stderr )
     pass
 
-a_study_bucket = a_s3_conn.create_bucket( a_bucket_name )
+a_study_bucket = a_s3_conn.create_bucket( a_study_bucket_name )
 print_d( "a_study_bucket = '%s'\n" % a_study_bucket.name )
 
 
-print_d( "\n======================= Registering study files ===========================" )
-print_d( "\n---------------------------------------------------------------------------\n" )
+print_i( "\n======================= Registering study files ===========================" )
+print_i( "\n---------------------------------------------------------------------------\n" )
 
 for a_file in a_files :
     an_init_printing = init_printing()

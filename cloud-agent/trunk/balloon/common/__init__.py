@@ -91,6 +91,16 @@ def print_d( the_message ) :
 
 
 #---------------------------------------------------------------------------
+def print_i( the_message ) :
+    "Optional printing of debug messages"
+    an_init_printing = init_printing()
+
+    print_d( the_message )
+
+    pass
+
+
+#---------------------------------------------------------------------------
 def print_e( the_message ) :
     "Printing of error message and quit"
     print_d( "\n---------------------------------------------------------------------------\n" )
