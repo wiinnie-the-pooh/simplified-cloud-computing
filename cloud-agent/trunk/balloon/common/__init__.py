@@ -97,6 +97,8 @@ def print_i( the_message ) :
 
     print_d( the_message )
 
+    del( an_init_printing )
+
     pass
 
 

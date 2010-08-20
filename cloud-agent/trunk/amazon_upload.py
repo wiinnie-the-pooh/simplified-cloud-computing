@@ -137,17 +137,20 @@ for a_file in a_files :
     a_file_bucket = a_s3_conn.create_bucket( a_bucket_name )
     print_d( "a_file_bucket = '%s'\n" % a_file_bucket.name )
 
-    sh_command( "cd '%s' &&  tar -czf - '%s' | split --bytes=1024 --suffix-length=5 - %s.tgz-" % ( a_file_dirname, a_file_basename, a_file_basename ) )
+    import tempfile
+    a_working_dir = tempfile.mkdtemp()
+    a_file_item_target = os.path.join( a_working_dir, a_file_basename )
+    sh_command( "cd '%s' &&  tar -czf - '%s' | split --bytes=1024 --suffix-length=5 - %s.tgz-" % 
+                ( a_file_dirname, a_file_basename, a_file_item_target ) )
 
-    a_dir_contents = os.listdir( a_file_dirname )
-
+    a_dir_contents = os.listdir( a_working_dir )
     for a_file_item in a_dir_contents :
         an_init_printing2 = init_printing()
 
         if not a_file_item.startswith( "%s.tgz-" % a_file_basename ) :
             continue
 
-        a_file_path = os.path.join( a_file_dirname, a_file_item )
+        a_file_path = os.path.join( a_working_dir, a_file_item )
         print_d( "a_file_item = %s\n" % a_file_path )
 
         a_part_key = Key( a_file_bucket )
@@ -155,9 +158,11 @@ for a_file in a_files :
         a_part_key.set_contents_from_filename( a_file_path )
         print_d( "a_part_key = %s\n" % a_part_key.name )
 
-        os.remove( a_file_item )
-
         pass
+
+    import shutil
+    shutil.rmtree( a_working_dir, True )
+    print_d( "\n" )
 
     pass
 

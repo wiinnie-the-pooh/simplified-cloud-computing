@@ -154,7 +154,10 @@ for a_file_key in a_study_bucket.get_all_keys() :
         pass
 
     sh_command( "cd '%s' && cat %s.tgz-* | tar -xzf - -C '%s'" % ( a_working_dir, a_file_basename, an_output_dir ) )
+
+    import shutil
     shutil.rmtree( a_working_dir, True )
+    print_d( "\n" )
     
     pass
 
