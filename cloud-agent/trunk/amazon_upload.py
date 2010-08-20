@@ -16,13 +16,13 @@
 ## limitations under the License.
 
 
-#--------------------------------------------------------------------------------------
+#------------------------------------------------------------------------------------------
 """
 This script is responsible for efficient uploading of multi file data
 """
 
 
-#--------------------------------------------------------------------------------------
+#------------------------------------------------------------------------------------------
 import balloon.common as common
 from balloon.common import print_d, init_printing, print_i, print_e, sh_command, ssh_command, Timer
 
@@ -34,7 +34,7 @@ from boto.s3.key import Key
 import sys, os, os.path, uuid, hashlib
 
 
-#--------------------------------------------------------------------------------------
+#------------------------------------------------------------------------------------------
 # Defining utility command-line interface
 
 an_usage_description = "%prog --study-name='my favorite study'"
@@ -63,7 +63,7 @@ amazon.add_parser_options( a_option_parser )
 an_engine_dir = os.path.abspath( os.path.dirname( sys.argv[ 0 ] ) )
 
 
-#--------------------------------------------------------------------------------------
+#------------------------------------------------------------------------------------------
 # Extracting and verifying command-line arguments
 
 an_options, an_args = a_option_parser.parse_args()
@@ -91,34 +91,48 @@ AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY = amazon.extract_options( an_options )
 
 
 print_d( "\n----------------------- Connecting to Amazon S3 ---------------------------\n" )
-#--------------------------------------------------------------------------------------
+#------------------------------------------------------------------------------------------
 a_s3_conn = boto.connect_s3( AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY )
 print_d( "a_s3_conn = %r\n" % a_s3_conn )
 
+
+print_d( "\n----------------------- Looking for study root ----------------------------\n" )
+#------------------------------------------------------------------------------------------
 a_canonical_user_id = a_s3_conn.get_canonical_user_id()
 print_d( "a_canonical_user_id = '%s'\n" % a_canonical_user_id )
 
-
-print_d( "\n----------------------- Creating a study bucket ---------------------------\n" )
-#--------------------------------------------------------------------------------------
-a_study_id = '%s/%s' % ( a_canonical_user_id, a_study_name )
-a_study_bucket_name = hashlib.md5( a_study_id ).hexdigest()
-print_d( "a_study_id = %s\n" % a_study_id )
-
+a_root_bucket_name = hashlib.md5( a_canonical_user_id ).hexdigest()
+a_root_bucket = None
 try :
-    a_s3_conn.get_bucket( a_study_bucket_name )
-    print_e( "You already have a study with this name ('%s')\n" % a_study_name )
+    a_root_bucket = a_s3_conn.get_bucket( a_root_bucket_name )
 except :
-    # import sys, traceback
-    # traceback.print_exc( file = sys.stderr )
+    print_d( "Not root was found, creating a new one - " )
+    a_root_bucket = a_s3_conn.create_bucket( a_root_bucket_name )
     pass
 
+print_d( "a_root_bucket = %s\n" % a_root_bucket )
+
+
+print_d( "\n--------------------- Registering the new study ---------------------------\n" )
+#------------------------------------------------------------------------------------------
+a_study_id = '%s/%s' % ( a_canonical_user_id, a_study_name )
+a_study_bucket_name = hashlib.md5( a_study_id ).hexdigest()
+print_d( "a_study_id = '%s'\n" % a_study_id )
+
+a_study_key = Key( a_root_bucket )
+a_study_key.key = '%s' % ( a_study_name )
+a_study_key.set_contents_from_string( 'dummy' )
+
+
+print_d( "\n--------------------- Creating the study bucket ---------------------------\n" )
+#------------------------------------------------------------------------------------------
+a_study_bucket_name = hashlib.md5( a_study_id ).hexdigest()
 a_study_bucket = a_s3_conn.create_bucket( a_study_bucket_name )
-print_d( "a_study_bucket = '%s'\n" % a_study_bucket.name )
+print_d( "a_study_bucket = '%s'\n" % a_study_bucket )
 
 
-print_i( "\n----------------------- Registering study files ---------------------------\n" )
-#--------------------------------------------------------------------------------------
+print_d( "\n----------------------- Registering study files ---------------------------\n" )
+#------------------------------------------------------------------------------------------
 for a_file in a_files :
     an_init_printing = init_printing()
 
@@ -128,14 +142,14 @@ for a_file in a_files :
     a_file_key = Key( a_study_bucket )
     a_file_key.key = '%s/%s' % ( a_file_dirname, a_file_basename )
     a_file_key.set_contents_from_string( 'dummy' )
-    print_d( "a_file_key = %s\n" % a_file_key.name )
+    print_d( "a_file_key = %s\n" % a_file_key )
 
     a_file_id = '%s%s' % ( a_study_id, a_file_key.name )
-    a_bucket_name = hashlib.md5( a_file_id ).hexdigest()
-    print_d( "a_file_id = %s\n" % a_file_id )
+    a_file_bucket_name = hashlib.md5( a_file_id ).hexdigest()
+    print_d( "a_file_id = '%s'\n" % a_file_id )
     
-    a_file_bucket = a_s3_conn.create_bucket( a_bucket_name )
-    print_d( "a_file_bucket = '%s'\n" % a_file_bucket.name )
+    a_file_bucket = a_s3_conn.create_bucket( a_file_bucket_name )
+    print_d( "a_file_bucket = %s\n" % a_file_bucket )
 
     import tempfile
     a_working_dir = tempfile.mkdtemp()
@@ -147,16 +161,13 @@ for a_file in a_files :
     for a_file_item in a_dir_contents :
         an_init_printing2 = init_printing()
 
-        if not a_file_item.startswith( "%s.tgz-" % a_file_basename ) :
-            continue
-
         a_file_path = os.path.join( a_working_dir, a_file_item )
-        print_d( "a_file_item = %s\n" % a_file_path )
+        print_d( "a_file_path = %s\n" % a_file_path )
 
         a_part_key = Key( a_file_bucket )
         a_part_key.key = a_file_item
         a_part_key.set_contents_from_filename( a_file_path )
-        print_d( "a_part_key = %s\n" % a_part_key.name )
+        print_d( "a_part_key = %s\n" % a_part_key )
 
         pass
 
@@ -168,8 +179,8 @@ for a_file in a_files :
 
 
 print_d( "\n---------------------------------- OK -------------------------------------\n" )
-#--------------------------------------------------------------------------------------
+#------------------------------------------------------------------------------------------
 print a_study_name
 
 
-#--------------------------------------------------------------------------------------
+#------------------------------------------------------------------------------------------
