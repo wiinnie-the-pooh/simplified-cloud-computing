@@ -62,8 +62,13 @@ def print_d( the_message ) :
 #---------------------------------------------------------------------------
 def print_e( the_message ) :
     "Printing of error message and quit"
-    sys.stderr.write( the_message )
+    print_d( "\n---------------------------------------------------------------------------\n" )
+
+    sys.stderr.write( "Error : " + the_message )
     
+    print_d( "\n---------------------------------------------------------------------------\n" )
+    print_d( 'KO\n' )
+
     os._exit( os.EX_USAGE )
     pass
 

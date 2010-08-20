@@ -85,14 +85,24 @@ AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY = amazon.extract_options( an_options )
 
 
 print_d( "\n---------------------------------------------------------------------------\n" )
-import boto
 a_s3_conn = boto.connect_s3( AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY )
 print_d( "a_s3_conn = %r\n" % a_s3_conn )
-print_d( "a_s3_conn.get_canonical_user_id() = %s\n" % a_s3_conn.get_canonical_user_id() )
 
-a_bucket_name = hashlib.md5( a_study_name ).hexdigest()
+a_canonical_user_id = a_s3_conn.get_canonical_user_id()
+print_d( "a_canonical_user_id = %s\n" % a_canonical_user_id )
+
+a_bucket_name = hashlib.md5( a_canonical_user_id + a_study_name ).hexdigest()
+
+try :
+    a_s3_bucket = a_s3_conn.get_bucket( a_bucket_name )
+    print_e( "You already have a study with this name ('%s')\n" % a_study_name )
+except :
+    import sys, traceback
+    traceback.print_exc( file = sys.stderr )
+    pass
+
 a_s3_bucket = a_s3_conn.create_bucket( a_bucket_name )
-print_d( "a_s3_bucket.name = '%s'\n" % a_s3_bucket.name )
+print_d( "create_bucket.name = '%s'\n" % a_s3_bucket.name )
 
 
 print_d( "\n---------------------------------------------------------------------------\n" )
