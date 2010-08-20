@@ -116,9 +116,9 @@ def print_e( the_message ) :
 
 
 #---------------------------------------------------------------------------
-def sh_command( the_command ) :
+def sh_command( the_command, the_printing_depth = -1 ) :
     "Execution of shell command"
-    print_d( "(%s)\n" % the_command )
+    print_d( "(%s)\n" % the_command, the_printing_depth )
     
     a_pipe = Popen( the_command, stdout = PIPE, stderr = PIPE, shell = True )
 

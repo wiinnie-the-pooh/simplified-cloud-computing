@@ -35,6 +35,34 @@ import sys, os, os.path, uuid, hashlib
 
 
 #------------------------------------------------------------------------------------------
+def upload_file_items( the_file_bucket, the_file_dirname, the_file_basename, the_printing_depth ) :
+    "Uploading file items"
+    import tempfile
+    a_working_dir = tempfile.mkdtemp()
+
+    a_file_item_target = os.path.join( a_working_dir, the_file_basename )
+    sh_command( "cd '%s' &&  tar -czf - '%s' | split --bytes=1024 --suffix-length=5 - %s.tgz-" % 
+                ( the_file_dirname, the_file_basename, a_file_item_target ), the_printing_depth )
+
+    a_dir_contents = os.listdir( a_working_dir )
+    for a_file_item in a_dir_contents :
+        a_file_path = os.path.join( a_working_dir, a_file_item )
+        print_d( "a_file_path = %s\n" % a_file_path, the_printing_depth )
+
+        a_part_key = Key( the_file_bucket )
+        a_part_key.key = a_file_item
+        a_part_key.set_contents_from_filename( a_file_path )
+        print_d( "a_part_key = %s\n" % a_part_key, the_printing_depth )
+
+        pass
+
+    import shutil
+    shutil.rmtree( a_working_dir, True )
+
+    pass
+
+
+#------------------------------------------------------------------------------------------
 # Defining utility command-line interface
 
 an_usage_description = "%prog --study-name='my favorite study'"
@@ -88,13 +116,13 @@ print_d( "a_files = %r\n" % a_files )
 AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY = amazon.extract_options( an_options )
 
 
-print_d( "\n----------------------- Connecting to Amazon S3 ---------------------------\n" )
+print_i( "--------------------------- Connecting to Amazon S3 -----------------------------\n" )
 #------------------------------------------------------------------------------------------
 a_s3_conn = boto.connect_s3( AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY )
 print_d( "a_s3_conn = %r\n" % a_s3_conn )
 
 
-print_d( "\n----------------------- Looking for study root ----------------------------\n" )
+print_i( "--------------------------- Looking for study root ------------------------------\n" )
 #------------------------------------------------------------------------------------------
 a_canonical_user_id = a_s3_conn.get_canonical_user_id()
 print_d( "a_canonical_user_id = '%s'\n" % a_canonical_user_id )
@@ -111,7 +139,7 @@ except :
 print_d( "a_root_bucket = %s\n" % a_root_bucket )
 
 
-print_d( "\n--------------------- Registering the new study ---------------------------\n" )
+print_i( "------------------------- Registering the new study -----------------------------\n" )
 #------------------------------------------------------------------------------------------
 a_study_id = '%s/%s' % ( a_canonical_user_id, a_study_name )
 a_study_bucket_name = hashlib.md5( a_study_id ).hexdigest()
@@ -122,14 +150,14 @@ a_study_key.key = '%s' % ( a_study_name )
 a_study_key.set_contents_from_string( 'dummy' )
 
 
-print_d( "\n--------------------- Creating the study bucket ---------------------------\n" )
+print_i( "------------------------- Creating the study bucket -----------------------------\n" )
 #------------------------------------------------------------------------------------------
 a_study_bucket_name = hashlib.md5( a_study_id ).hexdigest()
 a_study_bucket = a_s3_conn.create_bucket( a_study_bucket_name )
 print_d( "a_study_bucket = '%s'\n" % a_study_bucket )
 
 
-print_d( "\n----------------------- Registering study files ---------------------------\n" )
+print_i( "--------------------------- Registering study files -----------------------------\n" )
 #------------------------------------------------------------------------------------------
 for a_file in a_files :
     an_init_printing = init_printing()
@@ -149,34 +177,12 @@ for a_file in a_files :
     a_file_bucket = a_s3_conn.create_bucket( a_file_bucket_name )
     print_d( "a_file_bucket = %s\n" % a_file_bucket )
 
-    import tempfile
-    a_working_dir = tempfile.mkdtemp()
-    a_file_item_target = os.path.join( a_working_dir, a_file_basename )
-    sh_command( "cd '%s' &&  tar -czf - '%s' | split --bytes=1024 --suffix-length=5 - %s.tgz-" % 
-                ( a_file_dirname, a_file_basename, a_file_item_target ) )
-
-    a_dir_contents = os.listdir( a_working_dir )
-    for a_file_item in a_dir_contents :
-        an_init_printing2 = init_printing()
-
-        a_file_path = os.path.join( a_working_dir, a_file_item )
-        print_d( "a_file_path = %s\n" % a_file_path )
-
-        a_part_key = Key( a_file_bucket )
-        a_part_key.key = a_file_item
-        a_part_key.set_contents_from_filename( a_file_path )
-        print_d( "a_part_key = %s\n" % a_part_key )
-
-        pass
-
-    import shutil
-    shutil.rmtree( a_working_dir, True )
-    print_d( "\n" )
+    upload_file_items( a_file_bucket, a_file_dirname, a_file_basename, 1 )
 
     pass
 
 
-print_d( "\n---------------------------------- OK -------------------------------------\n" )
+print_i( "-------------------------------------- OK ---------------------------------------\n" )
 #------------------------------------------------------------------------------------------
 print a_study_name
 
