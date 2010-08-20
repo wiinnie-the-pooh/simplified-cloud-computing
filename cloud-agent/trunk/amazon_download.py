@@ -53,8 +53,7 @@ a_option_parser.add_option( "--study-name",
                             metavar = "< an unique name of the user study >",
                             action = "store",
                             dest = "study_name",
-                            help = "(UUID generated, by default)",
-                            default = str( uuid.uuid4() ) )
+                            help = "(intialized from input, otherwise)" )
 
 a_option_parser.add_option( "--output-dir",
                             metavar = "< location of the task defintion >",
@@ -97,8 +96,8 @@ print_d( "an_output_dir = '%s'\n" % an_output_dir )
 AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY = amazon.extract_options( an_options )
 
 
-print_d( "\n======================= Connecting to Amazon S3 ===========================" )
-print_d( "\n---------------------------------------------------------------------------\n" )
+print_d( "\n----------------------- Connecting to Amazon S3 ---------------------------\n" )
+#--------------------------------------------------------------------------------------
 a_s3_conn = boto.connect_s3( AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY )
 print_d( "a_s3_conn = %r\n" % a_s3_conn )
 
@@ -106,8 +105,8 @@ a_canonical_user_id = a_s3_conn.get_canonical_user_id()
 print_d( "a_canonical_user_id = '%s'\n" % a_canonical_user_id )
 
 
-print_d( "\n======================= Looking for the study bucket ===========================" )
-print_d( "\n---------------------------------------------------------------------------\n" )
+print_d( "\n-------------------- Looking for the study bucket -------------------------\n" )
+#--------------------------------------------------------------------------------------
 a_study_id = '%s/%s' % ( a_canonical_user_id, a_study_name )
 a_study_bucket_name = hashlib.md5( a_study_id ).hexdigest()
 
@@ -121,18 +120,19 @@ except :
 print_d( "a_study_bucket = '%s'\n" % a_study_bucket.name )
 
 
-print_i( "\n======================= Reading the study files ===========================" )
-print_i( "\n---------------------------------------------------------------------------\n" )
-
+print_i( "\n----------------------- Reading the study files ---------------------------\n" )
+#--------------------------------------------------------------------------------------
 for a_file_key in a_study_bucket.get_all_keys() :
     an_init_printing = init_printing()
 
     a_file_dirname = os.path.dirname( a_file_key.key )
     a_file_basename = os.path.basename( a_file_key.key )
 
-    print_d( "a_file_key = %s\n" % a_file_key.name )
+    print_d( "a_file_key = %s\n" % a_file_key.key )
 
     a_file_id = '%s/%s' % ( a_study_id, a_file_key.key )
+    print_d( "a_file_id = %s\n" % a_file_id )
+
     a_file_bucket_name = hashlib.md5( a_file_id ).hexdigest()
 
     a_file_bucket = a_s3_conn.get_bucket( a_file_bucket_name )
@@ -146,22 +146,21 @@ for a_file_key in a_study_bucket.get_all_keys() :
     for an_item_key in a_file_bucket.get_all_keys() :
         an_init_printing2 = init_printing()
 
-        print_d( "a_file_item = %s\n" % an_item_key )
-
         a_file_path = os.path.join( a_working_dir, an_item_key.name )
 
         an_item_key.get_contents_to_filename( a_file_path )
         print_d( "an_item_key.name = %s\n" % an_item_key.name )
-
+        
         pass
 
-    sh_command( "cd '%s' && cat %s.tgz- > tar -xzf - -C '%s'" % ( a_working_dir, a_file_basename, an_output_dir ) )
+    sh_command( "cd '%s' && cat %s.tgz-* | tar -xzf - -C '%s'" % ( a_working_dir, a_file_basename, an_output_dir ) )
+    shutil.rmtree( a_working_dir, True )
     
     pass
 
 
-print_d( "\n================================== OK =====================================" )
-print_d( "\n---------------------------------------------------------------------------\n" )
+print_d( "\n---------------------------------- OK -------------------------------------\n" )
+#--------------------------------------------------------------------------------------
 
 
 #--------------------------------------------------------------------------------------
