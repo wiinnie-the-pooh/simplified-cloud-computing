@@ -47,12 +47,12 @@ def upload_items( the_file_bucket, the_file_dirname, the_file_basename, the_prin
     a_dir_contents = os.listdir( a_working_dir )
     for a_file_item in a_dir_contents :
         a_file_path = os.path.join( a_working_dir, a_file_item )
-        print_d( "a_file_path = %s\n" % a_file_path, the_printing_depth )
+        print_d( "'%s' - " % a_file_path, the_printing_depth )
 
         a_part_key = Key( the_file_bucket )
         a_part_key.key = a_file_item
         a_part_key.set_contents_from_filename( a_file_path )
-        print_d( "a_part_key = %s\n" % a_part_key, the_printing_depth )
+        print_d( "%s\n" % a_part_key )
 
         pass
 
@@ -70,12 +70,12 @@ def upload_files( the_study_bucket, the_study_id, the_files, the_printing_depth 
         a_file_dirname = os.path.dirname( a_file )
         a_file_basename = os.path.basename( a_file )
 
-        a_file_key = Key( a_study_bucket )
-        a_file_key.key = '%s/%s' % ( a_file_dirname, a_file_basename )
-        a_file_key.set_contents_from_string( 'dummy' )
-        print_d( "a_file_key = %s\n" % a_file_key, the_printing_depth )
+        a_study_file_key = Key( a_study_bucket )
+        a_study_file_key.key = '%s/%s' % ( a_file_dirname, a_file_basename )
+        a_study_file_key.set_contents_from_string( 'dummy' )
+        print_d( "a_study_file_key = %s\n" % a_study_file_key, the_printing_depth )
 
-        a_file_id = '%s%s' % ( the_study_id, a_file_key.name )
+        a_file_id = '%s%s' % ( the_study_id, a_study_file_key.name )
         a_file_bucket_name = hashlib.md5( a_file_id ).hexdigest()
         print_d( "a_file_id = '%s'\n" % a_file_id, the_printing_depth )
     
@@ -168,23 +168,20 @@ print_d( "a_root_bucket = %s\n" % a_root_bucket )
 
 print_i( "------------------------- Registering the new study -----------------------------\n" )
 #------------------------------------------------------------------------------------------
+a_root_study_key = Key( a_root_bucket )
+a_root_study_key.key = '%s' % ( a_study_name )
+a_root_study_key.set_contents_from_string( 'dummy' )
+print_d( "a_root_study_key = %s\n" % a_root_study_key )
+
 a_study_id = '%s/%s' % ( a_canonical_user_id, a_study_name )
 a_study_bucket_name = hashlib.md5( a_study_id ).hexdigest()
 print_d( "a_study_id = '%s'\n" % a_study_id )
 
-a_study_key = Key( a_root_bucket )
-a_study_key.key = '%s' % ( a_study_name )
-a_study_key.set_contents_from_string( 'dummy' )
-
-
-print_i( "------------------------- Creating the study bucket -----------------------------\n" )
-#------------------------------------------------------------------------------------------
-a_study_bucket_name = hashlib.md5( a_study_id ).hexdigest()
 a_study_bucket = a_s3_conn.create_bucket( a_study_bucket_name )
 print_d( "a_study_bucket = '%s'\n" % a_study_bucket )
 
 
-print_i( "--------------------------- Registering study files -----------------------------\n" )
+print_i( "---------------------------- Uploading study files ------------------------------\n" )
 #------------------------------------------------------------------------------------------
 upload_files( a_study_bucket, a_study_id, a_files, 1 )
 
