@@ -35,6 +35,53 @@ import sys, os, os.path, uuid, hashlib
 
 
 #------------------------------------------------------------------------------------------
+def download_items( the_file_bucket, the_file_basename, the_output_dir, the_printing_depth ) :
+    import tempfile
+    a_working_dir = tempfile.mkdtemp( dir = the_output_dir )
+    a_working_dir = os.path.join( the_output_dir, a_working_dir )
+    print_d( "a_working_dir = '%s'\n" % a_working_dir, the_printing_depth )
+
+    for an_item_key in the_file_bucket.get_all_keys() :
+        a_file_path = os.path.join( a_working_dir, an_item_key.name )
+        an_item_key.get_contents_to_filename( a_file_path )
+        print_d( "an_item_key = %s\n" % an_item_key, the_printing_depth )
+        
+        pass
+
+    sh_command( "cd '%s' && cat %s.tgz-* | tar -xzf - -C '%s'" % 
+                ( a_working_dir, the_file_basename, the_output_dir ), 
+                the_printing_depth )
+
+    import shutil
+    shutil.rmtree( a_working_dir, True )
+    
+    pass
+
+
+#------------------------------------------------------------------------------------------
+def download_files( the_s3_conn, the_study_bucket, the_study_id, the_output_dir, the_printing_depth ) :
+    for a_study_file_key in the_study_bucket.get_all_keys() :
+        a_file_dirname = os.path.dirname( a_study_file_key.key )
+        a_file_basename = os.path.basename( a_study_file_key.key )
+
+        print_d( "a_study_file_key = %s\n" % a_study_file_key, the_printing_depth )
+
+        a_file_id = '%s/%s' % ( the_study_id, a_study_file_key.key )
+        print_d( "a_file_id = '%s'\n" % a_file_id, the_printing_depth )
+
+        a_file_bucket_name = hashlib.md5( a_file_id ).hexdigest()
+
+        a_file_bucket = the_s3_conn.get_bucket( a_file_bucket_name )
+        print_d( "a_file_bucket = %s\n" % a_file_bucket, the_printing_depth )
+
+        download_items( a_file_bucket, a_file_basename, the_output_dir, the_printing_depth + 1 )
+        
+        pass
+
+    pass
+
+
+#------------------------------------------------------------------------------------------
 # Defining utility command-line interface
 
 an_usage_description = "%prog --study-name='my favorite study'"
@@ -93,7 +140,7 @@ print_d( "an_output_dir = '%s'\n" % an_output_dir )
 AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY = amazon.extract_options( an_options )
 
 
-print_d( "\n----------------------- Connecting to Amazon S3 ---------------------------\n" )
+print_i( "--------------------------- Connecting to Amazon S3 -----------------------------\n" )
 #------------------------------------------------------------------------------------------
 a_s3_conn = boto.connect_s3( AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY )
 print_d( "a_s3_conn = %r\n" % a_s3_conn )
@@ -102,7 +149,7 @@ a_canonical_user_id = a_s3_conn.get_canonical_user_id()
 print_d( "a_canonical_user_id = '%s'\n" % a_canonical_user_id )
 
 
-print_d( "\n-------------------- Looking for the study bucket -------------------------\n" )
+print_i( "------------------------ Looking for the study bucket ---------------------------\n" )
 #------------------------------------------------------------------------------------------
 a_study_id = '%s/%s' % ( a_canonical_user_id, a_study_name )
 a_study_bucket_name = hashlib.md5( a_study_id ).hexdigest()
@@ -117,48 +164,11 @@ except :
 print_d( "a_study_bucket = '%s'\n" % a_study_bucket.name )
 
 
-print_i( "\n----------------------- Reading the study files ---------------------------\n" )
+print_i( "--------------------------- Reading the study files -----------------------------\n" )
 #------------------------------------------------------------------------------------------
-for a_file_key in a_study_bucket.get_all_keys() :
-    an_init_printing = init_printing()
-
-    a_file_dirname = os.path.dirname( a_file_key.key )
-    a_file_basename = os.path.basename( a_file_key.key )
-
-    print_d( "a_file_key = %s\n" % a_file_key.key )
-
-    a_file_id = '%s/%s' % ( a_study_id, a_file_key.key )
-    print_d( "a_file_id = %s\n" % a_file_id )
-
-    a_file_bucket_name = hashlib.md5( a_file_id ).hexdigest()
-
-    a_file_bucket = a_s3_conn.get_bucket( a_file_bucket_name )
-    print_d( "a_file_bucket = '%s'\n" % a_file_bucket.name )
-
-    import tempfile
-    a_working_dir = tempfile.mkdtemp( dir = an_output_dir )
-    a_working_dir = os.path.join( an_output_dir, a_working_dir )
-    print_d( "a_working_dir = %s\n" % a_working_dir )
-
-    for an_item_key in a_file_bucket.get_all_keys() :
-        an_init_printing2 = init_printing()
-
-        a_file_path = os.path.join( a_working_dir, an_item_key.name )
-
-        an_item_key.get_contents_to_filename( a_file_path )
-        print_d( "an_item_key.name = %s\n" % an_item_key.name )
-        
-        pass
-
-    sh_command( "cd '%s' && cat %s.tgz-* | tar -xzf - -C '%s'" % ( a_working_dir, a_file_basename, an_output_dir ) )
-
-    import shutil
-    shutil.rmtree( a_working_dir, True )
-    print_d( "\n" )
-    
-    pass
+download_files( a_s3_conn, a_study_bucket, a_study_id, an_output_dir, 1 )
 
 
-print_d( "\n---------------------------------- OK -------------------------------------\n" )
+print_i( "-------------------------------------- OK ---------------------------------------\n" )
 #------------------------------------------------------------------------------------------
 
