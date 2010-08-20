@@ -34,6 +34,62 @@ import sys, os, os.path, uuid, hashlib
 
 
 #------------------------------------------------------------------------------------------
+def read_items( the_file_bucket, the_printing_depth ) :
+    "Reading the file items"
+    for an_item_key in the_file_bucket.get_all_keys() :
+        print_d( "'%s'\n" % an_item_key.name, the_printing_depth )
+
+        pass
+
+    pass
+
+
+#------------------------------------------------------------------------------------------
+def read_files( the_study_bucket, the_study_id, the_printing_depth ) :
+    "Reading the study files"
+    for a_file_key in the_study_bucket.get_all_keys() :
+        print_d( "'%s' - " % a_file_key.name, the_printing_depth )
+        
+        a_file_id = '%s/%s' % ( the_study_id, a_file_key.key )
+        a_file_bucket_name = hashlib.md5( a_file_id ).hexdigest()
+        
+        a_file_bucket = a_s3_conn.get_bucket( a_file_bucket_name )
+        print_d( "%s\n" % a_file_bucket )
+
+        read_items( a_file_bucket, the_printing_depth + 1 )
+
+        pass
+    
+    pass
+
+
+#------------------------------------------------------------------------------------------
+def read_studies( the_root_bucket, the_canonical_user_id, the_printing_depth ) :
+    "Reading the studies"
+    for a_study_key in the_root_bucket.get_all_keys() :
+        a_study_name = a_study_key.name
+        print_d( "'%s' - " % a_study_name, the_printing_depth )
+
+        a_study_id = '%s/%s' % ( the_canonical_user_id, a_study_name )
+        a_study_bucket_name = hashlib.md5( a_study_id ).hexdigest()
+    
+        a_study_bucket = None
+        try :
+            a_study_bucket = a_s3_conn.get_bucket( a_study_bucket_name )
+        except :
+            print_d( "There is no study with such name ('%s')\n" % a_study_name, the_printing_depth )
+            return
+        
+        print_d( "%s\n" % a_study_bucket )
+    
+        read_files( a_study_bucket, a_study_id, the_printing_depth + 1 )
+    
+        pass
+
+    pass
+
+
+#------------------------------------------------------------------------------------------
 # Defining utility command-line interface
 an_usage_description = "%prog"
 an_usage_description += common.add_usage_description()
@@ -60,13 +116,13 @@ common.extract_options( an_options )
 AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY = amazon.extract_options( an_options )
 
 
-print_d( "\n------------------------- Connecting to Amazon S3 -----------------------------\n" )
+print_i( "--------------------------- Connecting to Amazon S3 -----------------------------\n" )
 #------------------------------------------------------------------------------------------
 a_s3_conn = boto.connect_s3( AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY )
 print_d( "a_s3_conn = %r\n" % a_s3_conn )
 
 
-print_d( "\n------------------------- Looking for study root ------------------------------\n" )
+print_i( "--------------------------- Looking for study root ------------------------------\n" )
 #------------------------------------------------------------------------------------------
 a_canonical_user_id = a_s3_conn.get_canonical_user_id()
 print_d( "a_canonical_user_id = '%s'\n" % a_canonical_user_id )
@@ -82,45 +138,10 @@ except :
 print_d( "a_root_bucket = %s\n" % a_root_bucket )
 
 
-for a_study_key in a_root_bucket.get_all_keys() :
-    print_d( "\n------------------------ Reading registered studies ---------------------------\n" )
-    #------------------------------------------------------------------------------------------
-
-    a_study_name = a_study_key.name
-    print_d( "a_study_name = '%s'\n" % a_study_name )
-
-    print_d( "\n---------------------- Looking for the study bucket ---------------------------\n" )
-    #------------------------------------------------------------------------------------------
-    a_study_id = '%s/%s' % ( a_canonical_user_id, a_study_name )
-    a_study_bucket_name = hashlib.md5( a_study_id ).hexdigest()
-    
-    a_study_bucket = None
-    try :
-        a_study_bucket = a_s3_conn.get_bucket( a_study_bucket_name )
-    except :
-        print_e( "There is no study with such name ('%s')\n" % a_study_name )
-        pass
-    
-    print_d( "a_study_bucket = '%s'\n" % a_study_bucket.name )
-    
-    
-    print_i( "\n----------------------- Reading the study files ---------------------------\n" )
-    #------------------------------------------------------------------------------------------
-    for a_file_key in a_study_bucket.get_all_keys() :
-        print_d( "a_file_key.name = '%s'\n" % a_file_key.name )
-
-        a_file_id = '%s/%s' % ( a_study_id, a_file_key.key )
-        a_file_bucket_name = hashlib.md5( a_file_id ).hexdigest()
-
-        a_file_bucket = a_s3_conn.get_bucket( a_file_bucket_name )
-        for an_item_key in a_file_bucket.get_all_keys() :
-            print_d( "an_item_key.name = %s\n" % an_item_key.name )
-            pass
-
-        pass
-    
-    pass
+print_i( "---------------------------- Reading the studies --------------------------------\n" )
+#------------------------------------------------------------------------------------------
+read_studies( a_root_bucket, a_canonical_user_id, 0 )
 
 
-print_d( "\n------------------------------------ OK ---------------------------------------\n" )
+print_i( "-------------------------------------- OK ---------------------------------------\n" )
 #------------------------------------------------------------------------------------------
