@@ -35,14 +35,14 @@ import sys, os, os.path, uuid, hashlib
 
 
 #------------------------------------------------------------------------------------------
-def upload_items( the_file_bucket, the_file_dirname, the_file_basename, the_printing_depth ) :
+def upload_items( the_file_bucket, the_file_dirname, the_file_basename, the_upload_item_size, the_printing_depth ) :
     "Uploading file items"
     import tempfile
     a_working_dir = tempfile.mkdtemp()
 
     a_file_item_target = os.path.join( a_working_dir, the_file_basename )
-    sh_command( "cd '%s' &&  tar -czf - '%s' | split --bytes=1024 --suffix-length=5 - %s.tgz-" % 
-                ( the_file_dirname, the_file_basename, a_file_item_target ), the_printing_depth )
+    sh_command( "cd '%s' &&  tar -czf - '%s' | split --bytes=%d --suffix-length=5 - %s.tgz-" % 
+                ( the_file_dirname, the_file_basename, the_upload_item_size, a_file_item_target ), the_printing_depth )
 
     a_dir_contents = os.listdir( a_working_dir )
     for a_file_item in a_dir_contents :
@@ -65,7 +65,7 @@ def upload_items( the_file_bucket, the_file_dirname, the_file_basename, the_prin
 
 
 #------------------------------------------------------------------------------------------
-def upload_files( the_study_bucket, the_study_id, the_files, the_printing_depth ) :
+def upload_files( the_study_bucket, the_study_id, the_files, the_upload_item_size, the_printing_depth ) :
     for a_file in the_files :
         a_file_dirname = os.path.dirname( a_file )
         a_file_basename = os.path.basename( a_file )
@@ -82,7 +82,7 @@ def upload_files( the_study_bucket, the_study_id, the_files, the_printing_depth 
         a_file_bucket = a_s3_conn.create_bucket( a_file_bucket_name )
         print_d( "a_file_bucket = %s\n" % a_file_bucket, the_printing_depth )
 
-        upload_items( a_file_bucket, a_file_dirname, a_file_basename, the_printing_depth + 1 )
+        upload_items( a_file_bucket, a_file_dirname, a_file_basename, the_upload_item_size, the_printing_depth + 1 )
 
         pass
 
@@ -110,6 +110,13 @@ a_option_parser.add_option( "--study-name",
                             dest = "study_name",
                             help = "(UUID generated, by default)",
                             default = str( uuid.uuid4() ) )
+a_option_parser.add_option( "--upload-item-size",
+                            metavar = "< size of file pieces to be uploaded, in bytes >",
+                            type = "int",
+                            action = "store",
+                            dest = "upload_item_size",
+                            help = "(\"%default\", by default)",
+                            default = 1024 )
 common.add_parser_options( a_option_parser )
 amazon.add_parser_options( a_option_parser )
     
@@ -183,7 +190,7 @@ print_d( "a_study_bucket = '%s'\n" % a_study_bucket )
 
 print_i( "---------------------------- Uploading study files ------------------------------\n" )
 #------------------------------------------------------------------------------------------
-upload_files( a_study_bucket, a_study_id, a_files, 1 )
+upload_files( a_study_bucket, a_study_id, a_files, an_options.upload_item_size, 1 )
 
 
 print_i( "-------------------------------------- OK ---------------------------------------\n" )
