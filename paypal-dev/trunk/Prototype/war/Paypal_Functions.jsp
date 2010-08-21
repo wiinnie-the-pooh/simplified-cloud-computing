@@ -131,7 +131,13 @@
 		return nvp;
 	}
 
-
+	public String getNonEmptyValue( HashMap theNVPMap, String theValueName ) {
+		String value = "--EmptyValue--";
+		if ( theNVPMap.containsKey(theValueName) ) {
+			value = theNVPMap.get( theValueName ).toString();
+		}
+		return value;
+	}
 	/*********************************************************************************
 	  * GetShippingDetails: Function to perform the GetExpressCheckoutDetails API call 
 	  *
@@ -156,7 +162,7 @@
 	    
 		HashMap nvp = httpcall("GetExpressCheckoutDetails", nvpstr);
 		String strAck = nvp.get("ACK").toString();
-	    if(strAck !=null && !(strAck.equalsIgnoreCase("Success") || strAck.equalsIgnoreCase("SuccessWithWarning")))
+	    if(strAck !=null && (strAck.equalsIgnoreCase("Success") || strAck.equalsIgnoreCase("SuccessWithWarning")))
 		{
 			session.setAttribute("PAYERID", nvp.get("PAYERID").toString());
 		}			
