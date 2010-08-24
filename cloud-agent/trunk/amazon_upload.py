@@ -190,7 +190,11 @@ print_d( "a_study_bucket = '%s'\n" % a_study_bucket )
 
 print_i( "---------------------------- Uploading study files ------------------------------\n" )
 #------------------------------------------------------------------------------------------
+a_data_loading_time = Timer()
+
 upload_files( a_study_bucket, a_study_id, a_files, an_options.upload_item_size, 1 )
+
+print_d( "a_data_loading_time = %s, sec\n" % a_data_loading_time )
 
 
 print_i( "-------------------------------------- OK ---------------------------------------\n" )

@@ -35,15 +35,67 @@ import sys, os, os.path, uuid, hashlib
 
 
 #------------------------------------------------------------------------------------------
+from Queue import Queue
+
+class Worker( Queue ) :
+    "Run all the registered tasks in parallel"
+    def __init__( self, the_number_threads ) :
+        "Reserve given number of threads to perform the tasks"
+        Queue.__init__( self )
+        from threading import Thread
+        for an_id in range( the_number_threads ) :
+            a_thread = Thread( target = self )
+            a_thread.daemon = True
+
+            a_thread.start()
+            
+            pass
+        
+        pass
+    
+    def __call__( self ) :
+        "Real execution of a task"
+        while True:
+            a_task = self.get()
+
+            a_task.run()
+
+            self.task_done()
+
+            pass
+
+        pass
+
+    pass
+
+
+#------------------------------------------------------------------------------------------
 def upload_item( the_file_item, the_working_dir, the_file_bucket, the_printing_depth ) :
     "Uploading file item"
     a_file_path = os.path.join( the_working_dir, the_file_item )
-    print_d( "'%s' - " % a_file_path, the_printing_depth )
+    print_d( "'%s'\n" % a_file_path, the_printing_depth )
 
     a_part_key = Key( the_file_bucket )
     a_part_key.key = the_file_item
     a_part_key.set_contents_from_filename( a_file_path )
-    print_d( "%s\n" % a_part_key )
+    print_d( "%s\n" % a_part_key, the_printing_depth + 1 )
+
+    pass
+
+
+#------------------------------------------------------------------------------------------
+class UploadItem :
+    def __init__( self, the_file_item, the_working_dir, the_file_bucket, the_printing_depth ) :
+        self.file_item = the_file_item
+        self.working_dir = the_working_dir
+        self.file_bucket = the_file_bucket
+        self.printing_depth = the_printing_depth
+        pass
+    
+    def run( self ) :
+        upload_item( self.file_item, self.working_dir, self.file_bucket, self.printing_depth )
+
+        return self
 
     pass
 
@@ -59,10 +111,17 @@ def upload_items( the_file_bucket, the_file_dirname, the_file_basename, the_uplo
                 ( the_file_dirname, the_file_basename, the_upload_item_size, a_file_item_target ), the_printing_depth )
 
     a_dir_contents = os.listdir( a_working_dir )
+
+    a_worker = Worker( len( a_dir_contents ) )
+
     for a_file_item in a_dir_contents :
-        upload_item( a_file_item, a_working_dir, the_file_bucket, the_printing_depth + 1 )
+        a_task = UploadItem( a_file_item, a_working_dir, the_file_bucket, the_printing_depth + 1 )
+
+        a_worker.put( a_task )
 
         pass
+
+    a_worker.join()
 
     import shutil
     shutil.rmtree( a_working_dir, True )
@@ -111,41 +170,17 @@ class UploadFile :
 
 
 #------------------------------------------------------------------------------------------
-from Queue import Queue
-
-class UploadFileWorker( Queue ) :
-    def __call__( self ) :
-        while True:
-            self.get().run()
-
-            self.task_done()
-
-            pass
-
-        pass
-
-    pass
-
-
-#------------------------------------------------------------------------------------------
 def upload_files( the_files, the_study_bucket, the_study_id, the_upload_item_size, the_printing_depth ) :
-    an_upload_file_worker = UploadFileWorker()
-
-    for an_id in range( len( the_files ) ) :
-        from threading import Thread
-        a_thread = Thread( target = an_upload_file_worker )
-        a_thread.daemon = True
-        a_thread.start()
-
-        pass
+    a_worker = Worker( len( the_files ) )
 
     for a_file in the_files :
         a_task = UploadFile( a_file, the_study_bucket, the_study_id, the_upload_item_size, the_printing_depth )
-        an_upload_file_worker.put( a_task )
+
+        a_worker.put( a_task )
 
         pass
 
-    an_upload_file_worker.join()
+    a_worker.join()
 
     pass
 
@@ -177,7 +212,7 @@ a_option_parser.add_option( "--upload-item-size",
                             action = "store",
                             dest = "upload_item_size",
                             help = "(\"%default\", by default)",
-                            default = 1024 )
+                            default = 1024000 )
 common.add_parser_options( a_option_parser )
 amazon.add_parser_options( a_option_parser )
     
@@ -251,7 +286,11 @@ print_d( "a_study_bucket = '%s'\n" % a_study_bucket )
 
 print_i( "---------------------------- Uploading study files ------------------------------\n" )
 #------------------------------------------------------------------------------------------
+a_data_loading_time = Timer()
+
 upload_files( a_files, a_study_bucket, a_study_id, an_options.upload_item_size, 1 )
+
+print_d( "a_data_loading_time = %s, sec\n" % a_data_loading_time )
 
 
 print_i( "-------------------------------------- OK ---------------------------------------\n" )
