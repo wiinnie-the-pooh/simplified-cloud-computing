@@ -35,6 +35,60 @@ import sys, os, os.path, uuid, hashlib
 
 
 #------------------------------------------------------------------------------------------
+def upload_items( the_file_bucket, the_file_basename, the_working_dir, the_printing_depth ) :
+    a_dir_contents = os.listdir( the_working_dir )
+
+    a_dir_contents.sort()
+    a_dir_contents.reverse()
+
+    for a_file_item in a_dir_contents :
+        a_file_path = os.path.join( the_working_dir, a_file_item )
+        print_d( "'%s'\n" % a_file_path, the_printing_depth )
+
+        a_part_key = Key( the_file_bucket )
+        a_part_key.key = a_file_item
+        a_part_key.set_contents_from_filename( a_file_path )
+        print_d( "%s\n" % a_part_key, the_printing_depth + 1 )
+
+        os.remove( a_file_path )
+        
+        try :
+            os.rmdir( the_working_dir )
+        except :
+            pass
+        
+        pass
+    
+    pass
+
+
+#------------------------------------------------------------------------------------------
+def upload_files( the_s3_conn, the_study_bucket, the_study_id, the_printing_depth ) :
+    for a_study_file_key in the_study_bucket.get_all_keys() :
+        a_file_dirname = os.path.dirname( a_study_file_key.key )
+        a_file_basename = os.path.basename( a_study_file_key.key )
+
+        print_d( "a_study_file_key = %s\n" % a_study_file_key, the_printing_depth )
+
+        a_working_dir = a_study_file_key.key.split( ':' )[ -1 ]
+        print_d( "a_working_dir = '%s'\n" % a_working_dir, the_printing_depth )
+
+        a_file_id = '%s/%s' % ( the_study_id, a_study_file_key.key )
+        print_d( "a_file_id = '%s'\n" % a_file_id, the_printing_depth )
+
+        a_file_bucket_name = hashlib.md5( a_file_id ).hexdigest()
+
+        a_file_bucket = the_s3_conn.get_bucket( a_file_bucket_name )
+        print_d( "a_file_bucket = %s\n" % a_file_bucket, the_printing_depth )
+
+        upload_items( a_file_bucket, a_file_basename, a_working_dir, the_printing_depth + 1 )
+        
+        pass
+
+    pass
+
+
+#------------------------------------------------------------------------------------------
 # Defining utility command-line interface
 
 an_usage_description = "%prog --study-name='my interrupted study' --number-threads=7"
@@ -113,7 +167,7 @@ print_d( "a_study_bucket = '%s'\n" % a_study_bucket )
 print_i( "---------------------------- Uploading study files ------------------------------\n" )
 a_data_loading_time = Timer()
 
-# upload_files( an_options.number_threads, a_files, a_study_bucket, a_study_id, an_options.upload_item_size, 1 )
+upload_files( a_s3_conn, a_study_bucket, a_study_id, 1 )
 
 print_d( "a_data_loading_time = %s, sec\n" % a_data_loading_time )
 
