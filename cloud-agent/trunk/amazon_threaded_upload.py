@@ -85,9 +85,28 @@ def upload_file( the_file, the_study_bucket, the_study_id, the_upload_item_size,
 
 
 #------------------------------------------------------------------------------------------
+class UploadFile :
+    def __init__( self, the_file, the_study_bucket, the_study_id, the_upload_item_size, the_printing_depth ) :
+        self.file = the_file
+        self.study_bucket = the_study_bucket
+        self.study_id = the_study_id
+        self.upload_item_size = the_upload_item_size
+        self.printing_depth = the_printing_depth
+        pass
+    
+    def run( self ) :
+        upload_file( self.file, self.study_bucket, self.study_id, self.upload_item_size, self.printing_depth )
+        pass
+
+    pass
+
+
+#------------------------------------------------------------------------------------------
 def upload_files( the_files, the_study_bucket, the_study_id, the_upload_item_size, the_printing_depth ) :
     for a_file in the_files :
-        upload_file( a_file, the_study_bucket, the_study_id, the_upload_item_size, the_printing_depth )
+        a_task = UploadFile( a_file, the_study_bucket, the_study_id, the_upload_item_size, the_printing_depth )
+
+        a_task.run()
 
         pass
 
