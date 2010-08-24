@@ -62,27 +62,32 @@ def upload_items( the_file_bucket, the_file_dirname, the_file_basename, the_uplo
     pass
 
 
+#------------------------------------------------------------------------------------------
+def upload_file( the_file, the_study_bucket, the_study_id, the_upload_item_size, the_printing_depth ) :
+    a_file_dirname = os.path.dirname( the_file )
+    a_file_basename = os.path.basename( the_file )
+
+    a_study_file_key = Key( the_study_bucket )
+    a_study_file_key.key = '%s/%s' % ( a_file_dirname, a_file_basename )
+    a_study_file_key.set_contents_from_string( 'dummy' )
+    print_d( "a_study_file_key = %s\n" % a_study_file_key, the_printing_depth )
+
+    a_file_id = '%s%s' % ( the_study_id, a_study_file_key.name )
+    a_file_bucket_name = hashlib.md5( a_file_id ).hexdigest()
+    print_d( "a_file_id = '%s'\n" % a_file_id, the_printing_depth )
+    
+    a_file_bucket = a_s3_conn.create_bucket( a_file_bucket_name )
+    print_d( "a_file_bucket = %s\n" % a_file_bucket, the_printing_depth )
+
+    upload_items( a_file_bucket, a_file_dirname, a_file_basename, the_upload_item_size, the_printing_depth + 1 )
+    
+    pass
 
 
 #------------------------------------------------------------------------------------------
-def upload_files( the_study_bucket, the_study_id, the_files, the_upload_item_size, the_printing_depth ) :
+def upload_files( the_files, the_study_bucket, the_study_id, the_upload_item_size, the_printing_depth ) :
     for a_file in the_files :
-        a_file_dirname = os.path.dirname( a_file )
-        a_file_basename = os.path.basename( a_file )
-
-        a_study_file_key = Key( a_study_bucket )
-        a_study_file_key.key = '%s/%s' % ( a_file_dirname, a_file_basename )
-        a_study_file_key.set_contents_from_string( 'dummy' )
-        print_d( "a_study_file_key = %s\n" % a_study_file_key, the_printing_depth )
-
-        a_file_id = '%s%s' % ( the_study_id, a_study_file_key.name )
-        a_file_bucket_name = hashlib.md5( a_file_id ).hexdigest()
-        print_d( "a_file_id = '%s'\n" % a_file_id, the_printing_depth )
-    
-        a_file_bucket = a_s3_conn.create_bucket( a_file_bucket_name )
-        print_d( "a_file_bucket = %s\n" % a_file_bucket, the_printing_depth )
-
-        upload_items( a_file_bucket, a_file_dirname, a_file_basename, the_upload_item_size, the_printing_depth + 1 )
+        upload_file( a_file, the_study_bucket, the_study_id, the_upload_item_size, the_printing_depth )
 
         pass
 
@@ -190,7 +195,7 @@ print_d( "a_study_bucket = '%s'\n" % a_study_bucket )
 
 print_i( "---------------------------- Uploading study files ------------------------------\n" )
 #------------------------------------------------------------------------------------------
-upload_files( a_study_bucket, a_study_id, a_files, an_options.upload_item_size, 1 )
+upload_files( a_files, a_study_bucket, a_study_id, an_options.upload_item_size, 1 )
 
 
 print_i( "-------------------------------------- OK ---------------------------------------\n" )
