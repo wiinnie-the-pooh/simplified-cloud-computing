@@ -35,63 +35,6 @@ import sys, os, os.path, uuid, hashlib
 
 
 #------------------------------------------------------------------------------------------
-def upload_item( the_file_item, the_working_dir, the_file_bucket, the_printing_depth ) :
-    "Uploading file item"
-    a_file_path = os.path.join( the_working_dir, the_file_item )
-    print_d( "'%s'\n" % a_file_path, the_printing_depth )
-
-    a_part_key = Key( the_file_bucket )
-    a_part_key.key = the_file_item
-    a_part_key.set_contents_from_filename( a_file_path )
-    print_d( "%s\n" % a_part_key, the_printing_depth + 1 )
-
-    os.remove( a_file_path )
-
-    try :
-        os.rmdir( the_working_dir )
-    except :
-        pass
-
-    pass
-
-
-#------------------------------------------------------------------------------------------
-class UploadItem :
-    def __init__( self, the_file_item, the_working_dir, the_file_bucket, the_printing_depth ) :
-        self.file_item = the_file_item
-        self.working_dir = the_working_dir
-        self.file_bucket = the_file_bucket
-        self.printing_depth = the_printing_depth
-        pass
-    
-    def run( self ) :
-        upload_item( self.file_item, self.working_dir, self.file_bucket, self.printing_depth )
-
-        return self
-
-    pass
-
-
-#------------------------------------------------------------------------------------------
-def upload_items( the_worker, the_file_bucket, the_working_dir, the_upload_item_size, the_printing_depth ) :
-    "Uploading file items"
-
-    a_dir_contents = os.listdir( the_working_dir )
-
-    a_dir_contents.sort()
-    a_dir_contents.reverse()
-
-    for a_file_item in a_dir_contents :
-        a_task = UploadItem( a_file_item, the_working_dir, the_file_bucket, the_printing_depth + 1 )
-
-        the_worker.put( a_task )
-
-        pass
-
-    pass
-
-
-#------------------------------------------------------------------------------------------
 def upload_file( the_worker, the_file, the_study_bucket, the_study_id, the_upload_item_size, the_printing_depth ) :
     a_file_dirname = os.path.dirname( the_file )
     a_file_basename = os.path.basename( the_file )
@@ -106,7 +49,7 @@ def upload_file( the_worker, the_file, the_study_bucket, the_study_id, the_uploa
     print_d( "a_statinfo.st_size = %d, bytes\n" % a_statinfo.st_size, the_printing_depth )
 
     import math
-    a_suffix_length = math.ceil( math.log10( a_statinfo.st_size / the_upload_item_size ) )
+    a_suffix_length = int( math.log10( a_statinfo.st_size / the_upload_item_size ) + 1 )
     print_d( "a_suffix_length = %d, bytes\n" % a_suffix_length, the_printing_depth )
 
     a_working_dir = tempfile.mkdtemp()
@@ -127,7 +70,7 @@ def upload_file( the_worker, the_file, the_study_bucket, the_study_id, the_uploa
     a_file_bucket = a_s3_conn.create_bucket( a_file_bucket_name )
     print_d( "a_file_bucket = %s\n" % a_file_bucket, the_printing_depth )
 
-    upload_items( the_worker, a_file_bucket, a_working_dir, the_upload_item_size, the_printing_depth + 1 )
+    amazon.upload_items( the_worker, a_file_bucket, a_working_dir, the_printing_depth + 1 )
     
     pass
 
@@ -153,7 +96,7 @@ class UploadFile :
 
 #------------------------------------------------------------------------------------------
 def upload_files( the_number_threads, the_files, the_study_bucket, the_study_id, the_upload_item_size, the_printing_depth ) :
-    a_worker = Worker( an_options.number_threads + len( the_files ) )
+    a_worker = Worker( the_number_threads + len( the_files ) )
 
     for a_file in the_files :
         a_task = UploadFile( a_worker, a_file, the_study_bucket, the_study_id, the_upload_item_size, the_printing_depth )

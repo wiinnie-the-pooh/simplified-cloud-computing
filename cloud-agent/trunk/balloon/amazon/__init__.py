@@ -19,7 +19,10 @@
 #--------------------------------------------------------------------------------------
 from balloon.common import print_e, print_d, ssh_command
 
-import os
+import boto
+from boto.s3.key import Key
+
+import os, os.path
 
 
 #--------------------------------------------------------------------------------------
@@ -89,6 +92,63 @@ def wait_activation( the_instance, the_ssh_connect, the_ssh_client ) :
             break
         except :
             continue
+        pass
+
+    pass
+
+
+#------------------------------------------------------------------------------------------
+def upload_item( the_file_item, the_working_dir, the_file_bucket, the_printing_depth ) :
+    "Uploading file item"
+    a_file_path = os.path.join( the_working_dir, the_file_item )
+    print_d( "'%s'\n" % a_file_path, the_printing_depth )
+
+    a_part_key = Key( the_file_bucket )
+    a_part_key.key = the_file_item
+    a_part_key.set_contents_from_filename( a_file_path )
+    print_d( "%s\n" % a_part_key, the_printing_depth + 1 )
+
+    os.remove( a_file_path )
+
+    try :
+        os.rmdir( the_working_dir )
+    except :
+        pass
+
+    pass
+
+
+#------------------------------------------------------------------------------------------
+class UploadItem :
+    def __init__( self, the_file_item, the_working_dir, the_file_bucket, the_printing_depth ) :
+        self.file_item = the_file_item
+        self.working_dir = the_working_dir
+        self.file_bucket = the_file_bucket
+        self.printing_depth = the_printing_depth
+        pass
+    
+    def run( self ) :
+        upload_item( self.file_item, self.working_dir, self.file_bucket, self.printing_depth )
+
+        return self
+
+    pass
+
+
+#------------------------------------------------------------------------------------------
+def upload_items( the_worker, the_file_bucket, the_working_dir, the_printing_depth ) :
+    "Uploading file items"
+
+    a_dir_contents = os.listdir( the_working_dir )
+
+    a_dir_contents.sort()
+    a_dir_contents.reverse()
+
+    for a_file_item in a_dir_contents :
+        a_task = UploadItem( a_file_item, the_working_dir, the_file_bucket, the_printing_depth + 1 )
+
+        the_worker.put( a_task )
+
         pass
 
     pass

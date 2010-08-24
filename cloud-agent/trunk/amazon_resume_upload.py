@@ -35,42 +35,7 @@ import sys, os, os.path, uuid, hashlib
 
 
 #------------------------------------------------------------------------------------------
-def upload_item( the_file_bucket, the_file_item, the_working_dir, the_printing_depth ) :
-    a_file_path = os.path.join( the_working_dir, the_file_item )
-    print_d( "'%s'\n" % a_file_path, the_printing_depth )
-    
-    a_part_key = Key( the_file_bucket )
-    a_part_key.key = the_file_item
-    a_part_key.set_contents_from_filename( a_file_path )
-    print_d( "%s\n" % a_part_key, the_printing_depth + 1 )
-    
-    os.remove( a_file_path )
-    
-    try :
-        os.rmdir( the_working_dir )
-    except :
-        pass
-    
-    pass
-
-
-#------------------------------------------------------------------------------------------
-def upload_items( the_file_bucket, the_file_basename, the_working_dir, the_printing_depth ) :
-    a_dir_contents = os.listdir( the_working_dir )
-
-    a_dir_contents.sort()
-    a_dir_contents.reverse()
-
-    for a_file_item in a_dir_contents :
-        upload_item( the_file_bucket, a_file_item, the_working_dir, the_printing_depth )
-        
-        pass
-    
-    pass
-
-
-#------------------------------------------------------------------------------------------
-def upload_file( the_s3_conn, the_study_file_key, the_study_id, the_printing_depth ) :
+def upload_file( the_s3_conn, the_worker, the_study_file_key, the_study_id, the_printing_depth ) :
     a_file_dirname = os.path.dirname( the_study_file_key.key )
     a_file_basename = os.path.basename( the_study_file_key.key )
 
@@ -87,17 +52,42 @@ def upload_file( the_s3_conn, the_study_file_key, the_study_id, the_printing_dep
     a_file_bucket = the_s3_conn.get_bucket( a_file_bucket_name )
     print_d( "a_file_bucket = %s\n" % a_file_bucket, the_printing_depth )
 
-    upload_items( a_file_bucket, a_file_basename, a_working_dir, the_printing_depth + 1 )
+    amazon.upload_items( the_worker, a_file_bucket, a_working_dir, the_printing_depth + 1 )
 
     pass
 
 
 #------------------------------------------------------------------------------------------
-def upload_files( the_s3_conn, the_study_bucket, the_study_id, the_printing_depth ) :
-    for a_study_file_key in the_study_bucket.get_all_keys() :
-        upload_file( the_s3_conn, a_study_file_key, the_study_id, the_printing_depth )
+class UploadFile :
+    def __init__( self, the_s3_conn, the_worker, the_study_file_key, the_study_id, the_printing_depth ) :
+        self.worker = the_worker
+        self.s3_conn = the_s3_conn
+        self.study_file_key = the_study_file_key
+        self.study_id = the_study_id
+        self.printing_depth = the_printing_depth
+        pass
+    
+    def run( self ) :
+        upload_file( self.s3_conn, self.worker, self.study_file_key, self.study_id, self.printing_depth )
+
+        return self
+
+    pass
+
+
+#------------------------------------------------------------------------------------------
+def upload_files( the_s3_conn, the_number_threads, the_study_bucket, the_study_id, the_printing_depth ) :
+    a_study_file_keys = the_study_bucket.get_all_keys()
+    a_worker = Worker( the_number_threads + len( a_study_file_keys ) )
+
+    for a_study_file_key in a_study_file_keys :
+        a_task = UploadFile( the_s3_conn, a_worker, a_study_file_key, the_study_id, the_printing_depth )
+
+        a_worker.put( a_task )
         
         pass
+
+    a_worker.join()
 
     pass
 
@@ -181,7 +171,7 @@ print_d( "a_study_bucket = '%s'\n" % a_study_bucket )
 print_i( "---------------------------- Uploading study files ------------------------------\n" )
 a_data_loading_time = Timer()
 
-upload_files( a_s3_conn, a_study_bucket, a_study_id, 1 )
+upload_files( a_s3_conn, an_options.number_threads, a_study_bucket, a_study_id, 1 )
 
 print_d( "a_data_loading_time = %s, sec\n" % a_data_loading_time )
 
