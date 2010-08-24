@@ -61,7 +61,10 @@ class Worker( Queue ) :
             try:
                 a_task.run()
                 self.task_done()
-            except:
+            except :
+                import traceback
+                traceback.print_exc( file = sys.stdout )
+
                 self.task_done()
                 break
             
@@ -82,6 +85,13 @@ def upload_item( the_file_item, the_working_dir, the_file_bucket, the_printing_d
     a_part_key.key = the_file_item
     a_part_key.set_contents_from_filename( a_file_path )
     print_d( "%s\n" % a_part_key, the_printing_depth + 1 )
+
+    os.remove( a_file_path )
+
+    try :
+        os.rmdir( the_working_dir )
+    except :
+        pass
 
     pass
 
@@ -107,25 +117,33 @@ class UploadItem :
 def upload_items( the_worker, the_file_bucket, the_file_dirname, the_file_basename, the_upload_item_size, the_printing_depth ) :
     "Uploading file items"
     import tempfile
-    a_working_dir = tempfile.mkdtemp()
 
+    a_tmp_file = tempfile.mkstemp()[ 1 ]
+    sh_command( "cd '%s' &&  tar -czf %s '%s'" % 
+                ( the_file_dirname, a_tmp_file, the_file_basename ), the_printing_depth )
+
+    a_statinfo = os.stat( a_tmp_file )
+    print_d( "a_statinfo.st_size = %d, bytes\n" % a_statinfo.st_size, the_printing_depth )
+
+    import math
+    a_suffix_length = math.ceil( math.log10( a_statinfo.st_size / the_upload_item_size ) )
+    print_d( "a_suffix_length = %d, bytes\n" % a_suffix_length, the_printing_depth )
+
+    a_working_dir = tempfile.mkdtemp()
     a_file_item_target = os.path.join( a_working_dir, the_file_basename )
-    sh_command( "cd '%s' &&  tar -czf - '%s' | split --bytes=%d --suffix-length=5 - %s.tgz-" % 
-                ( the_file_dirname, the_file_basename, the_upload_item_size, a_file_item_target ), the_printing_depth )
+    sh_command( "cat '%s' | split --bytes=%d --numeric-suffixes --suffix-length=%d - %s.tgz-" % 
+                ( a_tmp_file, the_upload_item_size, a_suffix_length, a_file_item_target ), the_printing_depth )
+    os.remove( a_tmp_file )
 
     a_dir_contents = os.listdir( a_working_dir )
-
+    a_dir_contents.sort()
+    a_dir_contents.reverse()
     for a_file_item in a_dir_contents :
         a_task = UploadItem( a_file_item, a_working_dir, the_file_bucket, the_printing_depth + 1 )
 
         the_worker.put( a_task )
 
         pass
-
-    a_worker.join()
-
-    import shutil
-    shutil.rmtree( a_working_dir, True )
 
     pass
 
@@ -172,14 +190,18 @@ class UploadFile :
 
 
 #------------------------------------------------------------------------------------------
-def upload_files( the_worker, the_files, the_study_bucket, the_study_id, the_upload_item_size, the_printing_depth ) :
-    for a_file in the_files :
-        a_task = UploadFile( the_worker, a_file, the_study_bucket, the_study_id, the_upload_item_size, the_printing_depth )
+def upload_files( the_number_threads, the_files, the_study_bucket, the_study_id, the_upload_item_size, the_printing_depth ) :
+    a_worker = Worker( an_options.number_threads + len( the_files ) )
 
-        the_worker.put( a_task )
+    for a_file in the_files :
+        a_task = UploadFile( a_worker, a_file, the_study_bucket, the_study_id, the_upload_item_size, the_printing_depth )
+
+        a_worker.put( a_task )
 
         pass
 
+    a_worker.join()
+    
     pass
 
 
@@ -261,8 +283,6 @@ if an_options.number_threads < 1 :
     a_option_parser.error( "'--number-threads' must be at least 1" )
     pass
 
-a_worker = Worker( an_options.number_threads )
-
 try:
     import socket
     # socket.setdefaulttimeout( an_options.socket_timeout )
@@ -309,10 +329,8 @@ print_d( "a_study_bucket = '%s'\n" % a_study_bucket )
 print_i( "---------------------------- Uploading study files ------------------------------\n" )
 a_data_loading_time = Timer()
 
-upload_files( a_worker, a_files, a_study_bucket, a_study_id, an_options.upload_item_size, 1 )
+upload_files( an_options.number_threads, a_files, a_study_bucket, a_study_id, an_options.upload_item_size, 1 )
 
-a_worker.join()
-    
 print_d( "a_data_loading_time = %s, sec\n" % a_data_loading_time )
 
 
