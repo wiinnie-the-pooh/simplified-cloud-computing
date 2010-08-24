@@ -35,6 +35,20 @@ import sys, os, os.path, uuid, hashlib
 
 
 #------------------------------------------------------------------------------------------
+def upload_item( the_file_item, the_working_dir, the_file_bucket, the_printing_depth ) :
+    "Uploading file item"
+    a_file_path = os.path.join( the_working_dir, the_file_item )
+    print_d( "'%s' - " % a_file_path, the_printing_depth )
+
+    a_part_key = Key( the_file_bucket )
+    a_part_key.key = the_file_item
+    a_part_key.set_contents_from_filename( a_file_path )
+    print_d( "%s\n" % a_part_key )
+
+    pass
+
+
+#------------------------------------------------------------------------------------------
 def upload_items( the_file_bucket, the_file_dirname, the_file_basename, the_upload_item_size, the_printing_depth ) :
     "Uploading file items"
     import tempfile
@@ -46,13 +60,7 @@ def upload_items( the_file_bucket, the_file_dirname, the_file_basename, the_uplo
 
     a_dir_contents = os.listdir( a_working_dir )
     for a_file_item in a_dir_contents :
-        a_file_path = os.path.join( a_working_dir, a_file_item )
-        print_d( "'%s' - " % a_file_path, the_printing_depth )
-
-        a_part_key = Key( the_file_bucket )
-        a_part_key.key = a_file_item
-        a_part_key.set_contents_from_filename( a_file_path )
-        print_d( "%s\n" % a_part_key )
+        upload_item( a_file_item, a_working_dir, the_file_bucket, the_printing_depth + 1 )
 
         pass
 
