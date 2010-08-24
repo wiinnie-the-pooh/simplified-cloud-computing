@@ -96,6 +96,24 @@ class UploadFile :
     
     def run( self ) :
         upload_file( self.file, self.study_bucket, self.study_id, self.upload_item_size, self.printing_depth )
+
+        return self
+
+    pass
+
+
+#------------------------------------------------------------------------------------------
+from Queue import Queue
+
+class UploadFileWorker( Queue ) :
+    def __call__( self ) :
+        while True:
+            self.get().run()
+
+            self.task_done()
+
+            pass
+
         pass
 
     pass
@@ -103,12 +121,23 @@ class UploadFile :
 
 #------------------------------------------------------------------------------------------
 def upload_files( the_files, the_study_bucket, the_study_id, the_upload_item_size, the_printing_depth ) :
-    for a_file in the_files :
-        a_task = UploadFile( a_file, the_study_bucket, the_study_id, the_upload_item_size, the_printing_depth )
+    an_upload_file_worker = UploadFileWorker()
 
-        a_task.run()
+    for an_id in range( len( the_files ) ) :
+        from threading import Thread
+        a_thread = Thread( target = an_upload_file_worker )
+        a_thread.daemon = True
+        a_thread.start()
 
         pass
+
+    for a_file in the_files :
+        a_task = UploadFile( a_file, the_study_bucket, the_study_id, the_upload_item_size, the_printing_depth )
+        an_upload_file_worker.put( a_task )
+
+        pass
+
+    an_upload_file_worker.join()
 
     pass
 
