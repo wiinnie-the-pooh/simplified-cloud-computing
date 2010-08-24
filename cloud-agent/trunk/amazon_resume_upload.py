@@ -35,6 +35,26 @@ import sys, os, os.path, uuid, hashlib
 
 
 #------------------------------------------------------------------------------------------
+def upload_item( the_file_bucket, the_file_item, the_working_dir, the_printing_depth ) :
+    a_file_path = os.path.join( the_working_dir, the_file_item )
+    print_d( "'%s'\n" % a_file_path, the_printing_depth )
+    
+    a_part_key = Key( the_file_bucket )
+    a_part_key.key = the_file_item
+    a_part_key.set_contents_from_filename( a_file_path )
+    print_d( "%s\n" % a_part_key, the_printing_depth + 1 )
+    
+    os.remove( a_file_path )
+    
+    try :
+        os.rmdir( the_working_dir )
+    except :
+        pass
+    
+    pass
+
+
+#------------------------------------------------------------------------------------------
 def upload_items( the_file_bucket, the_file_basename, the_working_dir, the_printing_depth ) :
     a_dir_contents = os.listdir( the_working_dir )
 
@@ -42,20 +62,7 @@ def upload_items( the_file_bucket, the_file_basename, the_working_dir, the_print
     a_dir_contents.reverse()
 
     for a_file_item in a_dir_contents :
-        a_file_path = os.path.join( the_working_dir, a_file_item )
-        print_d( "'%s'\n" % a_file_path, the_printing_depth )
-
-        a_part_key = Key( the_file_bucket )
-        a_part_key.key = a_file_item
-        a_part_key.set_contents_from_filename( a_file_path )
-        print_d( "%s\n" % a_part_key, the_printing_depth + 1 )
-
-        os.remove( a_file_path )
-        
-        try :
-            os.rmdir( the_working_dir )
-        except :
-            pass
+        upload_item( the_file_bucket, a_file_item, the_working_dir, the_printing_depth )
         
         pass
     
@@ -63,25 +70,32 @@ def upload_items( the_file_bucket, the_file_basename, the_working_dir, the_print
 
 
 #------------------------------------------------------------------------------------------
+def upload_file( the_s3_conn, the_study_file_key, the_study_id, the_printing_depth ) :
+    a_file_dirname = os.path.dirname( the_study_file_key.key )
+    a_file_basename = os.path.basename( the_study_file_key.key )
+
+    print_d( "the_study_file_key = %s\n" % the_study_file_key, the_printing_depth )
+
+    a_working_dir = the_study_file_key.key.split( ':' )[ -1 ]
+    print_d( "a_working_dir = '%s'\n" % a_working_dir, the_printing_depth )
+
+    a_file_id = '%s/%s' % ( the_study_id, the_study_file_key.key )
+    print_d( "a_file_id = '%s'\n" % a_file_id, the_printing_depth )
+
+    a_file_bucket_name = hashlib.md5( a_file_id ).hexdigest()
+
+    a_file_bucket = the_s3_conn.get_bucket( a_file_bucket_name )
+    print_d( "a_file_bucket = %s\n" % a_file_bucket, the_printing_depth )
+
+    upload_items( a_file_bucket, a_file_basename, a_working_dir, the_printing_depth + 1 )
+
+    pass
+
+
+#------------------------------------------------------------------------------------------
 def upload_files( the_s3_conn, the_study_bucket, the_study_id, the_printing_depth ) :
     for a_study_file_key in the_study_bucket.get_all_keys() :
-        a_file_dirname = os.path.dirname( a_study_file_key.key )
-        a_file_basename = os.path.basename( a_study_file_key.key )
-
-        print_d( "a_study_file_key = %s\n" % a_study_file_key, the_printing_depth )
-
-        a_working_dir = a_study_file_key.key.split( ':' )[ -1 ]
-        print_d( "a_working_dir = '%s'\n" % a_working_dir, the_printing_depth )
-
-        a_file_id = '%s/%s' % ( the_study_id, a_study_file_key.key )
-        print_d( "a_file_id = '%s'\n" % a_file_id, the_printing_depth )
-
-        a_file_bucket_name = hashlib.md5( a_file_id ).hexdigest()
-
-        a_file_bucket = the_s3_conn.get_bucket( a_file_bucket_name )
-        print_d( "a_file_bucket = %s\n" % a_file_bucket, the_printing_depth )
-
-        upload_items( a_file_bucket, a_file_basename, a_working_dir, the_printing_depth + 1 )
+        upload_file( the_s3_conn, a_study_file_key, the_study_id, the_printing_depth )
         
         pass
 
