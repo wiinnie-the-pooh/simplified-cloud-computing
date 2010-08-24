@@ -30,20 +30,74 @@ AWS_SECRET_ACCESS_KEY = os.getenv( "AWS_SECRET_ACCESS_KEY" )
 #--------------------------------------------------------------------------------------
 import boto
 
+import balloon.common as common
+from balloon.common import print_d, print_i, print_e, sh_command, ssh_command, Timer, Worker
+
+
+#--------------------------------------------------------------------------------------
+def delete_key( the_s3_bucket_key ) :
+    print "\t'%s'" % ( the_s3_bucket_key.name )
+
+    the_s3_bucket_key.delete()
+    
+    pass
+
+
+#--------------------------------------------------------------------------------------
+class DeleteKey :
+    def __init__( self, the_s3_bucket_key ) :
+        self.s3_bucket_key = the_s3_bucket_key
+        pass
+
+    def run( self ) :
+        delete_key( self.s3_bucket_key )
+        pass
+
+    pass
+
+
+#--------------------------------------------------------------------------------------
+class DeleteBucket :
+    def __init__( self, the_s3_bucket ) :
+        self.s3_bucket = the_s3_bucket
+        pass
+
+    def run( self ) :
+        self.s3_bucket.delete()
+        pass
+
+    pass
+
 
 #--------------------------------------------------------------------------------------
 print "--------------- Delete S3 buckets ----------------"
 a_s3_conn = boto.connect_s3( AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY )
+
+a_s3_worker = Worker( 8 )
+
+# First remove all the bucket keys
 for a_bucket in a_s3_conn.get_all_buckets() :
     a_s3_bucket_keys = a_bucket.get_all_keys()
     print "'%s' : %d" % ( a_bucket.name, len( a_s3_bucket_keys ) )
+
     for a_s3_bucket_key in a_s3_bucket_keys :
-        print "\t'%s'" % ( a_s3_bucket_key.name )
-        a_s3_bucket_key.delete()
+        a_s3_worker.put( DeleteKey( a_s3_bucket_key ) )
         pass
-    a_bucket.delete()
+
     pass
 
+a_s3_worker.join()
+print
+
+# Remove the bucket itself
+for a_bucket in a_s3_conn.get_all_buckets() :
+    print "'%s'" % ( a_bucket.name )
+
+    a_s3_worker.put( DeleteBucket( a_bucket ) )
+
+    pass
+
+a_s3_worker.join()
 print
 
 

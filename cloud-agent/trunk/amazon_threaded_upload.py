@@ -24,7 +24,7 @@ This script is responsible for efficient uploading of multi file data
 
 #------------------------------------------------------------------------------------------
 import balloon.common as common
-from balloon.common import print_d, init_printing, print_i, print_e, sh_command, ssh_command, Timer
+from balloon.common import print_d, print_i, print_e, sh_command, ssh_command, Timer, Worker
 
 import balloon.amazon as amazon
 
@@ -32,47 +32,6 @@ import boto
 from boto.s3.key import Key
 
 import sys, os, os.path, uuid, hashlib
-
-
-#------------------------------------------------------------------------------------------
-from Queue import Queue
-
-class Worker( Queue ) :
-    "Run all the registered tasks in parallel"
-    def __init__( self, the_number_threads ) :
-        "Reserve given number of threads to perform the tasks"
-        Queue.__init__( self )
-        from threading import Thread
-        for an_id in range( the_number_threads ) :
-            a_thread = Thread( target = self )
-            a_thread.daemon = True
-
-            a_thread.start()
-            
-            pass
-        
-        pass
-    
-    def __call__( self ) :
-        "Real execution of a task"
-        while True:
-            a_task = self.get()
-
-            try:
-                a_task.run()
-                self.task_done()
-            except :
-                import traceback
-                traceback.print_exc( file = sys.stdout )
-
-                self.task_done()
-                break
-            
-            pass
-
-        pass
-
-    pass
 
 
 #------------------------------------------------------------------------------------------
@@ -114,32 +73,16 @@ class UploadItem :
 
 
 #------------------------------------------------------------------------------------------
-def upload_items( the_worker, the_file_bucket, the_file_dirname, the_file_basename, the_upload_item_size, the_printing_depth ) :
+def upload_items( the_worker, the_file_bucket, the_working_dir, the_upload_item_size, the_printing_depth ) :
     "Uploading file items"
-    import tempfile
 
-    a_tmp_file = tempfile.mkstemp()[ 1 ]
-    sh_command( "cd '%s' &&  tar -czf %s '%s'" % 
-                ( the_file_dirname, a_tmp_file, the_file_basename ), the_printing_depth )
+    a_dir_contents = os.listdir( the_working_dir )
 
-    a_statinfo = os.stat( a_tmp_file )
-    print_d( "a_statinfo.st_size = %d, bytes\n" % a_statinfo.st_size, the_printing_depth )
-
-    import math
-    a_suffix_length = math.ceil( math.log10( a_statinfo.st_size / the_upload_item_size ) )
-    print_d( "a_suffix_length = %d, bytes\n" % a_suffix_length, the_printing_depth )
-
-    a_working_dir = tempfile.mkdtemp()
-    a_file_item_target = os.path.join( a_working_dir, the_file_basename )
-    sh_command( "cat '%s' | split --bytes=%d --numeric-suffixes --suffix-length=%d - %s.tgz-" % 
-                ( a_tmp_file, the_upload_item_size, a_suffix_length, a_file_item_target ), the_printing_depth )
-    os.remove( a_tmp_file )
-
-    a_dir_contents = os.listdir( a_working_dir )
     a_dir_contents.sort()
     a_dir_contents.reverse()
+
     for a_file_item in a_dir_contents :
-        a_task = UploadItem( a_file_item, a_working_dir, the_file_bucket, the_printing_depth + 1 )
+        a_task = UploadItem( a_file_item, the_working_dir, the_file_bucket, the_printing_depth + 1 )
 
         the_worker.put( a_task )
 
@@ -153,8 +96,27 @@ def upload_file( the_worker, the_file, the_study_bucket, the_study_id, the_uploa
     a_file_dirname = os.path.dirname( the_file )
     a_file_basename = os.path.basename( the_file )
 
+    import tempfile
+
+    a_tmp_file = tempfile.mkstemp()[ 1 ]
+    sh_command( "cd '%s' &&  tar -czf %s '%s'" % 
+                ( a_file_dirname, a_tmp_file, a_file_basename ), the_printing_depth )
+
+    a_statinfo = os.stat( a_tmp_file )
+    print_d( "a_statinfo.st_size = %d, bytes\n" % a_statinfo.st_size, the_printing_depth )
+
+    import math
+    a_suffix_length = math.ceil( math.log10( a_statinfo.st_size / the_upload_item_size ) )
+    print_d( "a_suffix_length = %d, bytes\n" % a_suffix_length, the_printing_depth )
+
+    a_working_dir = tempfile.mkdtemp()
+    a_file_item_target = os.path.join( a_working_dir, a_file_basename )
+    sh_command( "cat '%s' | split --bytes=%d --numeric-suffixes --suffix-length=%d - %s.tgz-" % 
+                ( a_tmp_file, the_upload_item_size, a_suffix_length, a_file_item_target ), the_printing_depth )
+    os.remove( a_tmp_file )
+
     a_study_file_key = Key( the_study_bucket )
-    a_study_file_key.key = '%s/%s' % ( a_file_dirname, a_file_basename )
+    a_study_file_key.key = '%s/%s:%s' % ( a_file_dirname, a_file_basename, a_working_dir )
     a_study_file_key.set_contents_from_string( 'dummy' )
     print_d( "a_study_file_key = %s\n" % a_study_file_key, the_printing_depth )
 
@@ -165,7 +127,7 @@ def upload_file( the_worker, the_file, the_study_bucket, the_study_id, the_uploa
     a_file_bucket = a_s3_conn.create_bucket( a_file_bucket_name )
     print_d( "a_file_bucket = %s\n" % a_file_bucket, the_printing_depth )
 
-    upload_items( the_worker, a_file_bucket, a_file_dirname, a_file_basename, the_upload_item_size, the_printing_depth + 1 )
+    upload_items( the_worker, a_file_bucket, a_working_dir, the_upload_item_size, the_printing_depth + 1 )
     
     pass
 

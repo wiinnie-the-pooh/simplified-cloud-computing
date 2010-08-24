@@ -234,4 +234,45 @@ class Timer :
     pass
 
 
+#------------------------------------------------------------------------------------------
+from Queue import Queue
+
+class Worker( Queue ) :
+    "Run all the registered tasks in parallel"
+    def __init__( self, the_number_threads ) :
+        "Reserve given number of threads to perform the tasks"
+        Queue.__init__( self )
+        from threading import Thread
+        for an_id in range( the_number_threads ) :
+            a_thread = Thread( target = self )
+            a_thread.daemon = True
+
+            a_thread.start()
+            
+            pass
+        
+        pass
+    
+    def __call__( self ) :
+        "Real execution of a task"
+        while True:
+            a_task = self.get()
+
+            try:
+                a_task.run()
+                self.task_done()
+            except :
+                import traceback
+                traceback.print_exc( file = sys.stdout )
+
+                self.task_done()
+                break
+            
+            pass
+
+        pass
+
+    pass
+
+
 #--------------------------------------------------------------------------------------
