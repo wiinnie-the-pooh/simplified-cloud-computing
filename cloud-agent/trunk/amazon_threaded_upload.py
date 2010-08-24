@@ -58,10 +58,13 @@ class Worker( Queue ) :
         while True:
             a_task = self.get()
 
-            a_task.run()
-
-            self.task_done()
-
+            try:
+                a_task.run()
+                self.task_done()
+            except:
+                self.task_done()
+                break
+            
             pass
 
         pass
