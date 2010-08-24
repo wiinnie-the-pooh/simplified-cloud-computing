@@ -101,7 +101,7 @@ class UploadItem :
 
 
 #------------------------------------------------------------------------------------------
-def upload_items( the_file_bucket, the_file_dirname, the_file_basename, the_upload_item_size, the_printing_depth ) :
+def upload_items( the_worker, the_file_bucket, the_file_dirname, the_file_basename, the_upload_item_size, the_printing_depth ) :
     "Uploading file items"
     import tempfile
     a_working_dir = tempfile.mkdtemp()
@@ -112,12 +112,10 @@ def upload_items( the_file_bucket, the_file_dirname, the_file_basename, the_uplo
 
     a_dir_contents = os.listdir( a_working_dir )
 
-    a_worker = Worker( len( a_dir_contents ) )
-
     for a_file_item in a_dir_contents :
         a_task = UploadItem( a_file_item, a_working_dir, the_file_bucket, the_printing_depth + 1 )
 
-        a_worker.put( a_task )
+        the_worker.put( a_task )
 
         pass
 
@@ -130,7 +128,7 @@ def upload_items( the_file_bucket, the_file_dirname, the_file_basename, the_uplo
 
 
 #------------------------------------------------------------------------------------------
-def upload_file( the_file, the_study_bucket, the_study_id, the_upload_item_size, the_printing_depth ) :
+def upload_file( the_worker, the_file, the_study_bucket, the_study_id, the_upload_item_size, the_printing_depth ) :
     a_file_dirname = os.path.dirname( the_file )
     a_file_basename = os.path.basename( the_file )
 
@@ -146,14 +144,15 @@ def upload_file( the_file, the_study_bucket, the_study_id, the_upload_item_size,
     a_file_bucket = a_s3_conn.create_bucket( a_file_bucket_name )
     print_d( "a_file_bucket = %s\n" % a_file_bucket, the_printing_depth )
 
-    upload_items( a_file_bucket, a_file_dirname, a_file_basename, the_upload_item_size, the_printing_depth + 1 )
+    upload_items( the_worker, a_file_bucket, a_file_dirname, a_file_basename, the_upload_item_size, the_printing_depth + 1 )
     
     pass
 
 
 #------------------------------------------------------------------------------------------
 class UploadFile :
-    def __init__( self, the_file, the_study_bucket, the_study_id, the_upload_item_size, the_printing_depth ) :
+    def __init__( self, the_worker, the_file, the_study_bucket, the_study_id, the_upload_item_size, the_printing_depth ) :
+        self.worker = the_worker
         self.file = the_file
         self.study_bucket = the_study_bucket
         self.study_id = the_study_id
@@ -162,7 +161,7 @@ class UploadFile :
         pass
     
     def run( self ) :
-        upload_file( self.file, self.study_bucket, self.study_id, self.upload_item_size, self.printing_depth )
+        upload_file( self.worker, self.file, self.study_bucket, self.study_id, self.upload_item_size, self.printing_depth )
 
         return self
 
@@ -170,17 +169,13 @@ class UploadFile :
 
 
 #------------------------------------------------------------------------------------------
-def upload_files( the_files, the_study_bucket, the_study_id, the_upload_item_size, the_printing_depth ) :
-    a_worker = Worker( len( the_files ) )
-
+def upload_files( the_worker, the_files, the_study_bucket, the_study_id, the_upload_item_size, the_printing_depth ) :
     for a_file in the_files :
-        a_task = UploadFile( a_file, the_study_bucket, the_study_id, the_upload_item_size, the_printing_depth )
+        a_task = UploadFile( the_worker, a_file, the_study_bucket, the_study_id, the_upload_item_size, the_printing_depth )
 
-        a_worker.put( a_task )
+        the_worker.put( a_task )
 
         pass
-
-    a_worker.join()
 
     pass
 
@@ -188,7 +183,7 @@ def upload_files( the_files, the_study_bucket, the_study_id, the_upload_item_siz
 #------------------------------------------------------------------------------------------
 # Defining utility command-line interface
 
-an_usage_description = "%prog --study-name='my favorite study'"
+an_usage_description = "%prog --study-name='my favorite study' --upload-item-size=5160 --number-threads=7"
 an_usage_description += common.add_usage_description()
 an_usage_description += amazon.add_usage_description()
 an_usage_description += " <file 1> <file 2> ..."
@@ -212,7 +207,21 @@ a_option_parser.add_option( "--upload-item-size",
                             action = "store",
                             dest = "upload_item_size",
                             help = "(\"%default\", by default)",
-                            default = 1024000 )
+                            default = 10240 )
+a_option_parser.add_option( "--number-threads",
+                            metavar = "< number of threads to use >",
+                            type = "int",
+                            action = "store",
+                            dest = "number_threads",
+                            help = "(\"%default\", by default)",
+                            default = 8 )
+a_option_parser.add_option( "--socket-timeout",
+                            metavar = "< socket timeout time >",
+                            type = "int",
+                            action = "store",
+                            dest = "socket_timeout",
+                            help = "(\"%default\", by default)",
+                            default = 0 )
 common.add_parser_options( a_option_parser )
 amazon.add_parser_options( a_option_parser )
     
@@ -226,34 +235,45 @@ an_options, an_args = a_option_parser.parse_args()
 
 common.extract_options( an_options )
 
-a_study_name = an_options.study_name
-print_d( "a_study_name = '%s'\n" % a_study_name )
-    
 a_files = list()
 for an_arg in an_args :
     if not os.path.exists( an_arg ) :
-        print_e( "The given file should exists\n" )
+        a_option_parser.error( "The given file should exists\n" )
         pass
     a_files.append( os.path.abspath( an_arg ) )
     pass
 
 if len( a_files ) == 0 :
-    print_e( "You should define one valid 'file' at least\n" )
+    a_option_parser.error( "You should define one valid 'file' at least\n" )
     pass
 
 print_d( "a_files = %r\n" % a_files )
 
+a_study_name = an_options.study_name
+print_d( "a_study_name = '%s'\n" % a_study_name )
+    
 AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY = amazon.extract_options( an_options )
+
+if an_options.number_threads < 1 :
+    a_option_parser.error( "'--number-threads' must be at least 1" )
+    pass
+
+a_worker = Worker( an_options.number_threads )
+
+try:
+    import socket
+    # socket.setdefaulttimeout( an_options.socket_timeout )
+except TypeError, exc :
+    print_e( "'--socket-timeout' error: %s" % exc.message )
+    pass
 
 
 print_i( "--------------------------- Connecting to Amazon S3 -----------------------------\n" )
-#------------------------------------------------------------------------------------------
 a_s3_conn = boto.connect_s3( AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY )
 print_d( "a_s3_conn = %r\n" % a_s3_conn )
 
 
 print_i( "--------------------------- Looking for study root ------------------------------\n" )
-#------------------------------------------------------------------------------------------
 a_canonical_user_id = a_s3_conn.get_canonical_user_id()
 print_d( "a_canonical_user_id = '%s'\n" % a_canonical_user_id )
 
@@ -270,7 +290,6 @@ print_d( "a_root_bucket = %s\n" % a_root_bucket )
 
 
 print_i( "------------------------- Registering the new study -----------------------------\n" )
-#------------------------------------------------------------------------------------------
 a_root_study_key = Key( a_root_bucket )
 a_root_study_key.key = '%s' % ( a_study_name )
 a_root_study_key.set_contents_from_string( 'dummy' )
@@ -285,16 +304,16 @@ print_d( "a_study_bucket = '%s'\n" % a_study_bucket )
 
 
 print_i( "---------------------------- Uploading study files ------------------------------\n" )
-#------------------------------------------------------------------------------------------
 a_data_loading_time = Timer()
 
-upload_files( a_files, a_study_bucket, a_study_id, an_options.upload_item_size, 1 )
+upload_files( a_worker, a_files, a_study_bucket, a_study_id, an_options.upload_item_size, 1 )
 
+a_worker.join()
+    
 print_d( "a_data_loading_time = %s, sec\n" % a_data_loading_time )
 
 
 print_i( "-------------------------------------- OK ---------------------------------------\n" )
-#------------------------------------------------------------------------------------------
 print a_study_name
 
 
