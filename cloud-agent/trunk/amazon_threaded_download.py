@@ -44,16 +44,37 @@ def download_item( the_item_key, the_working_dir, the_printing_depth ) :
 
 
 #------------------------------------------------------------------------------------------
-def download_items( the_file_bucket, the_file_basename, the_output_dir, the_printing_depth ) :
+class DownloadItem :
+    def __init__( self, the_item_key, the_working_dir, the_printing_depth ) :
+        self.item_key = the_item_key
+        self.working_dir = the_working_dir
+        self.printing_depth = the_printing_depth
+
+        pass
+    
+    def run( self ) :
+        download_item( self.item_key, self.working_dir, self.printing_depth )
+
+        return self
+
+    pass
+
+
+#------------------------------------------------------------------------------------------
+def download_items( the_worker, the_file_bucket, the_file_basename, the_output_dir, the_printing_depth ) :
     import tempfile
     a_working_dir = tempfile.mkdtemp( dir = the_output_dir )
     a_working_dir = os.path.join( the_output_dir, a_working_dir )
     print_d( "a_working_dir = '%s'\n" % a_working_dir, the_printing_depth )
 
     for an_item_key in the_file_bucket.get_all_keys() :
-        download_item( an_item_key, a_working_dir, the_printing_depth + 1 )
+        a_task = DownloadItem( an_item_key, a_working_dir, the_printing_depth + 1 )
+        
+        the_worker.put( a_task )
         
         pass
+
+    the_worker.join()
 
     sh_command( "cd '%s' && cat %s.tgz-* | tar -xzf - -C '%s'" % 
                 ( a_working_dir, the_file_basename, the_output_dir ), 
@@ -66,7 +87,7 @@ def download_items( the_file_bucket, the_file_basename, the_output_dir, the_prin
 
 
 #------------------------------------------------------------------------------------------
-def download_file( the_s3_conn, the_study_file_key, the_study_id, the_output_dir, the_printing_depth ) :
+def download_file( the_s3_conn, the_worker, the_study_file_key, the_study_id, the_output_dir, the_printing_depth ) :
     a_file_name = the_study_file_key.key.split( ':' )[ 0 ]
     a_file_dirname = os.path.dirname( a_file_name )
     a_file_basename = os.path.basename( a_file_name )
@@ -81,7 +102,7 @@ def download_file( the_s3_conn, the_study_file_key, the_study_id, the_output_dir
     a_file_bucket = the_s3_conn.get_bucket( a_file_bucket_name )
     print_d( "a_file_bucket = %s\n" % a_file_bucket, the_printing_depth )
 
-    download_items( a_file_bucket, a_file_basename, the_output_dir, the_printing_depth + 1 )
+    download_items( the_worker, a_file_bucket, a_file_basename, the_output_dir, the_printing_depth + 1 )
         
     pass
 
@@ -99,7 +120,7 @@ class DownloadFile :
         pass
     
     def run( self ) :
-        download_file( self.s3_conn, self.study_file_key, self.study_id, self.output_dir, self.printing_depth )
+        download_file( self.s3_conn, self.worker, self.study_file_key, self.study_id, self.output_dir, self.printing_depth )
 
         return self
 
@@ -219,5 +240,5 @@ download_files( a_s3_conn, a_worker, a_study_file_keys, a_study_id, an_output_di
 print_d( "a_data_loading_time = %s, sec\n" % a_data_loading_time )
 
 
-print_i( "-------------------------------------- OK ---------------------------------------\n" )
+print_i( "-------------------------------------- %s ---------------------------------------\n" % a_worker.status )
 

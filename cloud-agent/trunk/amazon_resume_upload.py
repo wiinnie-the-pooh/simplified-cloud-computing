@@ -90,7 +90,7 @@ def upload_files( the_s3_conn, the_worker, the_study_file_keys, the_study_id, th
         if the_worker.status == 'OK' :
             break
 
-        print_i( "-------------------------------------- %s ---------------------------------------\n" % a_worker.status )
+        print_i( "-------------------------------------- %s ---------------------------------------\n" % the_worker.status )
 
         the_worker.status = 'OK'
 

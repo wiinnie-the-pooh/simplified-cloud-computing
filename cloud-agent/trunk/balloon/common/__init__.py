@@ -265,9 +265,9 @@ class Worker( Queue ) :
                 self.task_done()
             except :
                 try:
+                    import traceback
+                    traceback.print_exc( file = sys.stdout )
                     self.status = 'KO'
-                    # import traceback
-                    # traceback.print_exc( file = sys.stdout )
                     self.task_done()
                 except :
                     pass
