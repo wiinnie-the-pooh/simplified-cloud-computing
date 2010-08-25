@@ -35,6 +35,15 @@ import sys, os, os.path, uuid, hashlib
 
 
 #------------------------------------------------------------------------------------------
+def download_item( the_item_key, the_working_dir, the_printing_depth ) :
+    a_file_path = os.path.join( the_working_dir, the_item_key.name )
+    the_item_key.get_contents_to_filename( a_file_path )
+    print_d( "an_item_key = %s\n" % the_item_key, the_printing_depth )
+        
+    pass
+
+
+#------------------------------------------------------------------------------------------
 def download_items( the_file_bucket, the_file_basename, the_output_dir, the_printing_depth ) :
     import tempfile
     a_working_dir = tempfile.mkdtemp( dir = the_output_dir )
@@ -42,9 +51,7 @@ def download_items( the_file_bucket, the_file_basename, the_output_dir, the_prin
     print_d( "a_working_dir = '%s'\n" % a_working_dir, the_printing_depth )
 
     for an_item_key in the_file_bucket.get_all_keys() :
-        a_file_path = os.path.join( a_working_dir, an_item_key.name )
-        an_item_key.get_contents_to_filename( a_file_path )
-        print_d( "an_item_key = %s\n" % an_item_key, the_printing_depth )
+        download_item( an_item_key, a_working_dir, the_printing_depth + 1 )
         
         pass
 
