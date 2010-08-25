@@ -122,7 +122,7 @@ a_option_parser.add_option( "--socket-timeout",
                             action = "store",
                             dest = "socket_timeout",
                             help = "(\"%default\", by default)",
-                            default = 0 )
+                            default = 1 )
 common.add_parser_options( a_option_parser )
 amazon.add_parser_options( a_option_parser )
     
@@ -149,12 +149,8 @@ if an_options.number_threads < 1 :
     a_option_parser.error( "'--number-threads' must be at least 1" )
     pass
 
-try:
-    import socket
-    # socket.setdefaulttimeout( an_options.socket_timeout )
-except TypeError, exc :
-    print_e( "'--socket-timeout' error: %s" % exc.message )
-    pass
+import socket
+socket.setdefaulttimeout( an_options.socket_timeout )
 
 
 print_i( "--------------------------- Connecting to Amazon S3 -----------------------------\n" )

@@ -61,8 +61,9 @@ def download_items( the_file_bucket, the_file_basename, the_output_dir, the_prin
 #------------------------------------------------------------------------------------------
 def download_files( the_s3_conn, the_study_bucket, the_study_id, the_output_dir, the_printing_depth ) :
     for a_study_file_key in the_study_bucket.get_all_keys() :
-        a_file_dirname = os.path.dirname( a_study_file_key.key )
-        a_file_basename = os.path.basename( a_study_file_key.key )
+        a_file_name = a_study_file_key.key.split( ':' )[ 0 ]
+        a_file_dirname = os.path.dirname( a_file_name )
+        a_file_basename = os.path.basename( a_file_name )
 
         print_d( "a_study_file_key = %s\n" % a_study_file_key, the_printing_depth )
 
