@@ -93,8 +93,8 @@ class UploadFile :
 
 
 #------------------------------------------------------------------------------------------
-def upload_files( the_number_threads, the_files, the_study_bucket, the_study_id, the_upload_item_size, the_printing_depth ) :
-    a_worker = Worker( the_number_threads + len( the_files ) )
+def upload_files( the_files, the_study_bucket, the_study_id, the_upload_item_size, the_printing_depth ) :
+    a_worker = Worker( len( the_files ) )
 
     for a_file in the_files :
         a_task = UploadFile( a_worker, a_file, the_study_bucket, the_study_id, the_upload_item_size, the_printing_depth )
@@ -111,7 +111,7 @@ def upload_files( the_number_threads, the_files, the_study_bucket, the_study_id,
 #------------------------------------------------------------------------------------------
 # Defining utility command-line interface
 
-an_usage_description = "%prog --study-name='my favorite study' --upload-item-size=5160 --number-threads=7"
+an_usage_description = "%prog --study-name='my favorite study' --upload-item-size=5160 --socket-timeout=3"
 an_usage_description += common.add_usage_description()
 an_usage_description += amazon.add_usage_description()
 an_usage_description += " <file 1> <file 2> ..."
@@ -136,20 +136,13 @@ a_option_parser.add_option( "--upload-item-size",
                             dest = "upload_item_size",
                             help = "(\"%default\", by default)",
                             default = 10240 )
-a_option_parser.add_option( "--number-threads",
-                            metavar = "< number of threads to use >",
-                            type = "int",
-                            action = "store",
-                            dest = "number_threads",
-                            help = "(\"%default\", by default)",
-                            default = 8 )
 a_option_parser.add_option( "--socket-timeout",
                             metavar = "< socket timeout time >",
                             type = "int",
                             action = "store",
                             dest = "socket_timeout",
                             help = "(\"%default\", by default)",
-                            default = 0 )
+                            default = 1 )
 common.add_parser_options( a_option_parser )
 amazon.add_parser_options( a_option_parser )
     
@@ -182,16 +175,8 @@ print_d( "a_study_name = '%s'\n" % a_study_name )
     
 AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY = amazon.extract_options( an_options )
 
-if an_options.number_threads < 1 :
-    a_option_parser.error( "'--number-threads' must be at least 1" )
-    pass
-
-try:
-    import socket
-    # socket.setdefaulttimeout( an_options.socket_timeout )
-except TypeError, exc :
-    print_e( "'--socket-timeout' error: %s" % exc.message )
-    pass
+import socket
+socket.setdefaulttimeout( an_options.socket_timeout )
 
 
 print_i( "--------------------------- Connecting to Amazon S3 -----------------------------\n" )
@@ -232,7 +217,7 @@ print_d( "a_study_bucket = '%s'\n" % a_study_bucket )
 print_i( "---------------------------- Uploading study files ------------------------------\n" )
 a_data_loading_time = Timer()
 
-upload_files( an_options.number_threads, a_files, a_study_bucket, a_study_id, an_options.upload_item_size, 1 )
+upload_files( a_files, a_study_bucket, a_study_id, an_options.upload_item_size, 0 )
 
 print_d( "a_data_loading_time = %s, sec\n" % a_data_loading_time )
 

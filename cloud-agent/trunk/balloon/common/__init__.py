@@ -242,6 +242,9 @@ class Worker( Queue ) :
     def __init__( self, the_number_threads ) :
         "Reserve given number of threads to perform the tasks"
         Queue.__init__( self )
+
+        self.status = 'OK'
+
         from threading import Thread
         for an_id in range( the_number_threads ) :
             a_thread = Thread( target = self )
@@ -256,20 +259,20 @@ class Worker( Queue ) :
     def __call__( self ) :
         "Real execution of a task"
         while True:
-            a_task = self.get()
-
             try:
+                a_task = self.get()
                 a_task.run()
                 self.task_done()
             except :
-                import traceback
-                traceback.print_exc( file = sys.stdout )
-
-                self.task_done()
+                try:
+                    self.status = 'KO'
+                    # import traceback
+                    # traceback.print_exc( file = sys.stdout )
+                    self.task_done()
+                except :
+                    pass
                 break
-            
             pass
-
         pass
 
     pass
