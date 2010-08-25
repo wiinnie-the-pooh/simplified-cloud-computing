@@ -36,12 +36,11 @@ import sys, os, os.path, uuid, hashlib
 
 #------------------------------------------------------------------------------------------
 def upload_file( the_s3_conn, the_worker, the_study_file_key, the_study_id, the_printing_depth ) :
-    a_file_dirname = os.path.dirname( the_study_file_key.key )
-    a_file_basename = os.path.basename( the_study_file_key.key )
+    a_working_dir = the_study_file_key.key.split( ':' )[ -1 ]
+    if not os.path.exists( a_working_dir ) :
+        return
 
     print_d( "the_study_file_key = %s\n" % the_study_file_key, the_printing_depth )
-
-    a_working_dir = the_study_file_key.key.split( ':' )[ -1 ]
     print_d( "a_working_dir = '%s'\n" % a_working_dir, the_printing_depth )
 
     a_file_id = '%s/%s' % ( the_study_id, the_study_file_key.key )
@@ -95,7 +94,7 @@ def upload_files( the_s3_conn, the_number_threads, the_study_bucket, the_study_i
 #------------------------------------------------------------------------------------------
 # Defining utility command-line interface
 
-an_usage_description = "%prog --study-name='my interrupted study' --number-threads=7"
+an_usage_description = "%prog --study-name='my interrupted study' --number-threads=7 --socket-timeout=3"
 an_usage_description += common.add_usage_description()
 an_usage_description += amazon.add_usage_description()
 
@@ -138,6 +137,11 @@ an_options, an_args = a_option_parser.parse_args()
 common.extract_options( an_options )
 
 a_study_name = an_options.study_name
+if a_study_name == None :
+    a_study_name = raw_input()
+    pass
+
+print_d( "a_study_name = '%s'\n" % a_study_name )
     
 AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY = amazon.extract_options( an_options )
 
@@ -177,7 +181,6 @@ print_d( "a_data_loading_time = %s, sec\n" % a_data_loading_time )
 
 
 print_i( "-------------------------------------- OK ---------------------------------------\n" )
-print a_study_name
 
 
 #------------------------------------------------------------------------------------------

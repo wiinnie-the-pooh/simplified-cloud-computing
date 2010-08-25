@@ -70,8 +70,6 @@ def upload_file( the_worker, the_file, the_study_bucket, the_study_id, the_uploa
     a_file_bucket = a_s3_conn.create_bucket( a_file_bucket_name )
     print_d( "a_file_bucket = %s\n" % a_file_bucket, the_printing_depth )
 
-    amazon.upload_items( the_worker, a_file_bucket, a_working_dir, the_printing_depth + 1 )
-    
     pass
 
 
