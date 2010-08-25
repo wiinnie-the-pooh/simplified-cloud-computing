@@ -68,21 +68,36 @@ def download_items( the_worker, the_number_threads, the_file_bucket, the_file_ba
     a_working_dir = os.path.join( the_output_dir, a_working_dir )
     print_d( "a_working_dir = '%s'\n" % a_working_dir, the_printing_depth )
 
-    for an_item_key in the_file_bucket.get_all_keys() :
-        a_file_path = os.path.join( a_working_dir, an_item_key.name )
-        print_d( "a_file_path = %s\n" % a_file_path, the_printing_depth )
-        
-        if os.path.exists( a_file_path ) :
-            continue
+    a_wait = 1
+    import time, random
+    an_is_everything_uploaded = False
+    while not an_is_everything_uploaded :
+        for an_item_key in the_file_bucket.get_all_keys() :
+            if an_item_key.name == the_file_bucket.name :
+                an_is_everything_uploaded = True
+                continue
 
-        a_task = DownloadItem( an_item_key, a_file_path, the_printing_depth + 1 )
-        
-        a_worker.put( a_task )
-        
+            a_file_path = os.path.join( a_working_dir, an_item_key.name )
+            if os.path.exists( a_file_path ) :
+                continue
+
+            print_d( "a_file_path = %s\n" % a_file_path, the_printing_depth )
+
+            a_task = DownloadItem( an_item_key, a_file_path, the_printing_depth + 1 )
+            
+            a_worker.put( a_task )
+            
+            pass
+
+        a_worker.join()
+
+        # Exponential backoff
+        a_wait = a_wait * 2 
+        a_sleep = a_wait * random.random()
+        time.sleep( a_sleep )
+
         pass
-
-    a_worker.join()
-
+    
     the_worker.status = a_worker.status
 
     sh_command( "cd '%s' && cat %s.tgz-* | tar -xzf - -C '%s'" % 
