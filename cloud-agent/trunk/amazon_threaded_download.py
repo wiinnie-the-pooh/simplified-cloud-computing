@@ -61,7 +61,9 @@ class DownloadItem :
 
 
 #------------------------------------------------------------------------------------------
-def download_items( the_worker, the_file_bucket, the_file_basename, the_output_dir, the_printing_depth ) :
+def download_items( the_worker, the_number_threads, the_file_bucket, the_file_basename, the_output_dir, the_printing_depth ) :
+    a_worker = Worker( the_number_threads )
+
     import tempfile
     a_working_dir = tempfile.mkdtemp( dir = the_output_dir )
     a_working_dir = os.path.join( the_output_dir, a_working_dir )
@@ -70,11 +72,13 @@ def download_items( the_worker, the_file_bucket, the_file_basename, the_output_d
     for an_item_key in the_file_bucket.get_all_keys() :
         a_task = DownloadItem( an_item_key, a_working_dir, the_printing_depth + 1 )
         
-        the_worker.put( a_task )
+        a_worker.put( a_task )
         
         pass
 
-    the_worker.join()
+    a_worker.join()
+
+    the_worker.status = a_worker.status
 
     sh_command( "cd '%s' && cat %s.tgz-* | tar -xzf - -C '%s'" % 
                 ( a_working_dir, the_file_basename, the_output_dir ), 
@@ -87,7 +91,7 @@ def download_items( the_worker, the_file_bucket, the_file_basename, the_output_d
 
 
 #------------------------------------------------------------------------------------------
-def download_file( the_s3_conn, the_worker, the_study_file_key, the_study_id, the_output_dir, the_printing_depth ) :
+def download_file( the_worker, the_number_threads, the_s3_conn, the_study_file_key, the_study_id, the_output_dir, the_printing_depth ) :
     a_file_name = the_study_file_key.key.split( ':' )[ 0 ]
     a_file_dirname = os.path.dirname( a_file_name )
     a_file_basename = os.path.basename( a_file_name )
@@ -102,16 +106,17 @@ def download_file( the_s3_conn, the_worker, the_study_file_key, the_study_id, th
     a_file_bucket = the_s3_conn.get_bucket( a_file_bucket_name )
     print_d( "a_file_bucket = %s\n" % a_file_bucket, the_printing_depth )
 
-    download_items( the_worker, a_file_bucket, a_file_basename, the_output_dir, the_printing_depth + 1 )
+    download_items( the_worker, the_number_threads, a_file_bucket, a_file_basename, the_output_dir, the_printing_depth + 1 )
         
     pass
 
 
 #------------------------------------------------------------------------------------------
 class DownloadFile :
-    def __init__( self, the_s3_conn, the_worker, the_study_file_key, the_study_id, the_output_dir, the_printing_depth ) :
-        self.s3_conn = the_s3_conn
+    def __init__( self, the_worker, the_number_threads, the_s3_conn, the_study_file_key, the_study_id, the_output_dir, the_printing_depth ) :
         self.worker = the_worker
+        self.number_threads = the_number_threads
+        self.s3_conn = the_s3_conn
         self.study_file_key = the_study_file_key
         self.study_id = the_study_id
         self.output_dir = the_output_dir
@@ -120,7 +125,7 @@ class DownloadFile :
         pass
     
     def run( self ) :
-        download_file( self.s3_conn, self.worker, self.study_file_key, self.study_id, self.output_dir, self.printing_depth )
+        download_file( self.worker, self.number_threads, self.s3_conn, self.study_file_key, self.study_id, self.output_dir, self.printing_depth )
 
         return self
 
@@ -128,9 +133,9 @@ class DownloadFile :
 
 
 #------------------------------------------------------------------------------------------
-def download_files( the_s3_conn, the_worker, the_study_file_keys, the_study_id, the_output_dir, the_printing_depth ) :
+def download_files( the_worker, the_number_threads, the_s3_conn, the_study_file_keys, the_study_id, the_output_dir, the_printing_depth ) :
     for a_study_file_key in the_study_file_keys :
-        a_task = DownloadFile( the_s3_conn, the_worker, a_study_file_key, the_study_id, the_output_dir, the_printing_depth )
+        a_task = DownloadFile( the_worker, the_number_threads, the_s3_conn, a_study_file_key, the_study_id, the_output_dir, the_printing_depth )
         
         the_worker.put( a_task )
         
@@ -233,9 +238,9 @@ print_i( "--------------------------- Reading the study files ------------------
 a_data_loading_time = Timer()
 
 a_study_file_keys = a_study_bucket.get_all_keys()
-a_worker = Worker( a_number_threads + len( a_study_file_keys ) )
+a_worker = Worker( len( a_study_file_keys ) )
 
-download_files( a_s3_conn, a_worker, a_study_file_keys, a_study_id, an_output_dir, 0 )
+download_files( a_worker, a_number_threads, a_s3_conn, a_study_file_keys, a_study_id, an_output_dir, 0 )
 
 print_d( "a_data_loading_time = %s, sec\n" % a_data_loading_time )
 

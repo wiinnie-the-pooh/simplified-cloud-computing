@@ -169,9 +169,13 @@ a_data_loading_time = Timer()
 a_study_file_keys = a_study_bucket.get_all_keys()
 a_worker = Worker( a_number_threads + len( a_study_file_keys ) )
 
-upload_files( a_s3_conn, a_worker, the_study_file_keys, a_study_id, 0 )
+upload_files( a_s3_conn, a_worker, a_study_file_keys, a_study_id, 0 )
 
 print_d( "a_data_loading_time = %s, sec\n" % a_data_loading_time )
 
 
 print_i( "-------------------------------------- OK ---------------------------------------\n" )
+print a_study_name
+
+
+#------------------------------------------------------------------------------------------
