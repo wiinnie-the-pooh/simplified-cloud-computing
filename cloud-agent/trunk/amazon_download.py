@@ -142,7 +142,6 @@ AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY = amazon.extract_options( an_options )
 
 
 print_i( "--------------------------- Connecting to Amazon S3 -----------------------------\n" )
-#------------------------------------------------------------------------------------------
 a_s3_conn = boto.connect_s3( AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY )
 print_d( "a_s3_conn = %r\n" % a_s3_conn )
 
@@ -151,7 +150,6 @@ print_d( "a_canonical_user_id = '%s'\n" % a_canonical_user_id )
 
 
 print_i( "------------------------ Looking for the study bucket ---------------------------\n" )
-#------------------------------------------------------------------------------------------
 a_study_id = '%s/%s' % ( a_canonical_user_id, a_study_name )
 a_study_bucket_name = hashlib.md5( a_study_id ).hexdigest()
 
@@ -166,10 +164,12 @@ print_d( "a_study_bucket = '%s'\n" % a_study_bucket.name )
 
 
 print_i( "--------------------------- Reading the study files -----------------------------\n" )
-#------------------------------------------------------------------------------------------
-download_files( a_s3_conn, a_study_bucket, a_study_id, an_output_dir, 1 )
+a_data_loading_time = Timer()
+
+download_files( a_s3_conn, a_study_bucket, a_study_id, an_output_dir, 0 )
+
+print_d( "a_data_loading_time = %s, sec\n" % a_data_loading_time )
 
 
 print_i( "-------------------------------------- OK ---------------------------------------\n" )
-#------------------------------------------------------------------------------------------
 

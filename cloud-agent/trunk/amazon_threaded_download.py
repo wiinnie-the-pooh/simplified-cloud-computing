@@ -170,7 +170,11 @@ print_d( "a_study_bucket = '%s'\n" % a_study_bucket.name )
 
 
 print_i( "--------------------------- Reading the study files -----------------------------\n" )
-download_files( a_s3_conn, a_study_bucket, a_study_id, an_output_dir, 1 )
+a_data_loading_time = Timer()
+
+download_files( a_s3_conn, a_study_bucket, a_study_id, an_output_dir, 0 )
+
+print_d( "a_data_loading_time = %s, sec\n" % a_data_loading_time )
 
 
 print_i( "-------------------------------------- OK ---------------------------------------\n" )
