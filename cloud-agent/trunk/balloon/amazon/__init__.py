@@ -64,6 +64,57 @@ def extract_options( the_options ) :
 
 
 #--------------------------------------------------------------------------------------
+def add_threading_usage_description() :
+    return " --number-threads=7"
+
+
+#--------------------------------------------------------------------------------------
+def add_threading_parser_options( the_option_parser ) :
+    the_option_parser.add_option( "--number-threads",
+                                  metavar = "< number of threads to use >",
+                                  type = "int",
+                                  action = "store",
+                                  dest = "number_threads",
+                                  help = "(\"%default\", by default)",
+                                  default = 8 )
+    pass
+
+
+#--------------------------------------------------------------------------------------
+def extract_threading_options( the_options, the_option_parser ) :
+    if the_options.number_threads < 1 :
+        the_option_parser.error( "'--number-threads' must be at least 1" )
+        pass
+
+    return the_options.number_threads
+
+
+#--------------------------------------------------------------------------------------
+def add_timeout_usage_description() :
+    return " --socket-timeout=3"
+
+
+#--------------------------------------------------------------------------------------
+def add_timeout_options( the_option_parser ) :
+    the_option_parser.add_option( "--socket-timeout",
+                                  metavar = "< socket timeout time >",
+                                  type = "int",
+                                  action = "store",
+                                  dest = "socket_timeout",
+                                  help = "(\"%default\", by default)",
+                                  default = 1 )
+    pass
+
+
+#--------------------------------------------------------------------------------------
+def extract_timeout_options( the_options, the_option_parser ) :
+    import socket
+    socket.setdefaulttimeout( the_options.socket_timeout )
+
+    return the_options.socket_timeout
+
+
+#--------------------------------------------------------------------------------------
 def wait_activation( the_instance, the_ssh_connect, the_ssh_client ) :
     while True :
         try :

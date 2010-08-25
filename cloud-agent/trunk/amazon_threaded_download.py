@@ -24,7 +24,7 @@ This script is responsible for efficient downloading of multi file data
 
 #------------------------------------------------------------------------------------------
 import balloon.common as common
-from balloon.common import print_d, init_printing, print_i, print_e, sh_command, ssh_command, Timer
+from balloon.common import print_d, init_printing, print_i, print_e, sh_command, ssh_command, Timer, Worker
 
 import balloon.amazon as amazon
 
@@ -102,6 +102,8 @@ def download_files( the_s3_conn, the_study_bucket, the_study_id, the_output_dir,
 an_usage_description = "%prog --study-name='my uploaded study' --output-dir='./tmp'"
 an_usage_description += common.add_usage_description()
 an_usage_description += amazon.add_usage_description()
+an_usage_description += amazon.add_timeout_usage_description()
+an_usage_description += amazon.add_threading_usage_description()
 
 from optparse import IndentedHelpFormatter
 a_help_formatter = IndentedHelpFormatter( width = 127 )
@@ -122,6 +124,8 @@ a_option_parser.add_option( "--output-dir",
                             help = "(the same a 'study' name, by default)" )
 common.add_parser_options( a_option_parser )
 amazon.add_parser_options( a_option_parser )
+amazon.add_timeout_options( a_option_parser )
+amazon.add_threading_parser_options( a_option_parser )
     
 an_engine_dir = os.path.abspath( os.path.dirname( sys.argv[ 0 ] ) )
 
@@ -152,6 +156,10 @@ os.makedirs( an_output_dir )
 print_d( "an_output_dir = '%s'\n" % an_output_dir )
 
 AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY = amazon.extract_options( an_options )
+
+a_number_threads = amazon.extract_threading_options( an_options, a_option_parser )
+
+amazon.extract_timeout_options( an_options, a_option_parser )
 
 
 print_i( "--------------------------- Connecting to Amazon S3 -----------------------------\n" )

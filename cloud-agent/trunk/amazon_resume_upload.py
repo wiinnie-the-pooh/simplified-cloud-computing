@@ -101,9 +101,11 @@ def upload_files( the_s3_conn, the_worker, the_study_bucket, the_study_id, the_p
 #------------------------------------------------------------------------------------------
 # Defining utility command-line interface
 
-an_usage_description = "%prog --study-name='my interrupted study' --number-threads=7 --socket-timeout=3"
+an_usage_description = "%prog --study-name='my interrupted study'"
 an_usage_description += common.add_usage_description()
 an_usage_description += amazon.add_usage_description()
+an_usage_description += amazon.add_timeout_usage_description()
+an_usage_description += amazon.add_threading_usage_description()
 
 from optparse import IndentedHelpFormatter
 a_help_formatter = IndentedHelpFormatter( width = 127 )
@@ -116,22 +118,10 @@ a_option_parser.add_option( "--study-name",
                             metavar = "< an unique name of the user study >",
                             action = "store",
                             dest = "study_name" )
-a_option_parser.add_option( "--number-threads",
-                            metavar = "< number of threads to use >",
-                            type = "int",
-                            action = "store",
-                            dest = "number_threads",
-                            help = "(\"%default\", by default)",
-                            default = 8 )
-a_option_parser.add_option( "--socket-timeout",
-                            metavar = "< socket timeout time >",
-                            type = "int",
-                            action = "store",
-                            dest = "socket_timeout",
-                            help = "(\"%default\", by default)",
-                            default = 1 )
 common.add_parser_options( a_option_parser )
 amazon.add_parser_options( a_option_parser )
+amazon.add_timeout_options( a_option_parser )
+amazon.add_threading_parser_options( a_option_parser )
     
 an_engine_dir = os.path.abspath( os.path.dirname( sys.argv[ 0 ] ) )
 
@@ -152,12 +142,9 @@ print_d( "a_study_name = '%s'\n" % a_study_name )
     
 AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY = amazon.extract_options( an_options )
 
-if an_options.number_threads < 1 :
-    a_option_parser.error( "'--number-threads' must be at least 1" )
-    pass
+a_number_threads = amazon.extract_threading_options( an_options, a_option_parser )
 
-import socket
-socket.setdefaulttimeout( an_options.socket_timeout )
+amazon.extract_timeout_options( an_options, a_option_parser )
 
 
 print_i( "--------------------------- Connecting to Amazon S3 -----------------------------\n" )
@@ -179,7 +166,7 @@ print_i( "---------------------------- Uploading study files -------------------
 a_data_loading_time = Timer()
 
 a_study_file_keys = a_study_bucket.get_all_keys()
-a_worker = Worker( an_options.number_threads + len( a_study_file_keys ) )
+a_worker = Worker( a_number_threads + len( a_study_file_keys ) )
 
 upload_files( a_s3_conn, a_worker, a_study_bucket, a_study_id, 0 )
 
