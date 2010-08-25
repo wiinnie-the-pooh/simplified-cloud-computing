@@ -149,16 +149,25 @@ def wait_activation( the_instance, the_ssh_connect, the_ssh_client ) :
 
 
 #------------------------------------------------------------------------------------------
-def remove_item( the_working_dir, the_file_item ) :
+def remove_item( the_working_dir, the_file_item, the_file_bucket, the_printing_depth ) :
     a_file_path = os.path.join( the_working_dir, the_file_item )
     os.remove( a_file_path )
 
     try :
         os.rmdir( the_working_dir )
+
+        # To mark that final file item have been sucessfully uploaded
+        a_part_key = Key( the_file_bucket )
+        a_part_key.key = the_file_bucket.name
+        a_part_key.set_contents_from_string( 'dummy' )
+
+        print_d( "%s\n" % a_part_key, the_printing_depth )
+
+        return True
     except :
         pass
 
-    pass
+    return False
 
 
 #------------------------------------------------------------------------------------------
@@ -172,7 +181,7 @@ def upload_item( the_file_item, the_working_dir, the_file_bucket, the_printing_d
     a_part_key.set_contents_from_filename( a_file_path )
     print_d( "%s\n" % a_part_key, the_printing_depth + 1 )
 
-    remove_item( the_working_dir, the_file_item )
+    remove_item( the_working_dir, the_file_item, the_file_bucket, the_printing_depth + 2 )
 
     pass
 
@@ -207,7 +216,8 @@ def upload_items( the_worker, the_file_bucket, the_working_dir, the_printing_dep
 
     for a_file_item in a_dir_contents :
         if a_file_item in a_file_bucket_keys :
-            remove_item( the_working_dir, a_file_item )
+            if remove_item( the_working_dir, a_file_item, the_file_bucket, the_printing_depth + 2 ) :
+                return
 
             continue
 

@@ -35,11 +35,8 @@ import sys, os, os.path, uuid, hashlib
 
 
 #------------------------------------------------------------------------------------------
-def download_item( the_item_key, the_working_dir, the_printing_depth ) :
-    a_file_path = os.path.join( the_working_dir, the_item_key.name )
-    print_d( "a_file_path = %s\n" % a_file_path, the_printing_depth )
-
-    the_item_key.get_contents_to_filename( a_file_path )
+def download_item( the_item_key, the_file_path, the_printing_depth ) :
+    the_item_key.get_contents_to_filename( the_file_path )
     print_d( "an_item_key = %s\n" % the_item_key, the_printing_depth )
         
     pass
@@ -47,15 +44,15 @@ def download_item( the_item_key, the_working_dir, the_printing_depth ) :
 
 #------------------------------------------------------------------------------------------
 class DownloadItem :
-    def __init__( self, the_item_key, the_working_dir, the_printing_depth ) :
+    def __init__( self, the_item_key, the_file_path, the_printing_depth ) :
         self.item_key = the_item_key
-        self.working_dir = the_working_dir
+        self.file_path = the_file_path
         self.printing_depth = the_printing_depth
 
         pass
     
     def run( self ) :
-        download_item( self.item_key, self.working_dir, self.printing_depth )
+        download_item( self.item_key, self.file_path, self.printing_depth )
 
         return self
 
@@ -72,7 +69,13 @@ def download_items( the_worker, the_number_threads, the_file_bucket, the_file_ba
     print_d( "a_working_dir = '%s'\n" % a_working_dir, the_printing_depth )
 
     for an_item_key in the_file_bucket.get_all_keys() :
-        a_task = DownloadItem( an_item_key, a_working_dir, the_printing_depth + 1 )
+        a_file_path = os.path.join( a_working_dir, an_item_key.name )
+        print_d( "a_file_path = %s\n" % a_file_path, the_printing_depth )
+        
+        if os.path.exists( a_file_path ) :
+            continue
+
+        a_task = DownloadItem( an_item_key, a_file_path, the_printing_depth + 1 )
         
         a_worker.put( a_task )
         
