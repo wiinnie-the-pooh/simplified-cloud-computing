@@ -37,6 +37,8 @@ import sys, os, os.path, uuid, hashlib
 #------------------------------------------------------------------------------------------
 def download_item( the_item_key, the_working_dir, the_printing_depth ) :
     a_file_path = os.path.join( the_working_dir, the_item_key.name )
+    print_d( "a_file_path = %s\n" % a_file_path, the_printing_depth )
+
     the_item_key.get_contents_to_filename( a_file_path )
     print_d( "an_item_key = %s\n" % the_item_key, the_printing_depth )
         
