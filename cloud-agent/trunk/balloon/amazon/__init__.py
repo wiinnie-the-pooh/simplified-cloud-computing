@@ -98,6 +98,19 @@ def wait_activation( the_instance, the_ssh_connect, the_ssh_client ) :
 
 
 #------------------------------------------------------------------------------------------
+def remove_item( the_working_dir, the_file_item ) :
+    a_file_path = os.path.join( the_working_dir, the_file_item )
+    os.remove( a_file_path )
+
+    try :
+        os.rmdir( the_working_dir )
+    except :
+        pass
+
+    pass
+
+
+#------------------------------------------------------------------------------------------
 def upload_item( the_file_item, the_working_dir, the_file_bucket, the_printing_depth ) :
     "Uploading file item"
     a_file_path = os.path.join( the_working_dir, the_file_item )
@@ -108,12 +121,7 @@ def upload_item( the_file_item, the_working_dir, the_file_bucket, the_printing_d
     a_part_key.set_contents_from_filename( a_file_path )
     print_d( "%s\n" % a_part_key, the_printing_depth + 1 )
 
-    os.remove( a_file_path )
-
-    try :
-        os.rmdir( the_working_dir )
-    except :
-        pass
+    remove_item( the_working_dir, the_file_item )
 
     pass
 
@@ -139,12 +147,19 @@ class UploadItem :
 def upload_items( the_worker, the_file_bucket, the_working_dir, the_printing_depth ) :
     "Uploading file items"
 
+    a_file_bucket_keys = [ an_item_key.key for an_item_key in the_file_bucket.get_all_keys() ]
+
     a_dir_contents = os.listdir( the_working_dir )
 
     a_dir_contents.sort()
     a_dir_contents.reverse()
 
     for a_file_item in a_dir_contents :
+        if a_file_item in a_file_bucket_keys :
+            remove_item( the_working_dir, a_file_item )
+
+            continue
+
         a_task = UploadItem( a_file_item, the_working_dir, the_file_bucket, the_printing_depth + 1 )
 
         the_worker.put( a_task )
