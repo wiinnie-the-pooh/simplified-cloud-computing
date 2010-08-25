@@ -46,11 +46,11 @@ def upload_file( the_worker, the_file, the_study_bucket, the_study_id, the_uploa
                 ( a_file_dirname, a_tmp_file, a_file_basename ), the_printing_depth )
 
     a_statinfo = os.stat( a_tmp_file )
-    print_d( "a_statinfo.st_size = %d, digits\n" % a_statinfo.st_size, the_printing_depth )
+    print_d( "a_statinfo.st_size = %d, bytes\n" % a_statinfo.st_size, the_printing_depth )
 
     import math
     a_suffix_length = int( math.log10( a_statinfo.st_size / the_upload_item_size ) + 1 )
-    print_d( "a_suffix_length = %d, bytes\n" % a_suffix_length, the_printing_depth )
+    print_d( "a_suffix_length = %d, digits\n" % a_suffix_length, the_printing_depth )
 
     a_working_dir = tempfile.mkdtemp()
     a_file_item_target = os.path.join( a_working_dir, a_file_basename )
