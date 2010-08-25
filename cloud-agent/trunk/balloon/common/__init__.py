@@ -266,12 +266,12 @@ class Worker( Queue ) :
             except Exception, exc:
                 import traceback
                 try:
-                    print_d( "%s" % exc )
+                    print_d( "%s\n" % exc )
                     # traceback.print_exc( file = sys.stderr )
                     self.status = 'KO'
                     self.task_done()
                 except Exception, exc:
-                    print_d( "%s" % exc )
+                    print_d( "%s\n" % exc )
                     # traceback.print_exc( file = sys.stderr )
                     pass
                 break
