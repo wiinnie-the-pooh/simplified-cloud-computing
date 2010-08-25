@@ -102,7 +102,7 @@ def add_timeout_options( the_option_parser ) :
                                   action = "store",
                                   dest = "socket_timeout",
                                   help = "(\"%default\", by default)",
-                                  default = 1 )
+                                  default = None )
     pass
 
 

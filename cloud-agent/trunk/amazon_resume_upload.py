@@ -64,6 +64,7 @@ class UploadFile :
         self.study_file_key = the_study_file_key
         self.study_id = the_study_id
         self.printing_depth = the_printing_depth
+
         pass
     
     def run( self ) :
@@ -75,23 +76,23 @@ class UploadFile :
 
 
 #------------------------------------------------------------------------------------------
-def upload_files( the_s3_conn, the_worker, the_study_bucket, the_study_id, the_printing_depth ) :
+def upload_files( the_s3_conn, the_worker, the_study_file_keys, the_study_id, the_printing_depth ) :
     while True :
-        for a_study_file_key in a_study_file_keys :
+        for a_study_file_key in the_study_file_keys :
             a_task = UploadFile( the_s3_conn, the_worker, a_study_file_key, the_study_id, the_printing_depth )
 
-            a_worker.put( a_task )
+            the_worker.put( a_task )
             
             pass
         
-        a_worker.join()
+        the_worker.join()
 
-        if a_worker.status == 'OK' :
+        if the_worker.status == 'OK' :
             break
 
         print_i( "-------------------------------------- %s ---------------------------------------\n" % a_worker.status )
 
-        a_worker.status = 'OK'
+        the_worker.status = 'OK'
 
         pass
 
@@ -168,7 +169,7 @@ a_data_loading_time = Timer()
 a_study_file_keys = a_study_bucket.get_all_keys()
 a_worker = Worker( a_number_threads + len( a_study_file_keys ) )
 
-upload_files( a_s3_conn, a_worker, a_study_bucket, a_study_id, 0 )
+upload_files( a_s3_conn, a_worker, the_study_file_keys, a_study_id, 0 )
 
 print_d( "a_data_loading_time = %s, sec\n" % a_data_loading_time )
 

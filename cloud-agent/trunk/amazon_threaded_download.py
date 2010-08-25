@@ -87,11 +87,35 @@ def download_file( the_s3_conn, the_study_file_key, the_study_id, the_output_dir
 
 
 #------------------------------------------------------------------------------------------
-def download_files( the_s3_conn, the_study_bucket, the_study_id, the_output_dir, the_printing_depth ) :
-    for a_study_file_key in the_study_bucket.get_all_keys() :
-        download_file( the_s3_conn, a_study_file_key, the_study_id, the_output_dir, the_printing_depth )
+class DownloadFile :
+    def __init__( self, the_s3_conn, the_worker, the_study_file_key, the_study_id, the_output_dir, the_printing_depth ) :
+        self.s3_conn = the_s3_conn
+        self.worker = the_worker
+        self.study_file_key = the_study_file_key
+        self.study_id = the_study_id
+        self.output_dir = the_output_dir
+        self.printing_depth = the_printing_depth
+
+        pass
+    
+    def run( self ) :
+        download_file( self.s3_conn, self.study_file_key, self.study_id, self.output_dir, self.printing_depth )
+
+        return self
+
+    pass
+
+
+#------------------------------------------------------------------------------------------
+def download_files( the_s3_conn, the_worker, the_study_file_keys, the_study_id, the_output_dir, the_printing_depth ) :
+    for a_study_file_key in the_study_file_keys :
+        a_task = DownloadFile( the_s3_conn, the_worker, a_study_file_key, the_study_id, the_output_dir, the_printing_depth )
+        
+        the_worker.put( a_task )
         
         pass
+
+    the_worker.join()
 
     pass
 
@@ -187,7 +211,10 @@ print_d( "a_study_bucket = '%s'\n" % a_study_bucket.name )
 print_i( "--------------------------- Reading the study files -----------------------------\n" )
 a_data_loading_time = Timer()
 
-download_files( a_s3_conn, a_study_bucket, a_study_id, an_output_dir, 0 )
+a_study_file_keys = a_study_bucket.get_all_keys()
+a_worker = Worker( a_number_threads + len( a_study_file_keys ) )
+
+download_files( a_s3_conn, a_worker, a_study_file_keys, a_study_id, an_output_dir, 0 )
 
 print_d( "a_data_loading_time = %s, sec\n" % a_data_loading_time )
 
