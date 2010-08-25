@@ -264,12 +264,13 @@ class Worker( Queue ) :
                 a_task.run()
                 self.task_done()
             except :
+                import traceback
                 try:
-                    import traceback
-                    traceback.print_exc( file = sys.stdout )
+                    traceback.print_exc( file = sys.stderr )
                     self.status = 'KO'
                     self.task_done()
                 except :
+                    traceback.print_exc( file = sys.stderr )
                     pass
                 break
             pass

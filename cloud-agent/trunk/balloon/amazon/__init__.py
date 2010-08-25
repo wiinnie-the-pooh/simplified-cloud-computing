@@ -76,7 +76,7 @@ def add_threading_parser_options( the_option_parser ) :
                                   action = "store",
                                   dest = "number_threads",
                                   help = "(\"%default\", by default)",
-                                  default = 8 )
+                                  default = 2 )
     pass
 
 
