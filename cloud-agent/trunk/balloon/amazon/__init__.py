@@ -139,9 +139,6 @@ class UploadItem :
 def upload_items( the_worker, the_file_bucket, the_working_dir, the_printing_depth ) :
     "Uploading file items"
 
-    if not os.path.exists( the_working_dir ) :
-        return
-
     a_dir_contents = os.listdir( the_working_dir )
 
     a_dir_contents.sort()
