@@ -234,6 +234,13 @@ a_file_name = an_options.file_name
 if a_file_name == None :
     download_files( a_number_threads, an_options.enable_fresh, a_s3_conn, a_study_bucket, a_study_id, an_output_dir, 0 )
 else :
+    for a_study_file_key in a_study_bucket.get_all_keys() :
+        a_file_key_name = a_study_file_key.key.split( ':' )[ 0 ]
+        a_file_key_name = os.path.join( '/', a_file_key_name )
+        print_d( "'%s' = %s\n" % ( a_file_key_name, a_file_name == a_file_key_name ) )
+        
+        pass
+
     pass
 
 print_d( "a_data_loading_time = %s, sec\n" % a_data_loading_time )
