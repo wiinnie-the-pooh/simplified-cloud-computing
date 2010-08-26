@@ -85,10 +85,22 @@ def download_items( the_number_threads, the_file_bucket, the_file_basename, the_
 
 
 #------------------------------------------------------------------------------------------
-def download_file( the_number_threads, the_s3_conn, the_study_file_key, the_study_id, the_output_dir, the_printing_depth ) :
+def download_file( the_number_threads, the_enable_fresh, the_s3_conn, the_study_file_key, the_study_id, the_output_dir, the_printing_depth ) :
     a_file_name = the_study_file_key.key.split( ':' )[ 0 ]
     a_file_dirname = os.path.dirname( a_file_name )
     a_file_basename = os.path.basename( a_file_name )
+
+    an_output_dir = os.path.join( the_output_dir, a_file_dirname )
+    
+    if the_enable_fresh :
+        import shutil
+        shutil.rmtree( an_output_dir, True )
+
+        pass
+
+    if not os.path.exists( an_output_dir ) :
+        os.makedirs( an_output_dir )
+        pass
 
     print_d( "the_study_file_key = %s\n" % the_study_file_key, the_printing_depth )
 
@@ -100,18 +112,18 @@ def download_file( the_number_threads, the_s3_conn, the_study_file_key, the_stud
     a_file_bucket = the_s3_conn.get_bucket( a_file_bucket_name )
     print_d( "a_file_bucket = %s\n" % a_file_bucket, the_printing_depth )
 
-    download_items( the_number_threads, a_file_bucket, a_file_basename, the_output_dir, the_printing_depth + 1 )
+    download_items( the_number_threads, a_file_bucket, a_file_basename, an_output_dir, the_printing_depth + 1 )
         
     return True
 
 
 #------------------------------------------------------------------------------------------
-def download_files( the_number_threads, the_s3_conn, the_study_bucket, the_study_id, the_output_dir, the_printing_depth ) :
+def download_files( the_number_threads, the_enable_fresh, the_s3_conn, the_study_bucket, the_study_id, the_output_dir, the_printing_depth ) :
     a_study_file_keys = the_study_bucket.get_all_keys()
     a_worker_pool = WorkerPool( len( a_study_file_keys ) )
 
     for a_study_file_key in a_study_file_keys :
-        a_worker_pool.charge( download_file, ( the_number_threads, the_s3_conn, a_study_file_key, the_study_id, the_output_dir, the_printing_depth ) )
+        a_worker_pool.charge( download_file, ( the_number_threads, the_enable_fresh, the_s3_conn, a_study_file_key, the_study_id, the_output_dir, the_printing_depth ) )
         
         pass
 
@@ -124,7 +136,7 @@ def download_files( the_number_threads, the_s3_conn, the_study_bucket, the_study
 #------------------------------------------------------------------------------------------
 # Defining utility command-line interface
 
-an_usage_description = "%prog --study-name='my uploaded study' --output-dir='./tmp'"
+an_usage_description = "%prog --study-name='my uploaded study' --file-name='/home/alexey' --output-dir='./tmp'"
 an_usage_description += common.add_usage_description()
 an_usage_description += amazon.add_usage_description()
 an_usage_description += amazon.add_timeout_usage_description()
@@ -138,15 +150,25 @@ a_option_parser = OptionParser( usage = an_usage_description, version="%prog 0.1
 
 # Definition of the command line arguments
 a_option_parser.add_option( "--study-name",
-                            metavar = "< an unique name of the user study >",
+                            metavar = "< a name of an uploaded study >",
                             action = "store",
                             dest = "study_name",
                             help = "(intialized from input, otherwise)" )
+a_option_parser.add_option( "--file-name",
+                            metavar = "< a of a file into uploaded study >",
+                            action = "store",
+                            dest = "file_name",
+                            help = "(if missed, all the study files will be downloaded)" )
 a_option_parser.add_option( "--output-dir",
                             metavar = "< location of the task defintion >",
                             action = "store",
                             dest = "output_dir",
                             help = "(the same a 'study' name, by default)" )
+a_option_parser.add_option( "--enable-fresh",
+                            action = "store_true",
+                            dest = "enable_fresh",
+                            help = "do not take into account previous downloads",
+                            default = False )
 common.add_parser_options( a_option_parser )
 amazon.add_parser_options( a_option_parser )
 amazon.add_timeout_options( a_option_parser )
@@ -173,10 +195,6 @@ an_output_dir = an_options.output_dir
 if an_output_dir == None :
     an_output_dir = os.path.join( an_engine_dir, a_study_name )
     pass
-
-import shutil
-shutil.rmtree( an_output_dir, True )
-os.makedirs( an_output_dir )
 
 print_d( "an_output_dir = '%s'\n" % an_output_dir )
 
@@ -212,7 +230,11 @@ print_d( "a_study_bucket = '%s'\n" % a_study_bucket.name )
 print_i( "--------------------------- Reading the study files -----------------------------\n" )
 a_data_loading_time = Timer()
 
-download_files( a_number_threads, a_s3_conn, a_study_bucket, a_study_id, an_output_dir, 0 )
+a_file_name = an_options.file_name
+if a_file_name == None :
+    download_files( a_number_threads, an_options.enable_fresh, a_s3_conn, a_study_bucket, a_study_id, an_output_dir, 0 )
+else :
+    pass
 
 print_d( "a_data_loading_time = %s, sec\n" % a_data_loading_time )
 
