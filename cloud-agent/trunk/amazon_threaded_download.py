@@ -100,7 +100,15 @@ def download_file( the_number_threads, the_enable_fresh, the_s3_conn, the_study_
 
     if not os.path.exists( an_output_dir ) :
         os.makedirs( an_output_dir )
+
         pass
+
+    a_file_path = os.path.join( an_output_dir, a_file_basename )
+    print_d( "a_file_path = '%s'\n" % a_file_path, the_printing_depth )
+    if os.path.exists( a_file_path ) :
+        print_d( "nothing to be done, already downloaded\n", the_printing_depth + 1 )
+
+        return True
 
     print_d( "the_study_file_key = %s\n" % the_study_file_key, the_printing_depth )
 
@@ -191,6 +199,9 @@ if a_study_name == None :
 
 print_d( "a_study_name = '%s'\n" % a_study_name )
     
+an_enable_fresh = an_options.enable_fresh
+print_d( "an_enable_fresh = %s\n" % an_enable_fresh )
+
 an_output_dir = an_options.output_dir
 if an_output_dir == None :
     an_output_dir = os.path.join( an_engine_dir, a_study_name )
@@ -201,6 +212,8 @@ print_d( "an_output_dir = '%s'\n" % an_output_dir )
 AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY = amazon.extract_options( an_options )
 
 a_number_threads = amazon.extract_threading_options( an_options, a_option_parser )
+
+print_d( "a_number_threads = %d\n" % a_number_threads )
 
 amazon.extract_timeout_options( an_options, a_option_parser )
 
@@ -232,14 +245,14 @@ a_data_loading_time = Timer()
 
 a_file_name = an_options.file_name
 if a_file_name == None :
-    download_files( a_number_threads, an_options.enable_fresh, a_s3_conn, a_study_bucket, a_study_id, an_output_dir, 0 )
+    download_files( a_number_threads, an_enable_fresh, a_s3_conn, a_study_bucket, a_study_id, an_output_dir, 0 )
 
 else :
     for a_study_file_key in a_study_bucket.get_all_keys() :
         a_file_key_name = a_study_file_key.key.split( ':' )[ 0 ]
         a_file_key_name = os.path.join( '/', a_file_key_name )
         if a_file_name == a_file_key_name :
-            download_file( a_number_threads, an_options.enable_fresh, a_s3_conn, a_study_file_key, a_study_id, an_output_dir, 0 )
+            download_file( a_number_threads, an_enable_fresh, a_s3_conn, a_study_file_key, a_study_id, an_output_dir, 0 )
 
             pass
 
