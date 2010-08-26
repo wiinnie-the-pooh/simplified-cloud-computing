@@ -262,11 +262,19 @@ class WorkerPool( workerpool.WorkerPool ) :
         a_result = True
         for i in range( self.results.qsize() ):
             a_result &= self.results.get()
+            self.results.task_done()
             pass
 
         return a_result
 
     pass
+
+
+#--------------------------------------------------------------------------------------
+def compute_md5( the_file_pointer ) :
+    from boto.s3.key import Key
+
+    return Key().compute_md5( the_file_pointer )
 
 
 #--------------------------------------------------------------------------------------

@@ -24,7 +24,7 @@ This script is responsible for efficient uploading of multi file data
 
 #------------------------------------------------------------------------------------------
 import balloon.common as common
-from balloon.common import print_d, print_i, print_e, sh_command, ssh_command, Timer, WorkerPool
+from balloon.common import print_d, print_i, print_e, sh_command, ssh_command, Timer, WorkerPool, compute_md5
 
 import balloon.amazon as amazon
 
@@ -58,14 +58,21 @@ def upload_item( the_file_item, the_file_path, the_file_bucket, the_printing_dep
     "Uploading file item"
     try :
         a_part_key = Key( the_file_bucket )
-        a_part_key.key = the_file_item
+
+        a_file_pointer = open( the_file_path, 'rb' )
+        a_md5 = compute_md5( a_file_pointer )
+        a_hex_md5, a_base64md5 = a_md5
+        a_part_key.key = '%s:%s' % ( the_file_item, a_hex_md5 )
+
         a_part_key.set_contents_from_filename( the_file_path )
         print_d( "%s\n" % a_part_key, the_printing_depth + 1 )
         
-        os.remove( a_file_path )
+        os.remove( the_file_path )
         
         return True
     except :
+        import sys, traceback
+        traceback.print_exc( file = sys.stderr )
         pass
 
     return False

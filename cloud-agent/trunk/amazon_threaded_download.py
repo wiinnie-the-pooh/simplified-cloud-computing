@@ -24,7 +24,7 @@ This script is responsible for efficient downloading of multi file data
 
 #------------------------------------------------------------------------------------------
 import balloon.common as common
-from balloon.common import print_d, init_printing, print_i, print_e, sh_command, ssh_command, Timer, WorkerPool
+from balloon.common import print_d, init_printing, print_i, print_e, sh_command, ssh_command, Timer, WorkerPool, compute_md5
 
 import balloon.amazon as amazon
 
@@ -62,9 +62,17 @@ def download_items( the_number_threads, the_file_bucket, the_file_basename, the_
                 an_is_everything_uploaded = True
                 continue
 
-            a_file_path = os.path.join( a_working_dir, an_item_key.name )
+            a_file_name, a_hex_md5 = an_item_key.name.split( ':' )
+            a_file_path = os.path.join( a_working_dir, a_file_name )
             if os.path.exists( a_file_path ) :
-                continue
+                a_file_pointer = open( a_file_path, 'rb' )
+                a_md5 = compute_md5( a_file_pointer )[ 0 ]
+                if a_hex_md5 == a_md5 :
+                    continue
+
+                os.remove( a_file_path )
+
+                pass
 
             print_d( "a_file_path = %s\n" % a_file_path, the_printing_depth + 1 )
 
