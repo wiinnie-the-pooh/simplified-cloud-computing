@@ -102,7 +102,7 @@ def download_items( the_number_threads, the_file_bucket, the_file_basename, the_
 
 
 #------------------------------------------------------------------------------------------
-def download_file( the_worker_pool, the_number_threads, the_s3_conn, the_study_file_key, the_study_id, the_output_dir, the_printing_depth ) :
+def download_file( the_number_threads, the_s3_conn, the_study_file_key, the_study_id, the_output_dir, the_printing_depth ) :
     a_file_name = the_study_file_key.key.split( ':' )[ 0 ]
     a_file_dirname = os.path.dirname( a_file_name )
     a_file_basename = os.path.basename( a_file_name )
@@ -123,14 +123,17 @@ def download_file( the_worker_pool, the_number_threads, the_s3_conn, the_study_f
 
 
 #------------------------------------------------------------------------------------------
-def download_files( the_worker_pool, the_number_threads, the_s3_conn, the_study_file_keys, the_study_id, the_output_dir, the_printing_depth ) :
-    for a_study_file_key in the_study_file_keys :
-        the_worker_pool.charge( download_file, ( the_worker_pool, the_number_threads, the_s3_conn, a_study_file_key, the_study_id, the_output_dir, the_printing_depth ) )
+def download_files( the_number_threads, the_s3_conn, the_study_bucket, the_study_id, the_output_dir, the_printing_depth ) :
+    a_study_file_keys = the_study_bucket.get_all_keys()
+    a_worker_pool = WorkerPool( len( a_study_file_keys ) )
+
+    for a_study_file_key in a_study_file_keys :
+        a_worker_pool.charge( download_file, ( the_number_threads, the_s3_conn, a_study_file_key, the_study_id, the_output_dir, the_printing_depth ) )
         
         pass
 
-    the_worker_pool.shutdown()
-    the_worker_pool.join()
+    a_worker_pool.shutdown()
+    a_worker_pool.join()
 
     pass
 
@@ -226,10 +229,7 @@ print_d( "a_study_bucket = '%s'\n" % a_study_bucket.name )
 print_i( "--------------------------- Reading the study files -----------------------------\n" )
 a_data_loading_time = Timer()
 
-a_study_file_keys = a_study_bucket.get_all_keys()
-a_worker_pool = WorkerPool( len( a_study_file_keys ) )
-
-download_files( a_worker_pool, a_number_threads, a_s3_conn, a_study_file_keys, a_study_id, an_output_dir, 0 )
+download_files( a_number_threads, a_s3_conn, a_study_bucket, a_study_id, an_output_dir, 0 )
 
 print_d( "a_data_loading_time = %s, sec\n" % a_data_loading_time )
 
