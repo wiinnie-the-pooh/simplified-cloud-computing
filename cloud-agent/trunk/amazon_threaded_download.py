@@ -52,14 +52,11 @@ def download_items( the_number_threads, the_file_bucket, the_file_basename, the_
     a_working_dir = the_output_dir
     print_d( "a_working_dir = '%s'\n" % a_working_dir, the_printing_depth )
 
-    a_wait = 1.0
-    import time, random
+    an_is_download_ok = False
     an_is_everything_uploaded = False
-
-    while not an_is_everything_uploaded :
+    while not an_is_everything_uploaded and not an_is_download_ok :
         a_worker_pool = WorkerPool( the_number_threads )
 
-        an_is_something_new = False
         for an_item_key in the_file_bucket.get_all_keys() :
             if an_item_key.name == the_file_bucket.name :
                 an_is_everything_uploaded = True
@@ -69,8 +66,6 @@ def download_items( the_number_threads, the_file_bucket, the_file_basename, the_
             if os.path.exists( a_file_path ) :
                 continue
 
-            an_is_something_new = True
-
             print_d( "a_file_path = %s\n" % a_file_path, the_printing_depth + 1 )
 
             a_worker_pool.charge( download_item, ( an_item_key, a_file_path, the_printing_depth + 2 ) )
@@ -78,19 +73,7 @@ def download_items( the_number_threads, the_file_bucket, the_file_basename, the_
             pass
 
         a_worker_pool.shutdown()
-        if not a_worker_pool.is_all_right() :
-            an_is_everything_uploaded = False
-            pass
-
-        # Exponential backoff
-        # if an_is_something_new :
-        #     a_wait /= 2.0
-        # else :
-        #     a_wait *= 2.0
-        #     pass
-        # 
-        # print_d( "%d " % a_wait )
-        # time.sleep( a_wait )
+        an_is_download_ok = a_worker_pool.is_all_right()
 
         pass
     
