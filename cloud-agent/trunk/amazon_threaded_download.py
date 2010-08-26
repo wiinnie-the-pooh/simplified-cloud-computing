@@ -49,9 +49,7 @@ def download_item( the_item_key, the_file_path, the_printing_depth ) :
 
 #------------------------------------------------------------------------------------------
 def download_items( the_number_threads, the_file_bucket, the_file_basename, the_output_dir, the_printing_depth ) :
-    import tempfile
-    a_working_dir = tempfile.mkdtemp( dir = the_output_dir )
-    a_working_dir = os.path.join( the_output_dir, a_working_dir )
+    a_working_dir = the_output_dir
     print_d( "a_working_dir = '%s'\n" % a_working_dir, the_printing_depth )
 
     a_wait = 1.0
@@ -96,13 +94,10 @@ def download_items( the_number_threads, the_file_bucket, the_file_basename, the_
 
         pass
     
-    sh_command( "cd '%s' && cat %s.tgz-* | tar -xzf - -C '%s'" % 
-                ( a_working_dir, the_file_basename, the_output_dir ), 
-                the_printing_depth )
+    sh_command( "cd '%s' && cat %s.tgz-* | tar -xzf - -C '%s'" % ( a_working_dir, the_file_basename, the_output_dir ), the_printing_depth )
 
-    import shutil
-    shutil.rmtree( a_working_dir, True )
-    
+    sh_command( "cd '%s' && rm %s.tgz-*" % ( a_working_dir, the_file_basename ), the_printing_depth )
+
     return True
 
 
