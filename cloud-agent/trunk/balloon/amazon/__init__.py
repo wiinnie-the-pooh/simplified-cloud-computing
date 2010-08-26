@@ -173,38 +173,26 @@ def remove_item( the_working_dir, the_file_item, the_file_bucket, the_printing_d
 #------------------------------------------------------------------------------------------
 def upload_item( the_file_item, the_working_dir, the_file_bucket, the_printing_depth ) :
     "Uploading file item"
-    a_file_path = os.path.join( the_working_dir, the_file_item )
-    print_d( "'%s'\n" % a_file_path, the_printing_depth )
+    try :
+        a_file_path = os.path.join( the_working_dir, the_file_item )
+        print_d( "'%s'\n" % a_file_path, the_printing_depth )
+        
+        a_part_key = Key( the_file_bucket )
+        a_part_key.key = the_file_item
+        a_part_key.set_contents_from_filename( a_file_path )
+        print_d( "%s\n" % a_part_key, the_printing_depth + 1 )
 
-    a_part_key = Key( the_file_bucket )
-    a_part_key.key = the_file_item
-    a_part_key.set_contents_from_filename( a_file_path )
-    print_d( "%s\n" % a_part_key, the_printing_depth + 1 )
+        remove_item( the_working_dir, the_file_item, the_file_bucket, the_printing_depth + 2 )
 
-    remove_item( the_working_dir, the_file_item, the_file_bucket, the_printing_depth + 2 )
-
-    pass
-
-
-#------------------------------------------------------------------------------------------
-class UploadItem :
-    def __init__( self, the_file_item, the_working_dir, the_file_bucket, the_printing_depth ) :
-        self.file_item = the_file_item
-        self.working_dir = the_working_dir
-        self.file_bucket = the_file_bucket
-        self.printing_depth = the_printing_depth
+        return True
+    except :
         pass
-    
-    def run( self ) :
-        upload_item( self.file_item, self.working_dir, self.file_bucket, self.printing_depth )
 
-        return self
-
-    pass
+    return False
 
 
 #------------------------------------------------------------------------------------------
-def upload_items( the_worker, the_file_bucket, the_working_dir, the_printing_depth ) :
+def upload_items( the_worker_pool, the_file_bucket, the_working_dir, the_printing_depth ) :
     "Uploading file items"
 
     a_file_bucket_keys = [ an_item_key.key for an_item_key in the_file_bucket.get_all_keys() ]
@@ -221,13 +209,11 @@ def upload_items( the_worker, the_file_bucket, the_working_dir, the_printing_dep
 
             continue
 
-        a_task = UploadItem( a_file_item, the_working_dir, the_file_bucket, the_printing_depth + 1 )
-
-        the_worker.put( a_task )
+        the_worker_pool.charge( upload_item, [ a_file_item, the_working_dir, the_file_bucket, the_printing_depth + 1 ] )
 
         pass
 
-    pass
+    return True
 
 
 #--------------------------------------------------------------------------------------

@@ -31,14 +31,14 @@ AWS_SECRET_ACCESS_KEY = os.getenv( "AWS_SECRET_ACCESS_KEY" )
 import boto
 
 import balloon.common as common
-from balloon.common import print_d, print_i, print_e, sh_command, ssh_command, Timer, Worker
+from balloon.common import print_d, print_i, print_e, sh_command, ssh_command, Timer, WorkerPool
 
 
 #--------------------------------------------------------------------------------------
 print "--------------- Delete S3 buckets ----------------"
 a_s3_conn = boto.connect_s3( AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY )
 
-a_s3_worker = Worker( 8 )
+a_worker_pool = WorkerPool( 8 )
 
 # First remove all the bucket keys
 for a_bucket in a_s3_conn.get_all_buckets() :
@@ -47,25 +47,37 @@ for a_bucket in a_s3_conn.get_all_buckets() :
 
     for a_s3_bucket_key in a_s3_bucket_keys :
         print "\t'%s'" % ( a_s3_bucket_key.name )
-        a_s3_worker.charge( lambda the_s3_bucket_key : the_s3_bucket_key.delete(), [ a_s3_bucket_key ] )
+        a_worker_pool.charge( lambda the_s3_bucket_key : the_s3_bucket_key.delete(), [ a_s3_bucket_key ] )
 
         pass
 
     pass
 
-a_s3_worker.join()
+a_worker_pool.join()
 print
 
 # Remove the bucket itself
 for a_bucket in a_s3_conn.get_all_buckets() :
     print "'%s'" % ( a_bucket.name )
-    a_s3_worker.charge( lambda the_s3_bucket : the_s3_bucket.delete(), [ a_bucket ] )
+    a_worker_pool.charge( lambda the_s3_bucket : the_s3_bucket.delete(), [ a_bucket ] )
 
     pass
 
-a_s3_worker.shutdown()
-a_s3_worker.join()
+a_worker_pool.shutdown()
+a_worker_pool.join()
 print
+
+
+#--------------------------------------------------------------------------------------
+def stop_instance( the_instance ) :
+    a_status = the_instance.update()
+    if a_status != 'terminated' :
+        print "%s : %s : '%s'" % ( the_instance, a_status, the_instance.dns_name )
+        the_instance.stop()
+
+        pass
+
+    pass
 
 
 #--------------------------------------------------------------------------------------
@@ -74,11 +86,7 @@ an_ec2_conn = boto.connect_ec2( AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY )
 for a_reservation in an_ec2_conn.get_all_instances() :
     # print "%s" % ( a_reservation )
     for an_instance in a_reservation.instances :
-        a_status = an_instance.update()
-        if a_status != 'terminated' :
-            print "%s : %s : '%s'" % ( an_instance, a_status, an_instance.dns_name )
-            an_instance.stop()
-            pass
+        stop_instance( an_instance )
         pass
     a_reservation.stop_all()
     pass

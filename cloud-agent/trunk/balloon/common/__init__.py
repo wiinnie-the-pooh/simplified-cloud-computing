@@ -235,17 +235,34 @@ class Timer :
 
 
 #------------------------------------------------------------------------------------------
-from workerpool import WorkerPool
+import workerpool
+from workerpool.pools import default_worker_factory
 
-class Worker( WorkerPool ) :
+class WorkerPool( workerpool.WorkerPool ) :
     "Run all the registered tasks in parallel"
+    def __init__( self, size = 1, maxjobs = 0, worker_factory = default_worker_factory ) :
+        workerpool.WorkerPool.__init__( self, size, maxjobs, worker_factory )
+
+        from workerpool.pools import Queue
+        self.results = Queue()
+
+        pass
+
     def charge( self, the_function, *the_args ):
         "Perform a map operation distributed among the workers. Will block until done."
-        from Queue import Queue
-        a_result = Queue()
 
         from workerpool import SimpleJob
-        self.put( SimpleJob( a_result, the_function, *the_args ) )
+        self.put( SimpleJob( self.results, the_function, *the_args ) )
+
+        pass
+
+    def is_all_right( self ) :
+        self.join()
+
+        a_result = True
+        for i in range( self.results.qsize() ):
+            a_result &= self.results.get()
+            pass
 
         return a_result
 

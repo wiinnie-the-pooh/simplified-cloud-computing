@@ -24,7 +24,7 @@ This script is responsible for efficient uploading of multi file data
 
 #------------------------------------------------------------------------------------------
 import balloon.common as common
-from balloon.common import print_d, print_i, print_e, sh_command, ssh_command, Timer, Worker
+from balloon.common import print_d, print_i, print_e, sh_command, ssh_command, Timer, WorkerPool
 
 import balloon.amazon as amazon
 
@@ -35,7 +35,7 @@ import sys, os, os.path, uuid, hashlib
 
 
 #------------------------------------------------------------------------------------------
-def upload_file( the_s3_conn, the_worker, the_study_file_key, the_study_id, the_printing_depth ) :
+def upload_file( the_s3_conn, the_worker_pool, the_study_file_key, the_study_id, the_printing_depth ) :
     a_working_dir = the_study_file_key.key.split( ':' )[ -1 ]
     if not os.path.exists( a_working_dir ) :
         return
@@ -51,48 +51,26 @@ def upload_file( the_s3_conn, the_worker, the_study_file_key, the_study_id, the_
     a_file_bucket = the_s3_conn.get_bucket( a_file_bucket_name )
     print_d( "a_file_bucket = %s\n" % a_file_bucket, the_printing_depth )
 
-    amazon.upload_items( the_worker, a_file_bucket, a_working_dir, the_printing_depth + 1 )
+    amazon.upload_items( the_worker_pool, a_file_bucket, a_working_dir, the_printing_depth + 1 )
 
-    pass
-
-
-#------------------------------------------------------------------------------------------
-class UploadFile :
-    def __init__( self, the_s3_conn, the_worker, the_study_file_key, the_study_id, the_printing_depth ) :
-        self.worker = the_worker
-        self.s3_conn = the_s3_conn
-        self.study_file_key = the_study_file_key
-        self.study_id = the_study_id
-        self.printing_depth = the_printing_depth
-
-        pass
-    
-    def run( self ) :
-        upload_file( self.s3_conn, self.worker, self.study_file_key, self.study_id, self.printing_depth )
-
-        return self
-
-    pass
+    return True
 
 
 #------------------------------------------------------------------------------------------
-def upload_files( the_s3_conn, the_worker, the_study_file_keys, the_study_id, the_printing_depth ) :
+def upload_files( the_s3_conn, the_worker_pool, the_study_file_keys, the_study_id, the_printing_depth ) :
     while True :
         for a_study_file_key in the_study_file_keys :
-            a_task = UploadFile( the_s3_conn, the_worker, a_study_file_key, the_study_id, the_printing_depth )
-
-            the_worker.put( a_task )
+            the_worker_pool.charge( upload_file, [ the_s3_conn, the_worker_pool, a_study_file_key, the_study_id, the_printing_depth ] )
             
             pass
         
-        the_worker.join()
+        if the_worker_pool.is_all_right() :
+            the_worker_pool.shutdown()
+            the_worker_pool.join()
 
-        if the_worker.status == 'OK' :
             break
 
-        print_i( "-------------------------------------- %s ---------------------------------------\n" % the_worker.status )
-
-        the_worker.status = 'OK'
+        print_i( "-------------------------------------- KO ---------------------------------------\n" )
 
         pass
 
@@ -167,9 +145,9 @@ print_i( "---------------------------- Uploading study files -------------------
 a_data_loading_time = Timer()
 
 a_study_file_keys = a_study_bucket.get_all_keys()
-a_worker = Worker( a_number_threads + len( a_study_file_keys ) )
+a_worker_pool = WorkerPool( a_number_threads )
 
-upload_files( a_s3_conn, a_worker, a_study_file_keys, a_study_id, 0 )
+upload_files( a_s3_conn, a_worker_pool, a_study_file_keys, a_study_id, 0 )
 
 print_d( "a_data_loading_time = %s, sec\n" % a_data_loading_time )
 

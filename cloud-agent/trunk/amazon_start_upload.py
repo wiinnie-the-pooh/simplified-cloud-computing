@@ -24,7 +24,7 @@ This script is responsible for efficient uploading of multi file data
 
 #------------------------------------------------------------------------------------------
 import balloon.common as common
-from balloon.common import print_d, print_i, print_e, sh_command, ssh_command, Timer, Worker
+from balloon.common import print_d, print_i, print_e, sh_command, ssh_command, Timer, WorkerPool
 
 import balloon.amazon as amazon
 
@@ -35,7 +35,7 @@ import sys, os, os.path, uuid, hashlib
 
 
 #------------------------------------------------------------------------------------------
-def upload_file( the_worker, the_file, the_study_bucket, the_study_id, the_upload_item_size, the_printing_depth ) :
+def upload_file( the_worker_pool, the_file, the_study_bucket, the_study_id, the_upload_item_size, the_printing_depth ) :
     a_file_dirname = os.path.dirname( the_file )
     a_file_basename = os.path.basename( the_file )
 
@@ -75,15 +75,15 @@ def upload_file( the_worker, the_file, the_study_bucket, the_study_id, the_uploa
 
 #------------------------------------------------------------------------------------------
 def upload_files( the_files, the_study_bucket, the_study_id, the_upload_item_size, the_printing_depth ) :
-    a_worker = Worker( len( the_files ) )
+    a_worker_pool = WorkerPool( len( the_files ) )
 
     for a_file in the_files :
-        a_worker.charge( upload_file, [ a_worker, a_file, the_study_bucket, the_study_id, the_upload_item_size, the_printing_depth ] )
+        a_worker_pool.charge( upload_file, [ a_worker_pool, a_file, the_study_bucket, the_study_id, the_upload_item_size, the_printing_depth ] )
 
         pass
 
-    a_worker.shutdown()
-    a_worker.join()
+    a_worker_pool.shutdown()
+    a_worker_pool.join()
     
     pass
 
@@ -115,7 +115,7 @@ a_option_parser.add_option( "--upload-item-size",
                             action = "store",
                             dest = "upload_item_size",
                             help = "(\"%default\", by default)",
-                            default = 10240 )
+                            default = 102400 )
 a_option_parser.add_option( "--socket-timeout",
                             metavar = "< socket timeout time >",
                             type = "int",
