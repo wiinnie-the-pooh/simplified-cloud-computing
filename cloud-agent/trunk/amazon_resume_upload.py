@@ -51,9 +51,7 @@ def upload_file( the_s3_conn, the_worker_pool, the_study_file_key, the_study_id,
     a_file_bucket = the_s3_conn.get_bucket( a_file_bucket_name )
     print_d( "a_file_bucket = %s\n" % a_file_bucket, the_printing_depth )
 
-    amazon.upload_items( the_worker_pool, a_file_bucket, a_working_dir, the_printing_depth + 1 )
-
-    return True
+    return amazon.upload_items( the_worker_pool, a_file_bucket, a_working_dir, the_printing_depth + 1 )
 
 
 #------------------------------------------------------------------------------------------
