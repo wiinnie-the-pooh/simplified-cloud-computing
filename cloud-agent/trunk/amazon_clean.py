@@ -42,15 +42,17 @@ a_worker_pool = WorkerPool( 8 )
 
 # First remove all the bucket keys
 for a_bucket in a_s3_conn.get_all_buckets() :
-    a_s3_bucket_keys = a_bucket.get_all_keys()
-    print "'%s' : %d" % ( a_bucket.name, len( a_s3_bucket_keys ) )
-
-    for a_s3_bucket_key in a_s3_bucket_keys :
-        print "\t'%s'" % ( a_s3_bucket_key.name )
-        a_worker_pool.charge( lambda the_s3_bucket_key : the_s3_bucket_key.delete(), [ a_s3_bucket_key ] )
-
+    try :
+        a_s3_bucket_keys = a_bucket.get_all_keys()
+        print "'%s' : %d" % ( a_bucket.name, len( a_s3_bucket_keys ) )
+        
+        for a_s3_bucket_key in a_s3_bucket_keys :
+            print "\t'%s'" % ( a_s3_bucket_key.name )
+            a_worker_pool.charge( lambda the_s3_bucket_key : the_s3_bucket_key.delete(), [ a_s3_bucket_key ] )
+            
+            pass
+    except :
         pass
-
     pass
 
 a_worker_pool.join()

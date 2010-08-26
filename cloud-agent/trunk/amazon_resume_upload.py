@@ -35,7 +35,86 @@ import sys, os, os.path, uuid, hashlib
 
 
 #------------------------------------------------------------------------------------------
-def upload_file( the_s3_conn, the_worker_pool, the_study_file_key, the_study_id, the_printing_depth ) :
+def mark_finished( the_working_dir, the_file_bucket, the_printing_depth ) :
+    try :
+        os.rmdir( the_working_dir )
+
+        # To mark that final file item have been sucessfully uploaded
+        a_part_key = Key( the_file_bucket )
+        a_part_key.key = the_file_bucket.name
+        a_part_key.set_contents_from_string( 'dummy' )
+
+        print_d( "%s\n" % a_part_key, the_printing_depth )
+
+        return True
+    except :
+        pass
+
+    return False
+
+
+#------------------------------------------------------------------------------------------
+def upload_item( the_file_item, the_file_path, the_file_bucket, the_printing_depth ) :
+    "Uploading file item"
+    try :
+        a_part_key = Key( the_file_bucket )
+        a_part_key.key = the_file_item
+        a_part_key.set_contents_from_filename( the_file_path )
+        print_d( "%s\n" % a_part_key, the_printing_depth + 1 )
+        
+        os.remove( a_file_path )
+        
+        return True
+    except :
+        pass
+
+    return False
+
+
+#------------------------------------------------------------------------------------------
+def upload_items( the_number_threads, the_file_bucket, the_working_dir, the_printing_depth ) :
+    "Uploading file items"
+    while True :
+        a_dir_contents = os.listdir( the_working_dir )
+
+        a_number_threads = max( min( the_number_threads, len( a_dir_contents ) ), 1 )
+        print_d( "a_number_threads = %d\n" % a_number_threads, the_printing_depth )
+
+        a_worker_pool = WorkerPool( a_number_threads )
+        
+        a_dir_contents.sort()
+        a_dir_contents.reverse()
+        
+        a_file_bucket_names = [ an_item_key.name for an_item_key in the_file_bucket.get_all_keys() ]
+        
+        for a_file_item in a_dir_contents :
+            a_file_path = os.path.join( the_working_dir, a_file_item )
+            print_d( "'%s'\n" % a_file_path, the_printing_depth + 1 )
+        
+            if a_file_item in a_file_bucket_names :
+                os.remove( a_file_path )
+
+                continue
+
+            a_worker_pool.charge( upload_item, [ a_file_item, a_file_path, the_file_bucket, the_printing_depth + 2 ] )
+
+            pass
+
+        a_worker_pool.shutdown()
+        an_is_all_right = a_worker_pool.is_all_right()
+
+        if an_is_all_right :
+            mark_finished( the_working_dir, the_file_bucket, the_printing_depth )
+
+            break
+
+        pass
+
+    return True
+
+
+#------------------------------------------------------------------------------------------
+def upload_file( the_s3_conn, the_number_threads, the_study_file_key, the_study_id, the_printing_depth ) :
     a_working_dir = the_study_file_key.key.split( ':' )[ -1 ]
     if not os.path.exists( a_working_dir ) :
         return True
@@ -51,25 +130,14 @@ def upload_file( the_s3_conn, the_worker_pool, the_study_file_key, the_study_id,
     a_file_bucket = the_s3_conn.get_bucket( a_file_bucket_name )
     print_d( "a_file_bucket = %s\n" % a_file_bucket, the_printing_depth )
 
-    return amazon.upload_items( the_worker_pool, a_file_bucket, a_working_dir, the_printing_depth + 1 )
+    return upload_items( the_number_threads, a_file_bucket, a_working_dir, the_printing_depth + 1 )
 
 
 #------------------------------------------------------------------------------------------
-def upload_files( the_s3_conn, the_worker_pool, the_study_file_keys, the_study_id, the_printing_depth ) :
-    while True :
-        for a_study_file_key in the_study_file_keys :
-            the_worker_pool.charge( upload_file, [ the_s3_conn, the_worker_pool, a_study_file_key, the_study_id, the_printing_depth ] )
-            
-            pass
+def upload_files( the_s3_conn, the_number_threads, the_study_bucket, the_study_id, the_printing_depth ) :
+    for a_study_file_key in the_study_bucket.get_all_keys() :
+        upload_file( the_s3_conn, the_number_threads, a_study_file_key, the_study_id, the_printing_depth )
         
-        if the_worker_pool.is_all_right() :
-            the_worker_pool.shutdown()
-            the_worker_pool.join()
-
-            break
-
-        print_i( "-------------------------------------- KO ---------------------------------------\n" )
-
         pass
 
     pass
@@ -142,10 +210,7 @@ print_d( "a_study_bucket = '%s'\n" % a_study_bucket )
 print_i( "---------------------------- Uploading study files ------------------------------\n" )
 a_data_loading_time = Timer()
 
-a_study_file_keys = a_study_bucket.get_all_keys()
-a_worker_pool = WorkerPool( a_number_threads )
-
-upload_files( a_s3_conn, a_worker_pool, a_study_file_keys, a_study_id, 0 )
+upload_files( a_s3_conn, a_number_threads, a_study_bucket, a_study_id, 0 )
 
 print_d( "a_data_loading_time = %s, sec\n" % a_data_loading_time )
 
