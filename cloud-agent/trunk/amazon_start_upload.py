@@ -74,35 +74,15 @@ def upload_file( the_worker, the_file, the_study_bucket, the_study_id, the_uploa
 
 
 #------------------------------------------------------------------------------------------
-class UploadFile :
-    def __init__( self, the_worker, the_file, the_study_bucket, the_study_id, the_upload_item_size, the_printing_depth ) :
-        self.worker = the_worker
-        self.file = the_file
-        self.study_bucket = the_study_bucket
-        self.study_id = the_study_id
-        self.upload_item_size = the_upload_item_size
-        self.printing_depth = the_printing_depth
-        pass
-    
-    def run( self ) :
-        upload_file( self.worker, self.file, self.study_bucket, self.study_id, self.upload_item_size, self.printing_depth )
-
-        return self
-
-    pass
-
-
-#------------------------------------------------------------------------------------------
 def upload_files( the_files, the_study_bucket, the_study_id, the_upload_item_size, the_printing_depth ) :
     a_worker = Worker( len( the_files ) )
 
     for a_file in the_files :
-        a_task = UploadFile( a_worker, a_file, the_study_bucket, the_study_id, the_upload_item_size, the_printing_depth )
-
-        a_worker.put( a_task )
+        a_worker.charge( upload_file, [ a_worker, a_file, the_study_bucket, the_study_id, the_upload_item_size, the_printing_depth ] )
 
         pass
 
+    a_worker.shutdown()
     a_worker.join()
     
     pass

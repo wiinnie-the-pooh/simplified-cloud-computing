@@ -235,48 +235,19 @@ class Timer :
 
 
 #------------------------------------------------------------------------------------------
-from Queue import Queue
+from workerpool import WorkerPool
 
-class Worker( Queue ) :
+class Worker( WorkerPool ) :
     "Run all the registered tasks in parallel"
-    def __init__( self, the_number_threads ) :
-        "Reserve given number of threads to perform the tasks"
-        Queue.__init__( self )
+    def charge( self, the_function, *the_args ):
+        "Perform a map operation distributed among the workers. Will block until done."
+        from Queue import Queue
+        a_result = Queue()
 
-        self.status = 'OK'
+        from workerpool import SimpleJob
+        self.put( SimpleJob( a_result, the_function, *the_args ) )
 
-        from threading import Thread
-        for an_id in range( the_number_threads ) :
-            a_thread = Thread( target = self )
-            a_thread.daemon = True
-
-            a_thread.start()
-            
-            pass
-        
-        pass
-    
-    def __call__( self ) :
-        "Real execution of a task"
-        while True:
-            try:
-                a_task = self.get()
-                a_task.run()
-                self.task_done()
-            except Exception, exc:
-                import traceback
-                try:
-                    print_d( "%s\n" % exc )
-                    # traceback.print_exc( file = sys.stderr )
-                    self.status = 'KO'
-                    self.task_done()
-                except Exception, exc:
-                    print_d( "%s\n" % exc )
-                    # traceback.print_exc( file = sys.stderr )
-                    pass
-                break
-            pass
-        pass
+        return a_result
 
     pass
 
