@@ -24,7 +24,7 @@ This script is responsible for efficient downloading of multi file data
 
 #------------------------------------------------------------------------------------------
 import balloon.common as common
-from balloon.common import print_d, init_printing, print_i, print_e, sh_command, ssh_command, Timer, Worker
+from balloon.common import print_d, init_printing, print_i, print_e, sh_command, ssh_command, Timer, WorkerPool
 
 import balloon.amazon as amazon
 
@@ -36,42 +36,32 @@ import sys, os, os.path, uuid, hashlib
 
 #------------------------------------------------------------------------------------------
 def download_item( the_item_key, the_file_path, the_printing_depth ) :
-    the_item_key.get_contents_to_filename( the_file_path )
-    print_d( "an_item_key = %s\n" % the_item_key, the_printing_depth )
+    try :
+        the_item_key.get_contents_to_filename( the_file_path )
+        print_d( "an_item_key = %s\n" % the_item_key, the_printing_depth )
         
-    pass
-
-
-#------------------------------------------------------------------------------------------
-class DownloadItem :
-    def __init__( self, the_item_key, the_file_path, the_printing_depth ) :
-        self.item_key = the_item_key
-        self.file_path = the_file_path
-        self.printing_depth = the_printing_depth
-
+        return True
+    except :
         pass
-    
-    def run( self ) :
-        download_item( self.item_key, self.file_path, self.printing_depth )
 
-        return self
-
-    pass
+    return False
 
 
 #------------------------------------------------------------------------------------------
-def download_items( the_worker, the_number_threads, the_file_bucket, the_file_basename, the_output_dir, the_printing_depth ) :
-    a_worker = Worker( the_number_threads )
-
+def download_items( the_number_threads, the_file_bucket, the_file_basename, the_output_dir, the_printing_depth ) :
     import tempfile
     a_working_dir = tempfile.mkdtemp( dir = the_output_dir )
     a_working_dir = os.path.join( the_output_dir, a_working_dir )
     print_d( "a_working_dir = '%s'\n" % a_working_dir, the_printing_depth )
 
-    a_wait = 1
+    a_wait = 1.0
     import time, random
     an_is_everything_uploaded = False
+
     while not an_is_everything_uploaded :
+        a_worker_pool = WorkerPool( the_number_threads )
+
+        an_is_something_new = False
         for an_item_key in the_file_bucket.get_all_keys() :
             if an_item_key.name == the_file_bucket.name :
                 an_is_everything_uploaded = True
@@ -81,25 +71,31 @@ def download_items( the_worker, the_number_threads, the_file_bucket, the_file_ba
             if os.path.exists( a_file_path ) :
                 continue
 
-            print_d( "a_file_path = %s\n" % a_file_path, the_printing_depth )
+            an_is_something_new = True
 
-            a_task = DownloadItem( an_item_key, a_file_path, the_printing_depth + 1 )
-            
-            a_worker.put( a_task )
+            print_d( "a_file_path = %s\n" % a_file_path, the_printing_depth + 1 )
+
+            a_worker_pool.charge( download_item, ( an_item_key, a_file_path, the_printing_depth + 2 ) )
             
             pass
 
-        a_worker.join()
+        a_worker_pool.shutdown()
+        if not a_worker_pool.is_all_right() :
+            an_is_everything_uploaded = False
+            pass
 
         # Exponential backoff
-        a_wait = a_wait * 2 
-        a_sleep = a_wait * random.random()
-        time.sleep( a_sleep )
+        # if an_is_something_new :
+        #     a_wait /= 2.0
+        # else :
+        #     a_wait *= 2.0
+        #     pass
+        # 
+        # print_d( "%d " % a_wait )
+        # time.sleep( a_wait )
 
         pass
     
-    the_worker.status = a_worker.status
-
     sh_command( "cd '%s' && cat %s.tgz-* | tar -xzf - -C '%s'" % 
                 ( a_working_dir, the_file_basename, the_output_dir ), 
                 the_printing_depth )
@@ -107,11 +103,11 @@ def download_items( the_worker, the_number_threads, the_file_bucket, the_file_ba
     import shutil
     shutil.rmtree( a_working_dir, True )
     
-    pass
+    return True
 
 
 #------------------------------------------------------------------------------------------
-def download_file( the_worker, the_number_threads, the_s3_conn, the_study_file_key, the_study_id, the_output_dir, the_printing_depth ) :
+def download_file( the_worker_pool, the_number_threads, the_s3_conn, the_study_file_key, the_study_id, the_output_dir, the_printing_depth ) :
     a_file_name = the_study_file_key.key.split( ':' )[ 0 ]
     a_file_dirname = os.path.dirname( a_file_name )
     a_file_basename = os.path.basename( a_file_name )
@@ -126,42 +122,20 @@ def download_file( the_worker, the_number_threads, the_s3_conn, the_study_file_k
     a_file_bucket = the_s3_conn.get_bucket( a_file_bucket_name )
     print_d( "a_file_bucket = %s\n" % a_file_bucket, the_printing_depth )
 
-    download_items( the_worker, the_number_threads, a_file_bucket, a_file_basename, the_output_dir, the_printing_depth + 1 )
+    download_items( the_number_threads, a_file_bucket, a_file_basename, the_output_dir, the_printing_depth + 1 )
         
-    pass
+    return True
 
 
 #------------------------------------------------------------------------------------------
-class DownloadFile :
-    def __init__( self, the_worker, the_number_threads, the_s3_conn, the_study_file_key, the_study_id, the_output_dir, the_printing_depth ) :
-        self.worker = the_worker
-        self.number_threads = the_number_threads
-        self.s3_conn = the_s3_conn
-        self.study_file_key = the_study_file_key
-        self.study_id = the_study_id
-        self.output_dir = the_output_dir
-        self.printing_depth = the_printing_depth
-
-        pass
-    
-    def run( self ) :
-        download_file( self.worker, self.number_threads, self.s3_conn, self.study_file_key, self.study_id, self.output_dir, self.printing_depth )
-
-        return self
-
-    pass
-
-
-#------------------------------------------------------------------------------------------
-def download_files( the_worker, the_number_threads, the_s3_conn, the_study_file_keys, the_study_id, the_output_dir, the_printing_depth ) :
+def download_files( the_worker_pool, the_number_threads, the_s3_conn, the_study_file_keys, the_study_id, the_output_dir, the_printing_depth ) :
     for a_study_file_key in the_study_file_keys :
-        a_task = DownloadFile( the_worker, the_number_threads, the_s3_conn, a_study_file_key, the_study_id, the_output_dir, the_printing_depth )
-        
-        the_worker.put( a_task )
+        the_worker_pool.charge( download_file, ( the_worker_pool, the_number_threads, the_s3_conn, a_study_file_key, the_study_id, the_output_dir, the_printing_depth ) )
         
         pass
 
-    the_worker.join()
+    the_worker_pool.shutdown()
+    the_worker_pool.join()
 
     pass
 
@@ -258,12 +232,12 @@ print_i( "--------------------------- Reading the study files ------------------
 a_data_loading_time = Timer()
 
 a_study_file_keys = a_study_bucket.get_all_keys()
-a_worker = Worker( len( a_study_file_keys ) )
+a_worker_pool = WorkerPool( len( a_study_file_keys ) )
 
-download_files( a_worker, a_number_threads, a_s3_conn, a_study_file_keys, a_study_id, an_output_dir, 0 )
+download_files( a_worker_pool, a_number_threads, a_s3_conn, a_study_file_keys, a_study_id, an_output_dir, 0 )
 
 print_d( "a_data_loading_time = %s, sec\n" % a_data_loading_time )
 
 
-print_i( "-------------------------------------- %s ---------------------------------------\n" % a_worker.status )
+print_i( "-------------------------------------- OK ---------------------------------------\n" )
 

@@ -149,10 +149,18 @@ def wait_activation( the_instance, the_ssh_connect, the_ssh_client ) :
 
 
 #------------------------------------------------------------------------------------------
-def remove_item( the_working_dir, the_file_item, the_file_bucket, the_printing_depth ) :
+def is_item_uploaded( the_file_item, the_file_bucket ) :
+    a_file_bucket_keys = [ an_item_key for an_item_key in the_file_bucket.get_all_keys() ]
+    a_file_bucket_names = [ an_item_key.name for an_item_key in a_file_bucket_keys ]
+
+    return the_file_item in a_file_bucket_names
+
+
+#------------------------------------------------------------------------------------------
+def try_remove_item( the_working_dir, the_file_item, the_file_bucket, the_printing_depth ) :
     a_file_path = os.path.join( the_working_dir, the_file_item )
     os.remove( a_file_path )
-
+    
     try :
         os.rmdir( the_working_dir )
 
@@ -174,21 +182,24 @@ def remove_item( the_working_dir, the_file_item, the_file_bucket, the_printing_d
 def upload_item( the_file_item, the_working_dir, the_file_bucket, the_printing_depth ) :
     "Uploading file item"
     try :
-        a_file_path = os.path.join( the_working_dir, the_file_item )
-        print_d( "'%s'\n" % a_file_path, the_printing_depth )
-        
-        a_part_key = Key( the_file_bucket )
-        a_part_key.key = the_file_item
-        a_part_key.set_contents_from_filename( a_file_path )
-        print_d( "%s\n" % a_part_key, the_printing_depth + 1 )
-
-        remove_item( the_working_dir, the_file_item, the_file_bucket, the_printing_depth + 2 )
-
-        return True
+        if not is_item_uploaded( the_file_item, the_file_bucket ) :
+            a_file_path = os.path.join( the_working_dir, the_file_item )
+            print_d( "'%s'\n" % a_file_path, the_printing_depth )
+            
+            a_part_key = Key( the_file_bucket )
+            a_part_key.key = the_file_item
+            a_part_key.set_contents_from_filename( a_file_path )
+            print_d( "%s\n" % a_part_key, the_printing_depth + 1 )
+            
+            pass
     except :
         pass
+    
+    if is_item_uploaded( the_file_item, the_file_bucket ) :
+        try_remove_item( the_working_dir, the_file_item, the_file_bucket, the_printing_depth + 2 )
+        pass
 
-    return False
+    return True
 
 
 #------------------------------------------------------------------------------------------
@@ -203,12 +214,6 @@ def upload_items( the_worker_pool, the_file_bucket, the_working_dir, the_printin
     a_dir_contents.reverse()
 
     for a_file_item in a_dir_contents :
-        if a_file_item in a_file_bucket_keys :
-            if remove_item( the_working_dir, a_file_item, the_file_bucket, the_printing_depth + 2 ) :
-                return
-
-            continue
-
         the_worker_pool.charge( upload_item, [ a_file_item, the_working_dir, the_file_bucket, the_printing_depth + 1 ] )
 
         pass

@@ -115,7 +115,7 @@ a_option_parser.add_option( "--upload-item-size",
                             action = "store",
                             dest = "upload_item_size",
                             help = "(\"%default\", by default)",
-                            default = 102400 )
+                            default = 10240 )
 a_option_parser.add_option( "--socket-timeout",
                             metavar = "< socket timeout time >",
                             type = "int",

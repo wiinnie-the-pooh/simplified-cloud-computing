@@ -38,7 +38,7 @@ import sys, os, os.path, uuid, hashlib
 def upload_file( the_s3_conn, the_worker_pool, the_study_file_key, the_study_id, the_printing_depth ) :
     a_working_dir = the_study_file_key.key.split( ':' )[ -1 ]
     if not os.path.exists( a_working_dir ) :
-        return
+        return True
 
     print_d( "the_study_file_key = %s\n" % the_study_file_key, the_printing_depth )
     print_d( "a_working_dir = '%s'\n" % a_working_dir, the_printing_depth )
