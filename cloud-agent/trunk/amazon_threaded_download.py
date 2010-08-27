@@ -98,11 +98,13 @@ def download_items( the_number_threads, the_file_bucket, the_file_basename, the_
 
 #------------------------------------------------------------------------------------------
 def download_file( the_number_threads, the_enable_fresh, the_s3_conn, the_study_file_key, the_study_id, the_output_dir, the_printing_depth ) :
-    a_file_name = the_study_file_key.key.split( ':' )[ 0 ]
+    a_file_name = the_study_file_key.key.split( ':' )[ 1 ]
     a_file_dirname = os.path.dirname( a_file_name )
     a_file_basename = os.path.basename( a_file_name )
+    print_d( "a_file_name = '%s'\n" % a_file_name, the_printing_depth )
 
-    an_output_dir = os.path.join( the_output_dir, a_file_dirname )
+    an_output_dir = os.path.join( the_output_dir, a_file_dirname[ 1 : ] )
+    print_d( "an_output_dir = '%s'\n" % an_output_dir, the_printing_depth )
     
     if the_enable_fresh :
         import shutil
@@ -264,8 +266,9 @@ if a_file_name == None :
 
 else :
     for a_study_file_key in a_study_bucket.list() :
-        a_file_key_name = a_study_file_key.key.split( ':' )[ 0 ]
-        a_file_key_name = os.path.join( '/', a_file_key_name )
+        a_file_key_name = a_study_file_key.key.split( ':' )[ 1 ]
+        print_d( "a_file_key_name = '%s'\n" % a_file_key_name )
+
         if a_file_name == a_file_key_name :
             download_file( a_number_threads, an_enable_fresh, a_s3_conn, a_study_file_key, a_study_id, an_output_dir, 0 )
 
