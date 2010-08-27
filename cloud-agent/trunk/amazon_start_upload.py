@@ -24,7 +24,8 @@ This script is responsible for efficient uploading of multi file data
 
 #------------------------------------------------------------------------------------------
 import balloon.common as common
-from balloon.common import print_d, print_i, print_e, sh_command, ssh_command, Timer, WorkerPool, compute_md5
+from balloon.common import print_d, print_i, print_e, sh_command, ssh_command
+from balloon.common import Timer, WorkerPool, compute_md5, get_id_separator
 
 import balloon.amazon as amazon
 
@@ -68,7 +69,7 @@ def upload_file( the_worker_pool, the_file, the_study_bucket, the_study_id, the_
     a_study_file_key.set_contents_from_string( 'dummy' )
     print_d( "a_study_file_key = %s\n" % a_study_file_key, the_printing_depth )
 
-    a_file_id = '%s/%s' % ( the_study_id, a_study_file_key.name )
+    a_file_id = '%s%s%s' % ( the_study_id, get_id_separator(), a_study_file_key.name )
     a_file_bucket_name = hashlib.md5( a_file_id ).hexdigest()
     print_d( "a_file_id = '%s'\n" % a_file_id, the_printing_depth )
     
@@ -191,7 +192,7 @@ a_root_study_key.key = '%s' % ( a_study_name )
 a_root_study_key.set_contents_from_string( 'dummy' )
 print_d( "a_root_study_key = %s\n" % a_root_study_key )
 
-a_study_id = '%s/%s' % ( a_canonical_user_id, a_study_name )
+a_study_id = '%s%s%s' % ( a_canonical_user_id, get_id_separator(), a_study_name )
 a_study_bucket_name = hashlib.md5( a_study_id ).hexdigest()
 print_d( "a_study_id = '%s'\n" % a_study_id )
 

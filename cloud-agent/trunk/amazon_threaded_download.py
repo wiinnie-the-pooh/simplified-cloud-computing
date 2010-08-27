@@ -24,7 +24,8 @@ This script is responsible for efficient downloading of multi file data
 
 #------------------------------------------------------------------------------------------
 import balloon.common as common
-from balloon.common import print_d, init_printing, print_i, print_e, sh_command, ssh_command, Timer, WorkerPool, compute_md5
+from balloon.common import print_d, print_i, print_e, sh_command, ssh_command
+from balloon.common import Timer, WorkerPool, compute_md5, get_id_separator
 
 import balloon.amazon as amazon
 
@@ -119,7 +120,7 @@ def download_file( the_number_threads, the_enable_fresh, the_s3_conn, the_study_
 
     print_d( "the_study_file_key = %s\n" % the_study_file_key, the_printing_depth )
 
-    a_file_id = '%s/%s' % ( the_study_id, the_study_file_key.key )
+    a_file_id = '%s%s%s' % ( the_study_id, get_id_separator(), the_study_file_key.key )
     print_d( "a_file_id = '%s'\n" % a_file_id, the_printing_depth )
 
     a_file_bucket_name = hashlib.md5( a_file_id ).hexdigest()
@@ -259,7 +260,7 @@ print_d( "a_canonical_user_id = '%s'\n" % a_canonical_user_id )
 
 
 print_i( "------------------------ Looking for the study bucket ---------------------------\n" )
-a_study_id = '%s/%s' % ( a_canonical_user_id, a_study_name )
+a_study_id = '%s%s%s' % ( a_canonical_user_id, get_id_separator(), a_study_name )
 a_study_bucket_name = hashlib.md5( a_study_id ).hexdigest()
 
 a_study_bucket = None
