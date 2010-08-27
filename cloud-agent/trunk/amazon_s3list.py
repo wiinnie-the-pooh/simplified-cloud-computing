@@ -36,7 +36,7 @@ import sys, os, os.path, uuid, hashlib
 #------------------------------------------------------------------------------------------
 def read_items( the_file_bucket, the_printing_depth ) :
     "Reading the file items"
-    for an_item_key in the_file_bucket.get_all_keys() :
+    for an_item_key in the_file_bucket.list() :
         print_d( "'%s' - %s\n" % ( an_item_key.name, an_item_key ), the_printing_depth )
 
         pass
@@ -47,7 +47,7 @@ def read_items( the_file_bucket, the_printing_depth ) :
 #------------------------------------------------------------------------------------------
 def read_files( the_study_bucket, the_study_id, the_printing_depth ) :
     "Reading the study files"
-    for a_file_key in the_study_bucket.get_all_keys() :
+    for a_file_key in the_study_bucket.list() :
         print_d( "'%s' - " % a_file_key.name, the_printing_depth )
         
         a_file_id = '%s/%s' % ( the_study_id, a_file_key.key )
@@ -66,7 +66,7 @@ def read_files( the_study_bucket, the_study_id, the_printing_depth ) :
 #------------------------------------------------------------------------------------------
 def read_studies( the_root_bucket, the_canonical_user_id, the_printing_depth ) :
     "Reading the studies"
-    for a_study_key in the_root_bucket.get_all_keys() :
+    for a_study_key in the_root_bucket.list() :
         a_study_name = a_study_key.name
         print_d( "'%s' - " % a_study_name, the_printing_depth )
 

@@ -73,6 +73,7 @@ def upload_item( the_file_item, the_file_path, the_file_bucket, the_printing_dep
     except :
         import sys, traceback
         traceback.print_exc( file = sys.stderr )
+
         pass
 
     return False
@@ -92,7 +93,7 @@ def upload_items( the_number_threads, the_file_bucket, the_working_dir, the_prin
         a_dir_contents.sort()
         a_dir_contents.reverse()
         
-        a_file_bucket_names = [ an_item_key.name for an_item_key in the_file_bucket.get_all_keys() ]
+        a_file_bucket_names = [ an_item_key.name for an_item_key in the_file_bucket.list() ]
         
         for a_file_item in a_dir_contents :
             a_file_path = os.path.join( the_working_dir, a_file_item )
@@ -142,7 +143,7 @@ def upload_file( the_s3_conn, the_number_threads, the_study_file_key, the_study_
 
 #------------------------------------------------------------------------------------------
 def upload_files( the_s3_conn, the_number_threads, the_study_bucket, the_study_id, the_printing_depth ) :
-    for a_study_file_key in the_study_bucket.get_all_keys() :
+    for a_study_file_key in the_study_bucket.list() :
         upload_file( the_s3_conn, the_number_threads, a_study_file_key, the_study_id, the_printing_depth )
         
         pass

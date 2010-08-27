@@ -42,6 +42,9 @@ def download_item( the_item_key, the_file_path, the_printing_depth ) :
         
         return True
     except :
+        import sys, traceback
+        traceback.print_exc( file = sys.stderr )
+
         pass
 
     return False
@@ -54,16 +57,17 @@ def download_items( the_number_threads, the_file_bucket, the_file_basename, the_
 
     an_is_download_ok = False
     an_is_everything_uploaded = False
-    while not an_is_everything_uploaded and not an_is_download_ok :
+    while not an_is_everything_uploaded or not an_is_download_ok :
         a_worker_pool = WorkerPool( the_number_threads )
 
-        for an_item_key in the_file_bucket.get_all_keys() :
+        for an_item_key in the_file_bucket.list() :
             if an_item_key.name == the_file_bucket.name :
                 an_is_everything_uploaded = True
                 continue
 
             a_file_name, a_hex_md5 = an_item_key.name.split( ':' )
             a_file_path = os.path.join( a_working_dir, a_file_name )
+
             if os.path.exists( a_file_path ) :
                 a_file_pointer = open( a_file_path, 'rb' )
                 a_md5 = compute_md5( a_file_pointer )[ 0 ]
@@ -138,7 +142,7 @@ def download_files( the_number_threads, the_enable_fresh, the_s3_conn, the_study
     a_study_file_keys = the_study_bucket.get_all_keys()
     a_worker_pool = WorkerPool( len( a_study_file_keys ) )
 
-    for a_study_file_key in a_study_file_keys :
+    for a_study_file_key in the_study_bucket.list() :
         a_worker_pool.charge( download_file, ( the_number_threads, the_enable_fresh, the_s3_conn, a_study_file_key, the_study_id, the_output_dir, the_printing_depth ) )
         
         pass
@@ -227,6 +231,9 @@ amazon.extract_timeout_options( an_options, a_option_parser )
 
 
 print_i( "--------------------------- Connecting to Amazon S3 -----------------------------\n" )
+import logging
+logging.basicConfig( filename = "boto.log", level = logging.DEBUG )
+
 a_s3_conn = boto.connect_s3( AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY )
 print_d( "a_s3_conn = %r\n" % a_s3_conn )
 
@@ -256,7 +263,7 @@ if a_file_name == None :
     download_files( a_number_threads, an_enable_fresh, a_s3_conn, a_study_bucket, a_study_id, an_output_dir, 0 )
 
 else :
-    for a_study_file_key in a_study_bucket.get_all_keys() :
+    for a_study_file_key in a_study_bucket.list() :
         a_file_key_name = a_study_file_key.key.split( ':' )[ 0 ]
         a_file_key_name = os.path.join( '/', a_file_key_name )
         if a_file_name == a_file_key_name :
