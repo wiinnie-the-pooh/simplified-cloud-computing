@@ -52,9 +52,6 @@ def download_item( the_item_key, the_file_path, the_printing_depth ) :
 
 #------------------------------------------------------------------------------------------
 def download_items( the_number_threads, the_file_bucket, the_file_basename, the_output_dir, the_printing_depth ) :
-    a_working_dir = the_output_dir
-    print_d( "a_working_dir = '%s'\n" % a_working_dir, the_printing_depth )
-
     an_is_download_ok = False
     an_is_everything_uploaded = False
     while not an_is_everything_uploaded or not an_is_download_ok :
@@ -66,7 +63,7 @@ def download_items( the_number_threads, the_file_bucket, the_file_basename, the_
                 continue
 
             a_file_name, a_hex_md5 = an_item_key.name.split( ':' )
-            a_file_path = os.path.join( a_working_dir, a_file_name )
+            a_file_path = os.path.join( the_output_dir, a_file_name )
 
             if os.path.exists( a_file_path ) :
                 a_file_pointer = open( a_file_path, 'rb' )
@@ -89,16 +86,12 @@ def download_items( the_number_threads, the_file_bucket, the_file_basename, the_
 
         pass
     
-    sh_command( "cd '%s' && cat %s.tgz-* | tar -xzf - -C '%s'" % ( a_working_dir, the_file_basename, the_output_dir ), the_printing_depth )
-
-    sh_command( "cd '%s' && rm %s.tgz-*" % ( a_working_dir, the_file_basename ), the_printing_depth )
-
     return True
 
 
 #------------------------------------------------------------------------------------------
 def download_file( the_number_threads, the_enable_fresh, the_s3_conn, the_study_file_key, the_study_id, the_output_dir, the_printing_depth ) :
-    a_file_name = the_study_file_key.key.split( ':' )[ 1 ]
+    a_hex_md5, a_file_name, an_upload_dir = the_study_file_key.key.split( ':' )
     a_file_dirname = os.path.dirname( a_file_name )
     a_file_basename = os.path.basename( a_file_name )
     print_d( "a_file_name = '%s'\n" % a_file_name, the_printing_depth )
@@ -134,8 +127,30 @@ def download_file( the_number_threads, the_enable_fresh, the_s3_conn, the_study_
     a_file_bucket = the_s3_conn.get_bucket( a_file_bucket_name )
     print_d( "a_file_bucket = %s\n" % a_file_bucket, the_printing_depth )
 
-    download_items( the_number_threads, a_file_bucket, a_file_basename, an_output_dir, the_printing_depth + 1 )
+    while True :
+        download_items( the_number_threads, a_file_bucket, a_file_basename, an_output_dir, the_printing_depth + 1 )
         
+        an_archive_name = "%s.tgz" % a_file_basename
+
+        sh_command( "cd '%s' && cat %s-* > %s" % ( an_output_dir, an_archive_name, an_archive_name ), the_printing_depth )
+
+        an_archive_path = os.path.join( an_output_dir, an_archive_name )
+        an_archive_pointer = open( an_archive_path, 'rb' )
+        a_md5 = compute_md5( an_archive_pointer )[ 0 ]
+
+        print_d( "'%s' - %s\n" % ( a_hex_md5, ( a_hex_md5 == a_md5 ) ), the_printing_depth )
+
+        if a_hex_md5 == a_md5 :
+            break
+
+        pass
+
+    sh_command( "tar -xzf '%s' -C '%s'" % ( an_archive_path, an_output_dir ), the_printing_depth )
+
+    # sh_command( "cd '%s' && rm %s-*" % ( an_output_dir, an_archive_name ), the_printing_depth )
+
+    # os.remove( an_archive_path )
+
     return True
 
 
