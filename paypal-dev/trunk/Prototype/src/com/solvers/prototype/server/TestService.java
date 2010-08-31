@@ -38,7 +38,7 @@ public class TestService extends HttpServlet {
 	
 	private HashMap<String, String> myUsers;
 
-    public void doGet(HttpServletRequest req, HttpServletResponse resp)
+    public void doPost(HttpServletRequest req, HttpServletResponse resp)
                 throws IOException
     {
     	String uid = req.getParameter("UID");
