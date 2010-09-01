@@ -23,7 +23,8 @@ Cleans all nodes from cloudservers and cloudfiles that correspond to defined rac
 
 #------------------------------------------------------------------------------------------
 import balloon.common as common
-from balloon.common import print_d, init_printing, print_i, print_e, sh_command, ssh_command, Timer
+from balloon.common import print_d, init_printing, print_i, print_e, sh_command, ssh_command
+from balloon.common import Timer, WorkerPool, compute_md5, get_id_separator
 
 import balloon.amazon as amazon
 
@@ -50,7 +51,7 @@ def read_files( the_study_bucket, the_study_id, the_printing_depth ) :
     for a_file_key in the_study_bucket.list() :
         print_d( "'%s' - " % a_file_key.name, the_printing_depth )
         
-        a_file_id = '%s/%s' % ( the_study_id, a_file_key.key )
+        a_file_id = '%s%s%s' % ( the_study_id, get_id_separator(), a_file_key.key )
         a_file_bucket_name = hashlib.md5( a_file_id ).hexdigest()
         
         a_file_bucket = a_s3_conn.get_bucket( a_file_bucket_name )
@@ -70,7 +71,7 @@ def read_studies( the_root_bucket, the_canonical_user_id, the_printing_depth ) :
         a_study_name = a_study_key.name
         print_d( "'%s' - " % a_study_name, the_printing_depth )
 
-        a_study_id = '%s/%s' % ( the_canonical_user_id, a_study_name )
+        a_study_id = '%s%s%s' % ( the_canonical_user_id, get_id_separator(), a_study_name )
         a_study_bucket_name = hashlib.md5( a_study_id ).hexdigest()
     
         a_study_bucket = None
@@ -78,7 +79,7 @@ def read_studies( the_root_bucket, the_canonical_user_id, the_printing_depth ) :
             a_study_bucket = a_s3_conn.get_bucket( a_study_bucket_name )
         except :
             print_d( "There is no study with such name ('%s')\n" % a_study_name, the_printing_depth )
-            return
+            continue
         
         print_d( "%s\n" % a_study_bucket )
     
