@@ -50,7 +50,7 @@ def upload_file( the_worker_pool, the_file, the_study_bucket, the_study_id, the_
     print_d( "a_statinfo.st_size = %d, bytes\n" % a_statinfo.st_size, the_printing_depth )
 
     import math
-    a_suffix_length = int( math.log10( a_statinfo.st_size / the_upload_item_size ) + 1 )
+    a_suffix_length = int( math.log10( a_statinfo.st_size / the_upload_item_size + 10 ) )
     print_d( "a_suffix_length = %d, digits\n" % a_suffix_length, the_printing_depth )
 
     a_working_dir = tempfile.mkdtemp()
