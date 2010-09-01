@@ -278,13 +278,13 @@ def compute_md5( the_file_pointer ) :
 
 
 #--------------------------------------------------------------------------------------
-def _get_id_separator() :
+def _id_separator() :
     return ' | '
 
 
 #--------------------------------------------------------------------------------------
 def generate_id( the_parent_id, the_child_name ) :
-    a_child_id = '%s%s%s' % ( the_parent_id, _get_id_separator(), the_child_name )
+    a_child_id = '%s%s%s' % ( the_parent_id, _id_separator(), the_child_name )
 
     import hashlib
     a_bucket_name = hashlib.md5( a_child_id ).hexdigest()
@@ -293,9 +293,22 @@ def generate_id( the_parent_id, the_child_name ) :
 
 
 #--------------------------------------------------------------------------------------
+def _file_key_separator() :
+    return ':'
+
+
+#--------------------------------------------------------------------------------------
 def generate_file_key( the_hex_md5, the_file_path, the_working_dir ) :
 
-    return '%s:%s:%s' % ( the_hex_md5, the_file_path, the_working_dir )
+    return '%s%s%s%s%s' % ( the_hex_md5, _file_key_separator(), the_file_path, _file_key_separator(), the_working_dir )
+
+
+#--------------------------------------------------------------------------------------
+def extract_file_props( the_study_file_key ) :
+
+    a_hex_md5, a_file_name, an_upload_dir = the_study_file_key.key.split( _file_key_separator() )
+
+    return a_hex_md5, a_file_name, an_upload_dir
 
 
 #--------------------------------------------------------------------------------------

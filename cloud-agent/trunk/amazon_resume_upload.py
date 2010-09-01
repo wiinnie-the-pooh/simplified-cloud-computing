@@ -25,7 +25,8 @@ This script is responsible for efficient uploading of multi file data
 #------------------------------------------------------------------------------------------
 import balloon.common as common
 from balloon.common import print_d, print_i, print_e, sh_command, ssh_command
-from balloon.common import Timer, WorkerPool, compute_md5, generate_id, generate_file_key
+from balloon.common import generate_id, generate_file_key, extract_file_props
+from balloon.common import Timer, WorkerPool, compute_md5
 
 import balloon.amazon as amazon
 
@@ -124,7 +125,7 @@ def upload_items( the_number_threads, the_file_bucket, the_working_dir, the_prin
 
 #------------------------------------------------------------------------------------------
 def upload_file( the_s3_conn, the_number_threads, the_study_file_key, the_study_id, the_printing_depth ) :
-    a_working_dir = the_study_file_key.key.split( ':' )[ -1 ]
+    a_hex_md5, a_file_name, a_working_dir = extract_file_props( the_study_file_key )
     if not os.path.exists( a_working_dir ) :
         return True
 

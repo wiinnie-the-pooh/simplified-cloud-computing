@@ -25,7 +25,7 @@ This script is responsible for efficient downloading of multi file data
 #------------------------------------------------------------------------------------------
 import balloon.common as common
 from balloon.common import print_d, print_i, print_e, sh_command, ssh_command
-from balloon.common import Timer, WorkerPool, compute_md5, generate_id
+from balloon.common import Timer, WorkerPool, compute_md5, generate_id, extract_file_props
 
 import balloon.amazon as amazon
 
@@ -92,7 +92,7 @@ def download_items( the_number_threads, the_file_bucket, the_file_basename, the_
 
 #------------------------------------------------------------------------------------------
 def download_file( the_number_threads, the_enable_fresh, the_s3_conn, the_study_file_key, the_study_id, the_output_dir, the_printing_depth ) :
-    a_hex_md5, a_file_name, an_upload_dir = the_study_file_key.key.split( ':' )
+    a_hex_md5, a_file_name, an_upload_dir = extract_file_props( the_study_file_key )
     a_file_dirname = os.path.dirname( a_file_name )
     a_file_basename = os.path.basename( a_file_name )
     print_d( "a_file_name = '%s'\n" % a_file_name, the_printing_depth )
@@ -273,17 +273,17 @@ print_d( "a_study_bucket = '%s'\n" % a_study_bucket.name )
 print_i( "--------------------------- Reading the study files -----------------------------\n" )
 a_data_loading_time = Timer()
 
-a_file_name = an_options.file_name
-if a_file_name == None :
+a_target_file_name = an_options.file_name
+if a_target_file_name == None :
     download_files( a_number_threads, an_enable_fresh, a_s3_conn, a_study_bucket, a_study_id, an_output_dir, 0 )
 
 else :
     for a_study_file_key in a_study_bucket.list() :
-        a_file_key_name = a_study_file_key.key.split( ':' )[ 1 ]
-        print_d( "a_file_key_name = '%s'\n" % a_file_key_name )
+        a_hex_md5, a_file_name, an_upload_dir = extract_file_props( a_study_file_key )
+        print_d( "a_file_name = '%s'\n" % a_file_name, 0 )
 
-        if a_file_name == a_file_key_name :
-            download_file( a_number_threads, an_enable_fresh, a_s3_conn, a_study_file_key, a_study_id, an_output_dir, 0 )
+        if a_file_name == a_target_file_name :
+            download_file( a_number_threads, an_enable_fresh, a_s3_conn, a_study_file_key, a_study_id, an_output_dir, 1 )
 
             pass
 
