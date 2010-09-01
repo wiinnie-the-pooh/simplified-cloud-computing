@@ -25,10 +25,13 @@ This script is responsible for efficient downloading of multi file data
 #------------------------------------------------------------------------------------------
 import balloon.common as common
 from balloon.common import print_d, print_i, print_e, sh_command, ssh_command
-from balloon.common import generate_id, extract_file_props, extract_item_props
+from balloon.common import generate_id, generate_file_key, generate_item_key
+from balloon.common import extract_file_props, extract_item_props
+from balloon.common import study_version, file_version
 from balloon.common import Timer, WorkerPool, compute_md5
 
 import balloon.amazon as amazon
+from balloon.amazon import mark_version, extract_version
 
 import boto
 from boto.s3.key import Key
@@ -53,7 +56,7 @@ def download_item( the_item_key, the_file_path, the_printing_depth ) :
 
 
 #------------------------------------------------------------------------------------------
-def download_items( the_number_threads, the_file_bucket, the_file_basename, the_output_dir, the_printing_depth ) :
+def download_items( the_number_threads, the_file_bucket, the_file_version, the_file_basename, the_output_dir, the_printing_depth ) :
     an_is_download_ok = False
     an_is_everything_uploaded = False
     while not an_is_everything_uploaded or not an_is_download_ok :
@@ -64,7 +67,7 @@ def download_items( the_number_threads, the_file_bucket, the_file_basename, the_
                 an_is_everything_uploaded = True
                 continue
 
-            a_hex_md5, a_file_name = extract_item_props( an_item_key.name )
+            a_hex_md5, a_file_name = extract_item_props( an_item_key.name, the_file_version )
             a_file_path = os.path.join( the_output_dir, a_file_name )
 
             if os.path.exists( a_file_path ) :
@@ -93,7 +96,8 @@ def download_items( the_number_threads, the_file_bucket, the_file_basename, the_
 
 #------------------------------------------------------------------------------------------
 def download_file( the_number_threads, the_enable_fresh, the_s3_conn, the_study_file_key, the_study_id, the_output_dir, the_printing_depth ) :
-    a_hex_md5, a_file_name, an_upload_dir = extract_file_props( the_study_file_key.name )
+    a_file_version = extract_version( the_study_file_key )
+    a_hex_md5, a_file_name, an_upload_dir = extract_file_props( the_study_file_key.name, a_file_version )
     a_file_dirname = os.path.dirname( a_file_name )
     a_file_basename = os.path.basename( a_file_name )
     print_d( "a_file_name = '%s'\n" % a_file_name, the_printing_depth )
@@ -121,14 +125,17 @@ def download_file( the_number_threads, the_enable_fresh, the_s3_conn, the_study_
 
     print_d( "the_study_file_key = %s\n" % the_study_file_key, the_printing_depth )
 
-    a_file_id, a_file_bucket_name = generate_id( the_study_id, the_study_file_key.key )
+    a_file_version = extract_version( the_study_file_key )
+    print_d( "a_file_version = '%s'\n" % a_file_version, the_printing_depth )
+
+    a_file_id, a_file_bucket_name = generate_id( the_study_id, the_study_file_key.name, a_file_version )
     print_d( "a_file_id = '%s'\n" % a_file_id, the_printing_depth )
 
     a_file_bucket = the_s3_conn.get_bucket( a_file_bucket_name )
     print_d( "a_file_bucket = %s\n" % a_file_bucket, the_printing_depth )
 
     while True :
-        download_items( the_number_threads, a_file_bucket, a_file_basename, an_output_dir, the_printing_depth + 1 )
+        download_items( the_number_threads, a_file_bucket, a_file_version, a_file_basename, an_output_dir, the_printing_depth + 1 )
         
         an_archive_name = "%s.tgz" % a_file_basename
 
@@ -251,12 +258,26 @@ print_i( "--------------------------- Connecting to Amazon S3 ------------------
 a_s3_conn = boto.connect_s3( AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY )
 print_d( "a_s3_conn = %r\n" % a_s3_conn )
 
+
+print_i( "--------------------------- Looking for study root ------------------------------\n" )
 a_canonical_user_id = a_s3_conn.get_canonical_user_id()
 print_d( "a_canonical_user_id = '%s'\n" % a_canonical_user_id )
 
+a_root_bucket_name = hashlib.md5( a_canonical_user_id ).hexdigest()
+a_root_bucket = a_s3_conn.get_bucket( a_root_bucket_name )
+print_d( "a_root_bucket = %s\n" % a_root_bucket )
+
+
+print_i( "--------------------------- Looking for study key -------------------------------\n" )
+a_study_key = Key( a_root_bucket )
+a_study_key.key = '%s' % ( a_study_name )
+a_study_version = extract_version( a_study_key )
+print_d( "a_study_version = '%s'\n" % a_study_version )
+
 
 print_i( "------------------------ Looking for the study bucket ---------------------------\n" )
-a_study_id, a_study_bucket_name = generate_id( a_canonical_user_id, a_study_name )
+a_study_id, a_study_bucket_name = generate_id( a_canonical_user_id, a_study_name, a_study_version )
+print_d( "a_study_id = '%s'\n" % a_study_id )
 
 a_study_bucket = None
 try :
@@ -277,7 +298,8 @@ if a_target_file_name == None :
 
 else :
     for a_study_file_key in a_study_bucket.list() :
-        a_hex_md5, a_file_name, an_upload_dir = extract_file_props( a_study_file_key.name )
+        a_file_version = extract_version( a_study_file_key )
+        a_hex_md5, a_file_name, an_upload_dir = extract_file_props( a_study_file_key.name, a_file_version )
         print_d( "a_file_name = '%s'\n" % a_file_name, 0 )
 
         if a_file_name == a_target_file_name :

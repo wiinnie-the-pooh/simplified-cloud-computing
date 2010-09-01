@@ -24,9 +24,13 @@ Cleans all nodes from cloudservers and cloudfiles that correspond to defined rac
 #------------------------------------------------------------------------------------------
 import balloon.common as common
 from balloon.common import print_d, print_i, print_e, sh_command, ssh_command
-from balloon.common import Timer, WorkerPool, compute_md5, generate_id
+from balloon.common import generate_id, generate_file_key, generate_item_key
+from balloon.common import extract_file_props, extract_item_props
+from balloon.common import study_version, file_version
+from balloon.common import Timer, WorkerPool, compute_md5
 
 import balloon.amazon as amazon
+from balloon.amazon import mark_version, extract_version
 
 import boto
 from boto.s3.key import Key
@@ -49,9 +53,10 @@ def read_items( the_file_bucket, the_printing_depth ) :
 def read_files( the_study_bucket, the_study_id, the_printing_depth ) :
     "Reading the study files"
     for a_file_key in the_study_bucket.list() :
-        print_d( "'%s' - " % a_file_key.name, the_printing_depth )
+        a_file_version = extract_version( a_file_key )
+        print_d( "'%s' - '%s' - " % ( a_file_key.name, a_file_version), the_printing_depth )
         
-        a_file_id, a_file_bucket_name = generate_id( the_study_id, a_file_key.name )
+        a_file_id, a_file_bucket_name = generate_id( the_study_id, a_file_key.name, a_file_version )
         a_file_bucket_name = hashlib.md5( a_file_id ).hexdigest()
         
         a_file_bucket = a_s3_conn.get_bucket( a_file_bucket_name )
@@ -69,9 +74,10 @@ def read_studies( the_root_bucket, the_canonical_user_id, the_printing_depth ) :
     "Reading the studies"
     for a_study_key in the_root_bucket.list() :
         a_study_name = a_study_key.name
-        print_d( "'%s' - " % a_study_name, the_printing_depth )
+        a_study_version = extract_version( a_study_key )
+        print_d( "'%s' - '%s' - " % ( a_study_name, a_study_version ), the_printing_depth )
 
-        a_study_id, a_study_bucket_name = generate_id( the_canonical_user_id, a_study_name )
+        a_study_id, a_study_bucket_name = generate_id( the_canonical_user_id, a_study_name, a_study_version )
     
         a_study_bucket = None
         try :
@@ -117,13 +123,11 @@ AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY = amazon.extract_options( an_options )
 
 
 print_i( "--------------------------- Connecting to Amazon S3 -----------------------------\n" )
-#------------------------------------------------------------------------------------------
 a_s3_conn = boto.connect_s3( AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY )
 print_d( "a_s3_conn = %r\n" % a_s3_conn )
 
 
 print_i( "--------------------------- Looking for study root ------------------------------\n" )
-#------------------------------------------------------------------------------------------
 a_canonical_user_id = a_s3_conn.get_canonical_user_id()
 print_d( "a_canonical_user_id = '%s'\n" % a_canonical_user_id )
 
@@ -139,9 +143,7 @@ print_d( "a_root_bucket = %s\n" % a_root_bucket )
 
 
 print_i( "---------------------------- Reading the studies --------------------------------\n" )
-#------------------------------------------------------------------------------------------
 read_studies( a_root_bucket, a_canonical_user_id, 1 )
 
 
 print_i( "-------------------------------------- OK ---------------------------------------\n" )
-#------------------------------------------------------------------------------------------
