@@ -28,6 +28,7 @@ from balloon.common import print_d, print_i, print_e, sh_command, ssh_command
 from balloon.common import generate_id, generate_file_key, generate_item_key
 from balloon.common import extract_file_props, extract_item_props
 from balloon.common import study_api_version, file_api_version
+from balloon.common import generate_uploading_dir
 from balloon.common import Timer, WorkerPool, compute_md5
 
 import balloon.amazon as amazon
@@ -40,13 +41,20 @@ import sys, os, os.path, uuid, hashlib
 
 
 #------------------------------------------------------------------------------------------
-def upload_file( the_worker_pool, the_file, the_study_bucket, the_study_id, the_upload_item_size, the_printing_depth ) :
-    a_file_dirname = os.path.dirname( the_file )
-    a_file_basename = os.path.basename( the_file )
+def upload_file( the_worker_pool, the_file_path, the_study_bucket, the_study_id, the_upload_item_size, the_printing_depth ) :
+    a_working_dir = generate_uploading_dir( the_file_path )
+
+    import shutil
+    shutil.rmtree( a_working_dir, True )
+    os.makedirs( a_working_dir )
+    print_d( "a_working_dir = '%s'\n" % a_working_dir, the_printing_depth )
+
+    a_file_dirname = os.path.dirname( the_file_path )
+    a_file_basename = os.path.basename( the_file_path )
 
     import tempfile
-
-    a_tmp_file = tempfile.mkstemp()[ 1 ]
+    a_tmp_file = tempfile.mkstemp( dir = a_working_dir )[ 1 ]
+    # a_tmp_file = tempfile.mkstemp()[ 1 ] # use this work arround for FAT file systems
     sh_command( "cd '%s' &&  tar -czf %s '%s'" % 
                 ( a_file_dirname, a_tmp_file, a_file_basename ), the_printing_depth )
 
@@ -62,7 +70,6 @@ def upload_file( the_worker_pool, the_file, the_study_bucket, the_study_id, the_
         pass
     print_d( "a_suffix_length = %d, digits\n" % a_suffix_length, the_printing_depth )
 
-    a_working_dir = tempfile.mkdtemp()
     a_file_item_target = os.path.join( a_working_dir, a_file_basename )
     sh_command( "cat '%s' | split --bytes=%d --numeric-suffixes --suffix-length=%d - %s.tgz-" % 
                 ( a_tmp_file, the_upload_item_size, a_suffix_length, a_file_item_target ), the_printing_depth )
@@ -71,13 +78,14 @@ def upload_file( the_worker_pool, the_file, the_study_bucket, the_study_id, the_
     a_md5 = compute_md5( a_file_pointer )
     a_hex_md5, a_base64md5 = a_md5
 
+    a_file_pointer.close()
     os.remove( a_tmp_file )
 
     a_file_api_version = file_api_version()
-    print_d( "a_file_api_version = '%s'\n" % a_file_api_version )
+    print_d( "a_file_api_version = '%s'\n" % a_file_api_version, the_printing_depth )
 
     a_study_file_key = Key( the_study_bucket )
-    a_study_file_key.key = generate_file_key( a_hex_md5, the_file, a_working_dir, a_file_api_version )
+    a_study_file_key.key = generate_file_key( a_hex_md5, the_file_path, a_file_api_version )
     mark_api_version( a_study_file_key, a_file_api_version )
     print_d( "a_study_file_key = %s\n" % a_study_file_key, the_printing_depth )
 
@@ -94,8 +102,8 @@ def upload_file( the_worker_pool, the_file, the_study_bucket, the_study_id, the_
 def upload_files( the_files, the_study_bucket, the_study_id, the_upload_item_size, the_printing_depth ) :
     a_worker_pool = WorkerPool( len( the_files ) )
 
-    for a_file in the_files :
-        a_worker_pool.charge( upload_file, [ a_worker_pool, a_file, the_study_bucket, the_study_id, the_upload_item_size, the_printing_depth ] )
+    for a_file_path in the_files :
+        a_worker_pool.charge( upload_file, ( a_worker_pool, a_file_path, the_study_bucket, the_study_id, the_upload_item_size, the_printing_depth ) )
 
         pass
 

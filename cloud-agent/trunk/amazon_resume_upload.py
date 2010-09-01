@@ -28,6 +28,7 @@ from balloon.common import print_d, print_i, print_e, sh_command, ssh_command
 from balloon.common import generate_id, generate_file_key, generate_item_key
 from balloon.common import extract_file_props, extract_item_props
 from balloon.common import study_api_version, file_api_version
+from balloon.common import generate_uploading_dir
 from balloon.common import Timer, WorkerPool, compute_md5
 
 import balloon.amazon as amazon
@@ -131,7 +132,9 @@ def upload_items( the_number_threads, the_file_bucket, the_file_api_version, the
 #------------------------------------------------------------------------------------------
 def upload_file( the_s3_conn, the_number_threads, the_study_file_key, the_study_id, the_printing_depth ) :
     a_file_api_version = extract_api_version( the_study_file_key )
-    a_hex_md5, a_file_name, a_working_dir = extract_file_props( the_study_file_key.name, a_file_api_version )
+    a_hex_md5, a_file_path = extract_file_props( the_study_file_key.name, a_file_api_version )
+
+    a_working_dir = generate_uploading_dir( a_file_path )
     if not os.path.exists( a_working_dir ) :
         return True
 

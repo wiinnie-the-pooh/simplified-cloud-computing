@@ -143,7 +143,7 @@ print_d( "a_root_bucket = %s\n" % a_root_bucket )
 
 
 print_i( "---------------------------- Reading the studies --------------------------------\n" )
-read_studies( a_root_bucket, a_canonical_user_id, 1 )
+read_studies( a_root_bucket, a_canonical_user_id, 0 )
 
 
 print_i( "-------------------------------------- OK ---------------------------------------\n" )

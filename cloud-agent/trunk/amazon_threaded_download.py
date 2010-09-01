@@ -67,8 +67,8 @@ def download_items( the_number_threads, the_file_bucket, the_file_api_version, t
                 an_is_everything_uploaded = True
                 continue
 
-            a_hex_md5, a_file_name = extract_item_props( an_item_key.name, the_file_api_version )
-            a_file_path = os.path.join( the_output_dir, a_file_name )
+            a_hex_md5, a_file_path = extract_item_props( an_item_key.name, the_file_api_version )
+            a_file_path = os.path.join( the_output_dir, a_file_path )
 
             if os.path.exists( a_file_path ) :
                 a_file_pointer = open( a_file_path, 'rb' )
@@ -97,10 +97,11 @@ def download_items( the_number_threads, the_file_bucket, the_file_api_version, t
 #------------------------------------------------------------------------------------------
 def download_file( the_number_threads, the_enable_fresh, the_s3_conn, the_study_file_key, the_study_id, the_output_dir, the_printing_depth ) :
     a_file_api_version = extract_api_version( the_study_file_key )
-    a_hex_md5, a_file_name, an_upload_dir = extract_file_props( the_study_file_key.name, a_file_api_version )
-    a_file_dirname = os.path.dirname( a_file_name )
-    a_file_basename = os.path.basename( a_file_name )
-    print_d( "a_file_name = '%s'\n" % a_file_name, the_printing_depth )
+    a_hex_md5, a_file_path = extract_file_props( the_study_file_key.name, a_file_api_version )
+    print_d( "a_file_path = '%s'\n" % a_file_path, the_printing_depth )
+
+    a_file_dirname = os.path.dirname( a_file_path )
+    a_file_basename = os.path.basename( a_file_path )
 
     an_output_dir = os.path.join( the_output_dir, a_file_dirname[ 1 : ] )
     print_d( "an_output_dir = '%s'\n" % an_output_dir, the_printing_depth )
@@ -299,10 +300,10 @@ if a_target_file_name == None :
 else :
     for a_study_file_key in a_study_bucket.list() :
         a_file_api_version = extract_api_version( a_study_file_key )
-        a_hex_md5, a_file_name, an_upload_dir = extract_file_props( a_study_file_key.name, a_file_api_version )
-        print_d( "a_file_name = '%s'\n" % a_file_name, 0 )
+        a_hex_md5, a_file_path = extract_file_props( a_study_file_key.name, a_file_api_version )
+        print_d( "a_file_path = '%s'\n" % a_file_path, 0 )
 
-        if a_file_name == a_target_file_name :
+        if a_file_path == a_target_file_name :
             download_file( a_number_threads, an_enable_fresh, a_s3_conn, a_study_file_key, a_study_id, an_output_dir, 1 )
 
             pass
