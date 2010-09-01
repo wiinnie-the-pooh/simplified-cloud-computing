@@ -46,29 +46,17 @@ def extract_options( the_options ) :
 
     ENABLE_DEBUG = the_options.enable_debug
 
+    if the_options.enable_debug :
+        import logging
+        logging.basicConfig( filename = "balloon.log", level = logging.DEBUG )
+
+        pass
+
     return ENABLE_DEBUG
 
 
 #---------------------------------------------------------------------------
 PRINTING_DEPTH = 0
-
-class init_printing :
-    "To provide hierarchical 'pretty' printing"
-    def __init__( self ) :
-        global PRINTING_DEPTH
-
-        # PRINTING_DEPTH += 1
-
-        pass
-
-    def __del__( self ) :
-        global PRINTING_DEPTH
-
-        # PRINTING_DEPTH -= 1
-
-        pass
-
-    pass
 
 def get_preffix( the_preffix, the_printing_depth ) :
     "Calaculate a preffix identation according to the current printing stack depth"

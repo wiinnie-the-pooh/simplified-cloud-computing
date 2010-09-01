@@ -248,9 +248,6 @@ amazon.extract_timeout_options( an_options, a_option_parser )
 
 
 print_i( "--------------------------- Connecting to Amazon S3 -----------------------------\n" )
-import logging
-logging.basicConfig( filename = "boto.log", level = logging.DEBUG )
-
 a_s3_conn = boto.connect_s3( AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY )
 print_d( "a_s3_conn = %r\n" % a_s3_conn )
 

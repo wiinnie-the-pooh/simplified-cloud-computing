@@ -67,7 +67,8 @@ def upload_item( the_file_item, the_file_path, the_file_bucket, the_printing_dep
 
         a_part_key.key = generate_item_key( a_hex_md5, the_file_item )
 
-        a_part_key.set_contents_from_filename( the_file_path )
+        # a_part_key.set_contents_from_file( a_file_pointer, md5 = a_md5 ) # this method is not thread safe
+        a_part_key.set_contents_from_file( a_file_pointer)
         print_d( "%s\n" % a_part_key, the_printing_depth + 1 )
         
         os.remove( the_file_path )
