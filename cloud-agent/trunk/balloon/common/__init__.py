@@ -277,11 +277,19 @@ def compute_md5( the_file_pointer ) :
     return Key().compute_md5( the_file_pointer )
 
 
+#--------------------------------------------------------------------------------------
+def _get_id_separator() :
+    return ' | '
 
 
 #--------------------------------------------------------------------------------------
-def get_id_separator() :
-    return ' | '
+def generate_id( the_parent_id, the_child_name ) :
+    a_child_id = '%s%s%s' % ( the_parent_id, _get_id_separator(), the_child_name )
+
+    import hashlib
+    a_bucket_name = hashlib.md5( a_child_id ).hexdigest()
+
+    return a_child_id, a_bucket_name
 
 
 #--------------------------------------------------------------------------------------
