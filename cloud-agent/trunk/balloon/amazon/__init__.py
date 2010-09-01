@@ -149,14 +149,14 @@ def wait_activation( the_instance, the_ssh_connect, the_ssh_client ) :
 
 
 #--------------------------------------------------------------------------------------
-def mark_version( the_entity_key, the_entity_version ) :
-    the_entity_key.set_contents_from_string( the_entity_version )
+def mark_api_version( the_entity_key, the_entity_api_version ) :
+    the_entity_key.set_contents_from_string( the_entity_api_version )
 
-    return the_entity_version
+    return the_entity_api_version
 
 
 #--------------------------------------------------------------------------------------
-def extract_version( the_entity_key ) :
+def extract_api_version( the_entity_key ) :
 
     return the_entity_key.get_contents_as_string()
 

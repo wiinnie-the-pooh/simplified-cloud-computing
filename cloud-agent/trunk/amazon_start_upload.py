@@ -27,11 +27,11 @@ import balloon.common as common
 from balloon.common import print_d, print_i, print_e, sh_command, ssh_command
 from balloon.common import generate_id, generate_file_key, generate_item_key
 from balloon.common import extract_file_props, extract_item_props
-from balloon.common import study_version, file_version
+from balloon.common import study_api_version, file_api_version
 from balloon.common import Timer, WorkerPool, compute_md5
 
 import balloon.amazon as amazon
-from balloon.amazon import mark_version, extract_version
+from balloon.amazon import mark_api_version, extract_api_version
 
 import boto
 from boto.s3.key import Key
@@ -73,15 +73,15 @@ def upload_file( the_worker_pool, the_file, the_study_bucket, the_study_id, the_
 
     os.remove( a_tmp_file )
 
-    a_file_version = file_version()
-    print_d( "a_file_version = '%s'\n" % a_file_version )
+    a_file_api_version = file_api_version()
+    print_d( "a_file_api_version = '%s'\n" % a_file_api_version )
 
     a_study_file_key = Key( the_study_bucket )
-    a_study_file_key.key = generate_file_key( a_hex_md5, the_file, a_working_dir, a_file_version )
-    mark_version( a_study_file_key, a_file_version )
+    a_study_file_key.key = generate_file_key( a_hex_md5, the_file, a_working_dir, a_file_api_version )
+    mark_api_version( a_study_file_key, a_file_api_version )
     print_d( "a_study_file_key = %s\n" % a_study_file_key, the_printing_depth )
 
-    a_file_id, a_file_bucket_name = generate_id( the_study_id, a_study_file_key.name, a_file_version )
+    a_file_id, a_file_bucket_name = generate_id( the_study_id, a_study_file_key.name, a_file_api_version )
     print_d( "a_file_id = '%s'\n" % a_file_id, the_printing_depth )
     
     a_file_bucket = a_s3_conn.create_bucket( a_file_bucket_name )
@@ -198,15 +198,15 @@ print_d( "a_root_bucket = %s\n" % a_root_bucket )
 
 
 print_i( "------------------------- Registering the new study -----------------------------\n" )
-a_study_version = study_version()
-print_d( "a_study_version = '%s'\n" % a_study_version )
+a_study_api_version = study_api_version()
+print_d( "a_study_api_version = '%s'\n" % a_study_api_version )
 
 a_study_key = Key( a_root_bucket )
 a_study_key.key = '%s' % ( a_study_name )
-mark_version( a_study_key, study_version() )
+mark_api_version( a_study_key, study_api_version() )
 print_d( "a_study_key = %s\n" % a_study_key )
 
-a_study_id, a_study_bucket_name = generate_id( a_canonical_user_id, a_study_name, a_study_version )
+a_study_id, a_study_bucket_name = generate_id( a_canonical_user_id, a_study_name, a_study_api_version )
 print_d( "a_study_id = '%s'\n" % a_study_id )
 
 a_study_bucket = a_s3_conn.create_bucket( a_study_bucket_name )

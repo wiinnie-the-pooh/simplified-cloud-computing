@@ -27,11 +27,11 @@ import balloon.common as common
 from balloon.common import print_d, print_i, print_e, sh_command, ssh_command
 from balloon.common import generate_id, generate_file_key, generate_item_key
 from balloon.common import extract_file_props, extract_item_props
-from balloon.common import study_version, file_version
+from balloon.common import study_api_version, file_api_version
 from balloon.common import Timer, WorkerPool, compute_md5
 
 import balloon.amazon as amazon
-from balloon.amazon import mark_version, extract_version
+from balloon.amazon import mark_api_version, extract_api_version
 
 import boto
 from boto.s3.key import Key
@@ -59,7 +59,7 @@ def mark_finished( the_working_dir, the_file_bucket, the_printing_depth ) :
 
 
 #------------------------------------------------------------------------------------------
-def upload_item( the_file_item, the_file_path, the_file_bucket, the_file_version, the_printing_depth ) :
+def upload_item( the_file_item, the_file_path, the_file_bucket, the_file_api_version, the_printing_depth ) :
     "Uploading file item"
     try :
         a_part_key = Key( the_file_bucket )
@@ -68,7 +68,7 @@ def upload_item( the_file_item, the_file_path, the_file_bucket, the_file_version
         a_md5 = compute_md5( a_file_pointer )
         a_hex_md5, a_base64md5 = a_md5
 
-        a_part_key.key = generate_item_key( a_hex_md5, the_file_item, the_file_version )
+        a_part_key.key = generate_item_key( a_hex_md5, the_file_item, the_file_api_version )
 
         # a_part_key.set_contents_from_file( a_file_pointer, md5 = a_md5 ) # this method is not thread safe
         a_part_key.set_contents_from_file( a_file_pointer)
@@ -87,7 +87,7 @@ def upload_item( the_file_item, the_file_path, the_file_bucket, the_file_version
 
 
 #------------------------------------------------------------------------------------------
-def upload_items( the_number_threads, the_file_bucket, the_file_version, the_working_dir, the_printing_depth ) :
+def upload_items( the_number_threads, the_file_bucket, the_file_api_version, the_working_dir, the_printing_depth ) :
     "Uploading file items"
     while True :
         a_dir_contents = os.listdir( the_working_dir )
@@ -111,7 +111,7 @@ def upload_items( the_number_threads, the_file_bucket, the_file_version, the_wor
 
                 continue
 
-            a_worker_pool.charge( upload_item, ( a_file_item, a_file_path, the_file_bucket, the_file_version, the_printing_depth + 2 ) )
+            a_worker_pool.charge( upload_item, ( a_file_item, a_file_path, the_file_bucket, the_file_api_version, the_printing_depth + 2 ) )
 
             pass
 
@@ -130,24 +130,24 @@ def upload_items( the_number_threads, the_file_bucket, the_file_version, the_wor
 
 #------------------------------------------------------------------------------------------
 def upload_file( the_s3_conn, the_number_threads, the_study_file_key, the_study_id, the_printing_depth ) :
-    a_file_version = extract_version( the_study_file_key )
-    a_hex_md5, a_file_name, a_working_dir = extract_file_props( the_study_file_key.name, a_file_version )
+    a_file_api_version = extract_api_version( the_study_file_key )
+    a_hex_md5, a_file_name, a_working_dir = extract_file_props( the_study_file_key.name, a_file_api_version )
     if not os.path.exists( a_working_dir ) :
         return True
 
     print_d( "the_study_file_key = %s\n" % the_study_file_key, the_printing_depth )
     print_d( "a_working_dir = '%s'\n" % a_working_dir, the_printing_depth )
 
-    a_file_version = extract_version( the_study_file_key )
-    print_d( "a_file_version = '%s'\n" % a_file_version, the_printing_depth )
+    a_file_api_version = extract_api_version( the_study_file_key )
+    print_d( "a_file_api_version = '%s'\n" % a_file_api_version, the_printing_depth )
 
-    a_file_id, a_file_bucket_name = generate_id( the_study_id, the_study_file_key.name, a_file_version )
+    a_file_id, a_file_bucket_name = generate_id( the_study_id, the_study_file_key.name, a_file_api_version )
     print_d( "a_file_id = '%s'\n" % a_file_id, the_printing_depth )
 
     a_file_bucket = the_s3_conn.get_bucket( a_file_bucket_name )
     print_d( "a_file_bucket = %s\n" % a_file_bucket, the_printing_depth )
 
-    return upload_items( the_number_threads, a_file_bucket, a_file_version, a_working_dir, the_printing_depth + 1 )
+    return upload_items( the_number_threads, a_file_bucket, a_file_api_version, a_working_dir, the_printing_depth + 1 )
 
 
 #------------------------------------------------------------------------------------------
@@ -226,14 +226,14 @@ print_d( "a_root_bucket = %s\n" % a_root_bucket )
 print_i( "--------------------------- Looking for study key -------------------------------\n" )
 a_study_key = Key( a_root_bucket )
 a_study_key.key = '%s' % ( a_study_name )
-a_study_version = extract_version( a_study_key )
-print_d( "a_study_version = '%s'\n" % a_study_version )
+a_study_api_version = extract_api_version( a_study_key )
+print_d( "a_study_api_version = '%s'\n" % a_study_api_version )
 
 
 print_i( "----------------------- Looking for the appointed study -------------------------\n" )
 a_canonical_user_id = a_s3_conn.get_canonical_user_id()
 
-a_study_id, a_study_bucket_name = generate_id( a_canonical_user_id, a_study_name, a_study_version )
+a_study_id, a_study_bucket_name = generate_id( a_canonical_user_id, a_study_name, a_study_api_version )
 print_d( "a_study_id = '%s'\n" % a_study_id )
 
 a_study_bucket = a_s3_conn.get_bucket( a_study_bucket_name )

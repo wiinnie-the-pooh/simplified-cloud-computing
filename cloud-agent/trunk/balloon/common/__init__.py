@@ -266,34 +266,34 @@ def compute_md5( the_file_pointer ) :
 
 
 #--------------------------------------------------------------------------------------
-def _version_separator() :
+def _api_version_separator() :
 
     return ' ! '
 
 
 #--------------------------------------------------------------------------------------
-def study_version() :
+def study_api_version() :
 
     return 'dummy'
 
 
 #--------------------------------------------------------------------------------------
-def file_version() :
+def file_api_version() :
 
     return 'dummy'
 
 
 #--------------------------------------------------------------------------------------
-def _id_separator( the_entity_version ) :
-    if the_entity_version == 'dummy' :
+def _id_separator( the_entity_api_version ) :
+    if the_entity_api_version == 'dummy' :
         return ' | '
 
     return " | "
 
 
 #--------------------------------------------------------------------------------------
-def generate_id( the_parent_id, the_child_name, the_entity_version ) :
-    a_child_id = '%s%s%s' % ( the_parent_id, _id_separator( the_entity_version ), the_child_name )
+def generate_id( the_parent_id, the_child_name, the_entity_api_version ) :
+    a_child_id = '%s%s%s' % ( the_parent_id, _id_separator( the_entity_api_version ), the_child_name )
 
     import hashlib
     a_bucket_name = hashlib.md5( a_child_id ).hexdigest()
@@ -302,23 +302,23 @@ def generate_id( the_parent_id, the_child_name, the_entity_version ) :
 
 
 #--------------------------------------------------------------------------------------
-def _file_key_separator( the_entity_version ) :
-    if the_entity_version == 'dummy' :
+def _file_key_separator( the_entity_api_version ) :
+    if the_entity_api_version == 'dummy' :
         return ':'
 
     return ' : '
 
 
 #--------------------------------------------------------------------------------------
-def generate_file_key( the_hex_md5, the_file_path, the_working_dir, the_entity_version ) :
-    a_separator = _file_key_separator( the_entity_version )
+def generate_file_key( the_hex_md5, the_file_path, the_working_dir, the_entity_api_version ) :
+    a_separator = _file_key_separator( the_entity_api_version )
 
     return '%s%s%s%s%s' % ( the_hex_md5, a_separator, the_file_path, a_separator, the_working_dir )
 
 
 #--------------------------------------------------------------------------------------
-def extract_file_props( the_study_file_key_name, the_entity_version ) :
-    a_separator = _file_key_separator( the_entity_version )
+def extract_file_props( the_study_file_key_name, the_entity_api_version ) :
+    a_separator = _file_key_separator( the_entity_api_version )
 
     a_hex_md5, a_file_name, an_upload_dir = the_study_file_key_name.split( a_separator )
 
@@ -326,23 +326,23 @@ def extract_file_props( the_study_file_key_name, the_entity_version ) :
 
 
 #--------------------------------------------------------------------------------------
-def _item_key_separator( the_file_version ) :
-    if the_file_version == 'dummy' :
+def _item_key_separator( the_file_api_version ) :
+    if the_file_api_version == 'dummy' :
         return ':'
 
     return ' % '
 
 
 #--------------------------------------------------------------------------------------
-def generate_item_key( the_hex_md5, the_file_item, the_file_version ) :
-    a_separator = _item_key_separator( the_file_version )
+def generate_item_key( the_hex_md5, the_file_item, the_file_api_version ) :
+    a_separator = _item_key_separator( the_file_api_version )
 
     return '%s%s%s' % ( the_file_item, a_separator, the_hex_md5 )
 
 
 #--------------------------------------------------------------------------------------
-def extract_item_props( the_file_item_key_name, the_file_version ) :
-    a_separator = _item_key_separator( the_file_version )
+def extract_item_props( the_file_item_key_name, the_file_api_version ) :
+    a_separator = _item_key_separator( the_file_api_version )
 
     a_file_name, a_hex_md5 = the_file_item_key_name.split( a_separator )
 
