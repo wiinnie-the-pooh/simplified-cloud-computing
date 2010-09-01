@@ -25,7 +25,7 @@ This script is responsible for efficient uploading of multi file data
 #------------------------------------------------------------------------------------------
 import balloon.common as common
 from balloon.common import print_d, print_i, print_e, sh_command, ssh_command
-from balloon.common import Timer, WorkerPool, compute_md5, generate_id
+from balloon.common import Timer, WorkerPool, compute_md5, generate_id, generate_file_key
 
 import balloon.amazon as amazon
 
@@ -50,7 +50,12 @@ def upload_file( the_worker_pool, the_file, the_study_bucket, the_study_id, the_
     print_d( "a_statinfo.st_size = %d, bytes\n" % a_statinfo.st_size, the_printing_depth )
 
     import math
-    a_suffix_length = int( math.log10( a_statinfo.st_size / the_upload_item_size + 10 ) )
+    a_suffix_length = math.log10( float( a_statinfo.st_size ) / the_upload_item_size )
+    if a_suffix_length > 0 :
+        a_suffix_length = int( a_suffix_length + 1.0 )
+    else:
+        a_suffix_length = 0
+        pass
     print_d( "a_suffix_length = %d, digits\n" % a_suffix_length, the_printing_depth )
 
     a_working_dir = tempfile.mkdtemp()
@@ -65,7 +70,7 @@ def upload_file( the_worker_pool, the_file, the_study_bucket, the_study_id, the_
     os.remove( a_tmp_file )
 
     a_study_file_key = Key( the_study_bucket )
-    a_study_file_key.key = '%s:%s:%s' % ( a_hex_md5, the_file, a_working_dir )
+    a_study_file_key.key = generate_file_key( a_hex_md5, the_file, a_working_dir )
     a_study_file_key.set_contents_from_string( 'dummy' )
     print_d( "a_study_file_key = %s\n" % a_study_file_key, the_printing_depth )
 

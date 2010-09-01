@@ -25,7 +25,7 @@ This script is responsible for efficient uploading of multi file data
 #------------------------------------------------------------------------------------------
 import balloon.common as common
 from balloon.common import print_d, print_i, print_e, sh_command, ssh_command
-from balloon.common import Timer, WorkerPool, compute_md5, generate_id
+from balloon.common import Timer, WorkerPool, compute_md5, generate_id, generate_file_key
 
 import balloon.amazon as amazon
 

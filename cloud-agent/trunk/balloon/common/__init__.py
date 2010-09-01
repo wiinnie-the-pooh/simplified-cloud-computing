@@ -293,3 +293,9 @@ def generate_id( the_parent_id, the_child_name ) :
 
 
 #--------------------------------------------------------------------------------------
+def generate_file_key( the_hex_md5, the_file_path, the_working_dir ) :
+
+    return '%s:%s:%s' % ( the_hex_md5, the_file_path, the_working_dir )
+
+
+#--------------------------------------------------------------------------------------
