@@ -64,7 +64,7 @@ def download_items( the_number_threads, the_file_bucket, the_file_basename, the_
                 an_is_everything_uploaded = True
                 continue
 
-            a_hex_md5, a_file_name = extract_item_props( an_item_key )
+            a_hex_md5, a_file_name = extract_item_props( an_item_key.name )
             a_file_path = os.path.join( the_output_dir, a_file_name )
 
             if os.path.exists( a_file_path ) :
@@ -93,7 +93,7 @@ def download_items( the_number_threads, the_file_bucket, the_file_basename, the_
 
 #------------------------------------------------------------------------------------------
 def download_file( the_number_threads, the_enable_fresh, the_s3_conn, the_study_file_key, the_study_id, the_output_dir, the_printing_depth ) :
-    a_hex_md5, a_file_name, an_upload_dir = extract_file_props( the_study_file_key )
+    a_hex_md5, a_file_name, an_upload_dir = extract_file_props( the_study_file_key.name )
     a_file_dirname = os.path.dirname( a_file_name )
     a_file_basename = os.path.basename( a_file_name )
     print_d( "a_file_name = '%s'\n" % a_file_name, the_printing_depth )
@@ -277,7 +277,7 @@ if a_target_file_name == None :
 
 else :
     for a_study_file_key in a_study_bucket.list() :
-        a_hex_md5, a_file_name, an_upload_dir = extract_file_props( a_study_file_key )
+        a_hex_md5, a_file_name, an_upload_dir = extract_file_props( a_study_file_key.name )
         print_d( "a_file_name = '%s'\n" % a_file_name, 0 )
 
         if a_file_name == a_target_file_name :

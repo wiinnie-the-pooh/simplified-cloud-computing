@@ -127,7 +127,7 @@ def upload_items( the_number_threads, the_file_bucket, the_working_dir, the_prin
 
 #------------------------------------------------------------------------------------------
 def upload_file( the_s3_conn, the_number_threads, the_study_file_key, the_study_id, the_printing_depth ) :
-    a_hex_md5, a_file_name, a_working_dir = extract_file_props( the_study_file_key )
+    a_hex_md5, a_file_name, a_working_dir = extract_file_props( the_study_file_key.name )
     if not os.path.exists( a_working_dir ) :
         return True
 

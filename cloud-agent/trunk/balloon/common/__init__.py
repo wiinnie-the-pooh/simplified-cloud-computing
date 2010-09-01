@@ -294,8 +294,8 @@ def generate_file_key( the_hex_md5, the_file_path, the_working_dir ) :
 
 
 #--------------------------------------------------------------------------------------
-def extract_file_props( the_study_file_key ) :
-    a_hex_md5, a_file_name, an_upload_dir = the_study_file_key.key.split( _file_key_separator() )
+def extract_file_props( the_study_file_key_name ) :
+    a_hex_md5, a_file_name, an_upload_dir = the_study_file_key_name.split( _file_key_separator() )
 
     return a_hex_md5, a_file_name, an_upload_dir
 
@@ -313,8 +313,8 @@ def generate_item_key( the_hex_md5, the_file_item ) :
 
 
 #--------------------------------------------------------------------------------------
-def extract_item_props( the_file_item_key ) :
-    a_file_name, a_hex_md5 = the_file_item_key.name.split( _item_key_separator() )
+def extract_item_props( the_file_item_key_name ) :
+    a_file_name, a_hex_md5 = the_file_item_key_name.split( _item_key_separator() )
 
     return a_hex_md5, a_file_name
 
