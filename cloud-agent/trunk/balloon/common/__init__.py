@@ -279,6 +279,7 @@ def compute_md5( the_file_pointer ) :
 
 #--------------------------------------------------------------------------------------
 def _id_separator() :
+
     return ' | '
 
 
@@ -294,6 +295,7 @@ def generate_id( the_parent_id, the_child_name ) :
 
 #--------------------------------------------------------------------------------------
 def _file_key_separator() :
+
     return ':'
 
 
@@ -305,10 +307,28 @@ def generate_file_key( the_hex_md5, the_file_path, the_working_dir ) :
 
 #--------------------------------------------------------------------------------------
 def extract_file_props( the_study_file_key ) :
-
     a_hex_md5, a_file_name, an_upload_dir = the_study_file_key.key.split( _file_key_separator() )
 
     return a_hex_md5, a_file_name, an_upload_dir
+
+
+#--------------------------------------------------------------------------------------
+def _item_key_separator() :
+
+    return ':'
+
+
+#--------------------------------------------------------------------------------------
+def generate_item_key( the_hex_md5, the_file_item ) :
+
+    return '%s%s%s' % ( the_file_item, _item_key_separator(), the_hex_md5 )
+
+
+#--------------------------------------------------------------------------------------
+def extract_item_props( the_file_item_key ) :
+    a_file_name, a_hex_md5 = the_file_item_key.name.split( _item_key_separator() )
+
+    return a_hex_md5, a_file_name
 
 
 #--------------------------------------------------------------------------------------

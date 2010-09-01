@@ -25,7 +25,8 @@ This script is responsible for efficient downloading of multi file data
 #------------------------------------------------------------------------------------------
 import balloon.common as common
 from balloon.common import print_d, print_i, print_e, sh_command, ssh_command
-from balloon.common import Timer, WorkerPool, compute_md5, generate_id, extract_file_props
+from balloon.common import generate_id, extract_file_props, extract_item_props
+from balloon.common import Timer, WorkerPool, compute_md5
 
 import balloon.amazon as amazon
 
@@ -63,7 +64,7 @@ def download_items( the_number_threads, the_file_bucket, the_file_basename, the_
                 an_is_everything_uploaded = True
                 continue
 
-            a_file_name, a_hex_md5 = an_item_key.name.split( ':' )
+            a_hex_md5, a_file_name = extract_item_props( an_item_key )
             a_file_path = os.path.join( the_output_dir, a_file_name )
 
             if os.path.exists( a_file_path ) :
