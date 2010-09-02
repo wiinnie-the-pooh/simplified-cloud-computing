@@ -39,33 +39,16 @@ import sys, os, os.path, uuid, hashlib
 
 
 #------------------------------------------------------------------------------------------
-def read_items( the_file_bucket, the_printing_depth ) :
-    "Reading the file items"
-    for an_item_key in the_file_bucket.list() :
-        print_d( "'%s' - %s\n" % ( an_item_key.name, an_item_key ), the_printing_depth )
-
-        pass
-
-    pass
-
-
-#------------------------------------------------------------------------------------------
 def read_files( the_study_bucket, the_study_id, the_printing_depth ) :
     "Reading the study files"
     for a_file_key in the_study_bucket.list() :
         a_file_api_version = extract_api_version( a_file_key )
-        print_d( "'%s' - '%s' - " % ( a_file_key.name, a_file_api_version), the_printing_depth )
-        
-        a_file_id, a_file_bucket_name = generate_id( the_study_id, a_file_key.name, a_file_api_version )
-        a_file_bucket_name = hashlib.md5( a_file_id ).hexdigest()
-        
-        a_file_bucket = a_s3_conn.get_bucket( a_file_bucket_name )
-        print_d( "%s\n" % a_file_bucket )
+        a_hex_md5, a_file_path = extract_file_props( a_file_key.name, a_file_api_version )
 
-        read_items( a_file_bucket, the_printing_depth + 1 )
-
+        print a_file_path
+        
         pass
-    
+
     pass
 
 
@@ -95,7 +78,7 @@ from optparse import OptionParser
 a_option_parser = OptionParser( usage = an_usage_description, version="%prog 0.1", formatter = a_help_formatter )
 
 # Definition of the command line arguments
-common.add_parser_options( a_option_parser, True )
+common.add_parser_options( a_option_parser, False )
 amazon.add_parser_options( a_option_parser )
 
 
@@ -129,8 +112,28 @@ except :
 print_d( "a_root_bucket = %s\n" % a_root_bucket )
 
 
-print_i( "---------------------------- Reading the studies --------------------------------\n" )
-read_studies( a_root_bucket, a_canonical_user_id, 0 )
+if len( an_args ) == 0 :
+    print_i( "---------------------------- Reading the studies --------------------------------\n" )
+    read_studies( a_root_bucket, a_canonical_user_id, 0 )
+else :
+    a_study_name = an_args[ 0 ]
 
+    print_i( "--------------------------- Looking for study key -------------------------------\n" )
+    a_study_key = Key( a_root_bucket )
+    a_study_key.key = '%s' % ( a_study_name )
+    a_study_api_version = extract_api_version( a_study_key )
+    print_d( "a_study_api_version = '%s'\n" % a_study_api_version )
+
+    print_i( "----------------------- Looking for the appointed study -------------------------\n" )
+    a_study_id, a_study_bucket_name = generate_id( a_canonical_user_id, a_study_name, a_study_api_version )
+    print_d( "a_study_id = '%s'\n" % a_study_id )
+
+    a_study_bucket = a_s3_conn.get_bucket( a_study_bucket_name )
+    print_d( "a_study_bucket = '%s'\n" % a_study_bucket )
+
+    print_i( "---------------------------- Reading the study files ----------------------------\n" )
+    read_files( a_study_bucket, a_study_id, 0 )
+
+    pass
 
 print_i( "-------------------------------------- OK ---------------------------------------\n" )

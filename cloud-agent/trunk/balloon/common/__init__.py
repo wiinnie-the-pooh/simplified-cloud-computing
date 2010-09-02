@@ -31,12 +31,12 @@ def add_usage_description() :
 
 
 #--------------------------------------------------------------------------------------
-def add_parser_options( the_option_parser ) :
+def add_parser_options( the_option_parser, the_default_value = True ) :
     the_option_parser.add_option( "--debug",
                                   action = "store_true",
                                   dest = "enable_debug",
                                   help = "print debug information",
-                                  default = True )
+                                  default = the_default_value )
     pass
 
 
