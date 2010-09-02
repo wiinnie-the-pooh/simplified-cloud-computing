@@ -25,14 +25,14 @@ This script is responsible for efficient uploading of multi file data
 #------------------------------------------------------------------------------------------
 import balloon.common as common
 from balloon.common import print_d, print_i, print_e, sh_command, ssh_command
-from balloon.common import generate_id, generate_file_key, generate_item_key
-from balloon.common import extract_file_props, extract_item_props
-from balloon.common import study_api_version, file_api_version
-from balloon.common import generate_uploading_dir
 from balloon.common import Timer, WorkerPool, compute_md5
 
 import balloon.amazon as amazon
-from balloon.amazon import mark_api_version, extract_api_version
+from balloon.amazon import get_root_object, create_study_object, create_file_object
+from balloon.amazon import extract_file_props, extract_item_props
+from balloon.amazon import generate_id, generate_item_key
+from balloon.amazon import generate_uploading_dir
+from balloon.amazon import api_version
 
 import boto
 from boto.s3.key import Key
@@ -41,7 +41,7 @@ import sys, os, os.path, uuid, hashlib
 
 
 #------------------------------------------------------------------------------------------
-def upload_file( the_worker_pool, the_file_path, the_study_bucket, the_study_id, the_upload_item_size, the_printing_depth ) :
+def upload_file( the_worker_pool, the_file_path, the_s3_conn, the_study_bucket, the_study_id, the_upload_item_size, the_printing_depth ) :
     a_working_dir = generate_uploading_dir( the_file_path )
 
     import shutil
@@ -81,29 +81,19 @@ def upload_file( the_worker_pool, the_file_path, the_study_bucket, the_study_id,
     a_file_pointer.close()
     os.remove( a_tmp_file )
 
-    a_file_api_version = file_api_version()
-    print_d( "a_file_api_version = '%s'\n" % a_file_api_version, the_printing_depth )
-
-    a_study_file_key = Key( the_study_bucket )
-    a_study_file_key.key = generate_file_key( a_hex_md5, the_file_path, a_file_api_version )
-    mark_api_version( a_study_file_key, a_file_api_version )
-    print_d( "a_study_file_key = %s\n" % a_study_file_key, the_printing_depth )
-
-    a_file_id, a_file_bucket_name = generate_id( the_study_id, a_study_file_key.name, a_file_api_version )
+    a_file_bucket, a_file_id = create_file_object( the_s3_conn, the_study_bucket, the_study_id, the_file_path, a_hex_md5 )
     print_d( "a_file_id = '%s'\n" % a_file_id, the_printing_depth )
-    
-    a_file_bucket = a_s3_conn.create_bucket( a_file_bucket_name )
-    print_d( "a_file_bucket = %s\n" % a_file_bucket, the_printing_depth )
 
     pass
 
 
 #------------------------------------------------------------------------------------------
-def upload_files( the_files, the_study_bucket, the_study_id, the_upload_item_size, the_printing_depth ) :
+def upload_files( the_files, the_s3_conn, the_study_bucket, the_study_id, the_upload_item_size, the_printing_depth ) :
     a_worker_pool = WorkerPool( len( the_files ) )
 
     for a_file_path in the_files :
-        a_worker_pool.charge( upload_file, ( a_worker_pool, a_file_path, the_study_bucket, the_study_id, the_upload_item_size, the_printing_depth ) )
+        a_worker_pool.charge( upload_file, ( a_worker_pool, a_file_path, the_s3_conn, the_study_bucket,
+                                             the_study_id, the_upload_item_size, the_printing_depth ) )
 
         pass
 
@@ -182,43 +172,17 @@ print_i( "--------------------------- Connecting to Amazon S3 ------------------
 a_s3_conn = boto.connect_s3( AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY )
 print_d( "a_s3_conn = %r\n" % a_s3_conn )
 
+a_root_bucket, a_root_id = get_root_object( a_s3_conn )
+print_d( "a_root_id = '%s'\n" % a_root_id )
 
-print_i( "--------------------------- Looking for study root ------------------------------\n" )
-a_canonical_user_id = a_s3_conn.get_canonical_user_id()
-print_d( "a_canonical_user_id = '%s'\n" % a_canonical_user_id )
-
-a_root_bucket_name = hashlib.md5( a_canonical_user_id ).hexdigest()
-a_root_bucket = None
-try :
-    a_root_bucket = a_s3_conn.get_bucket( a_root_bucket_name )
-except :
-    print_d( "Not root was found, creating a new one - " )
-    a_root_bucket = a_s3_conn.create_bucket( a_root_bucket_name )
-    pass
-
-print_d( "a_root_bucket = %s\n" % a_root_bucket )
-
-
-print_i( "------------------------- Registering the new study -----------------------------\n" )
-a_study_api_version = study_api_version()
-print_d( "a_study_api_version = '%s'\n" % a_study_api_version )
-
-a_study_key = Key( a_root_bucket )
-a_study_key.key = '%s' % ( a_study_name )
-mark_api_version( a_study_key, study_api_version() )
-print_d( "a_study_key = %s\n" % a_study_key )
-
-a_study_id, a_study_bucket_name = generate_id( a_canonical_user_id, a_study_name, a_study_api_version )
+a_study_bucket, a_study_id = create_study_object( a_s3_conn, a_root_bucket, a_root_id, a_study_name )
 print_d( "a_study_id = '%s'\n" % a_study_id )
-
-a_study_bucket = a_s3_conn.create_bucket( a_study_bucket_name )
-print_d( "a_study_bucket = '%s'\n" % a_study_bucket )
 
 
 print_i( "---------------------------- Uploading study files ------------------------------\n" )
 a_data_loading_time = Timer()
 
-upload_files( a_files, a_study_bucket, a_study_id, an_options.upload_item_size, 0 )
+upload_files( a_files, a_s3_conn, a_study_bucket, a_study_id, an_options.upload_item_size, 0 )
 
 print_d( "a_data_loading_time = %s, sec\n" % a_data_loading_time )
 

@@ -22,7 +22,7 @@ from balloon.common import print_e, print_d, ssh_command
 import boto
 from boto.s3.key import Key
 
-import os, os.path
+import os, os.path, hashlib
 
 
 #--------------------------------------------------------------------------------------
@@ -149,16 +149,169 @@ def wait_activation( the_instance, the_ssh_connect, the_ssh_client ) :
 
 
 #--------------------------------------------------------------------------------------
-def mark_api_version( the_entity_key, the_entity_api_version ) :
-    the_entity_key.set_contents_from_string( the_entity_api_version )
+def get_root_object( the_s3_conn ) :
+    "Looking for study root"
+    a_backet_id = the_s3_conn.get_canonical_user_id()
+    a_bucket_name = hashlib.md5( a_backet_id ).hexdigest()
 
-    return the_entity_api_version
+    a_bucket = None
+    try :
+        a_bucket = the_s3_conn.get_bucket( a_bucket_name )
+    except :
+        a_bucket = the_s3_conn.create_bucket( a_bucket_name )
+        pass
+
+    return a_bucket, a_backet_id
 
 
 #--------------------------------------------------------------------------------------
-def extract_api_version( the_entity_key ) :
+def api_version() :
 
-    return the_entity_key.get_contents_as_string()
+    return '0.1'
+
+
+#--------------------------------------------------------------------------------------
+def _id_separator( the_api_version ) :
+    if the_api_version == 'dummy' :
+        return '|'
+
+    return ' | '
+
+
+#--------------------------------------------------------------------------------------
+def generate_id( the_parent_id, the_child_name, the_api_version ) :
+    a_separator = _id_separator( the_api_version )
+    a_child_id = '%s%s%s' % ( the_parent_id, a_separator, the_child_name )
+
+    a_bucket_name = hashlib.md5( a_child_id ).hexdigest()
+
+    return a_child_id, a_bucket_name
+
+
+#--------------------------------------------------------------------------------------
+def _decorate_key_name( the_name, the_api_version ) :
+    # This workaround make possible to use '/' symbol at the beginning of the key name
+
+    return '!%s' % the_name
+
+
+#--------------------------------------------------------------------------------------
+def get_name( the_key, the_api_version ) :
+
+    return the_key.name[ 1 : ]
+
+
+#--------------------------------------------------------------------------------------
+def key_eq_name( the_key, the_name, the_api_version ) :
+
+    return get_name( the_key, the_api_version ) == the_name
+
+
+#--------------------------------------------------------------------------------------
+def get_key( the_parent_bucket, the_name, the_api_version ) :
+    a_decorated_name = _decorate_key_name( the_name, the_api_version )
+
+    return Key( the_parent_bucket, a_decorated_name )
+
+
+#--------------------------------------------------------------------------------------
+def create_object( the_s3_conn, the_parent_bucket, the_parent_id, the_name, the_attr ) :
+    a_study_key = get_key( the_parent_bucket, the_name, api_version() )
+
+    a_study_key.set_contents_from_string( the_attr )
+
+    a_backet_id, a_bucket_name = generate_id( the_parent_id, the_name, api_version() )
+    
+    a_bucket = the_s3_conn.create_bucket( a_bucket_name )
+
+    return a_bucket, a_backet_id
+
+
+#--------------------------------------------------------------------------------------
+def create_study_object( the_s3_conn, the_root_bucket, the_root_id, the_study_name ) :
+    "Registering the new study"
+
+    return create_object( the_s3_conn, the_root_bucket, the_root_id, the_study_name, api_version() )
+
+
+#--------------------------------------------------------------------------------------
+def get_study_key( the_root_bucket, the_study_name, the_api_version ) :
+
+    return get_key( the_root_bucket, the_study_name, the_api_version )
+
+
+#--------------------------------------------------------------------------------------
+def extract_study_props( the_study_key, the_api_version ) :
+    an_api_version = the_study_key.get_contents_as_string()
+
+    a_study_name = get_name( the_study_key, the_api_version )
+
+    return an_api_version, a_study_name
+
+
+#--------------------------------------------------------------------------------------
+def create_file_object( the_s3_conn, the_study_bucket, the_study_id, the_file_path, the_hex_md5 ) :
+    
+    return create_object( the_s3_conn, the_study_bucket, the_study_id, the_file_path, the_hex_md5 )
+
+
+#--------------------------------------------------------------------------------------
+def get_study_key( the_root_bucket, the_study_name, the_api_version ) :
+
+    return get_key( the_root_bucket, the_study_name, the_api_version )
+
+
+#--------------------------------------------------------------------------------------
+def extract_file_props( the_file_key, the_api_version ) :
+    a_hex_md5 = the_file_key_name.get_contents_as_string()
+
+    a_file_path = get_name( the_file_key, the_api_version )
+
+    return a_hex_md5, a_file_path
+
+
+#--------------------------------------------------------------------------------------
+def _item_key_separator( the_api_version ) :
+    if the_api_version == 'dummy' :
+        return ':'
+
+    return ' % '
+
+
+#--------------------------------------------------------------------------------------
+def generate_item_key( the_hex_md5, the_file_item, the_api_version ) :
+    a_separator = _item_key_separator( the_api_version )
+
+    if the_api_version == 'dummy' :
+        return '%s%s%s' % ( the_file_item, a_separator, the_hex_md5 )
+
+    return '%s%s%s' % ( the_hex_md5, a_separator, the_file_item )
+
+
+#--------------------------------------------------------------------------------------
+def extract_item_props( the_file_item_key_name, the_api_version ) :
+    a_separator = _item_key_separator( the_api_version )
+
+    a_file_name, a_hex_md5 = None, None
+
+    if the_api_version == 'dummy' :
+        a_file_name, a_hex_md5 = the_file_item_key_name.split( a_separator )
+    else:
+        a_hex_md5, a_file_name = the_file_item_key_name.split( a_separator )
+        pass
+
+    return a_hex_md5, a_file_name
+
+
+#--------------------------------------------------------------------------------------
+def generate_uploading_dir( the_file_path ) :
+    a_file_dirname = os.path.dirname( the_file_path )
+    a_file_basename = os.path.basename( the_file_path )
+
+    a_sub_folder = hashlib.md5( a_file_basename ).hexdigest()
+    a_working_dir = os.path.join( a_file_dirname, a_sub_folder )
+    
+    return a_working_dir
 
 
 #--------------------------------------------------------------------------------------
