@@ -35,43 +35,6 @@ from balloon.common import print_d, print_i, print_e, sh_command, ssh_command, T
 
 
 #--------------------------------------------------------------------------------------
-print "--------------- Delete S3 buckets ----------------"
-a_s3_conn = boto.connect_s3( AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY )
-
-a_worker_pool = WorkerPool( 8 )
-
-# First remove all the bucket keys
-for a_bucket in a_s3_conn.get_all_buckets() :
-    try :
-        a_s3_bucket_keys = a_bucket.get_all_keys()
-        print "'%s' : %d" % ( a_bucket.name, len( a_s3_bucket_keys ) )
-        
-        for a_s3_bucket_key in a_bucket.list() :
-            print "\t'%s'" % ( a_s3_bucket_key.name )
-            a_worker_pool.charge( lambda the_s3_bucket_key : the_s3_bucket_key.delete(), [ a_s3_bucket_key ] )
-            
-            pass
-    except :
-        pass
-
-    pass
-
-a_worker_pool.join()
-print
-
-# Remove the bucket itself
-for a_bucket in a_s3_conn.get_all_buckets() :
-    print "'%s'" % ( a_bucket.name )
-    a_worker_pool.charge( lambda the_s3_bucket : the_s3_bucket.delete(), [ a_bucket ] )
-
-    pass
-
-a_worker_pool.shutdown()
-a_worker_pool.join()
-print
-
-
-#--------------------------------------------------------------------------------------
 def stop_instance( the_instance ) :
     a_status = the_instance.update()
     if a_status != 'terminated' :
