@@ -168,14 +168,18 @@ def get_root_object( the_s3_conn ) :
 class TRootObject :
     "Represents S3 dedicated implementation of study root"
 
-    def __init__( self, the_s3_conn, the_bucket, the_id ) :
+    def __init__( self, the_s3_conn, the_root_bucket, the_root_id ) :
         "Use static corresponding functions to an instance of this class"
-        self.connection = the_s3_conn
-        self.bucket = the_bucket
-        self.id = the_id
+        self._connection = the_s3_conn
+        self._bucket = the_root_bucket
+        self._id = the_root_id
 
         pass
     
+    def __str__( self ) :
+
+        return "'%s'" % ( self._id )
+
     @staticmethod
     def get( the_s3_conn ) :
         a_bucket, an_id = get_root_object( the_s3_conn )
@@ -266,9 +270,42 @@ def get_study_object( the_s3_conn, the_root_id, the_study_name, the_api_version 
 
 
 #--------------------------------------------------------------------------------------
-def get_study_key( the_root_bucket, the_study_name ) :
+class TStudyObject :
+    "Represents S3 dedicated implementation of study object"
 
-    return get_key( the_root_bucket, the_study_name )
+    def __init__( self, the_root_object, the_study_key, the_study_bucket, the_study_id, the_api_version ) :
+        "Use static corresponding functions to an instance of this class"
+        self._root_object = the_root_object
+        self._study_key = the_study_key
+
+        self._bucket = the_study_bucket
+        self._id = the_study_id
+
+        self._api_version = the_api_version
+
+        pass
+    
+    def connection( self ) :
+
+        return self._root_object._connection
+
+    def __str__( self ) :
+
+        return "'%s'" % ( self._id )
+
+    @staticmethod
+    def create( the_root_object, the_study_name ) :
+        a_key = get_key( the_root_object._bucket, the_study_name )
+
+        a_key.set_contents_from_string( api_version() )
+
+        an_id, a_bucket_name = generate_id( the_root_object._id, the_study_name, api_version() )
+    
+        a_bucket = the_root_object._connection.create_bucket( a_bucket_name )
+
+        return TStudyObject( the_root_object, a_key, a_bucket, an_id, api_version() )
+    
+    pass
 
 
 #--------------------------------------------------------------------------------------
