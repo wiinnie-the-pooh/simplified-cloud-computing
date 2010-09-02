@@ -18,7 +18,7 @@
 
 #------------------------------------------------------------------------------------------
 """
-Cleans all nodes from cloudservers and cloudfiles that correspond to defined rackspace account
+Lists all existing cloud studies and their contents
 """
 
 #------------------------------------------------------------------------------------------

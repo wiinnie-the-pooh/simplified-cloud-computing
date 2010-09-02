@@ -119,6 +119,7 @@ def upload_files( the_files, the_study_bucket, the_study_id, the_upload_item_siz
 an_usage_description = "%prog --study-name='my favorite study' --upload-item-size=5160 --socket-timeout=3"
 an_usage_description += common.add_usage_description()
 an_usage_description += amazon.add_usage_description()
+an_usage_description += amazon.add_timeout_usage_description()
 an_usage_description += " <file 1> <file 2> ..."
 
 from optparse import IndentedHelpFormatter
@@ -132,24 +133,18 @@ a_option_parser.add_option( "--study-name",
                             metavar = "< an unique name of the user study >",
                             action = "store",
                             dest = "study_name",
-                            help = "(UUID generated, by default)",
-                            default = str( uuid.uuid4() ) )
+                            help = "(generated, by default)",
+                            default = 'tmp-' + str( uuid.uuid4() ) )
 a_option_parser.add_option( "--upload-item-size",
                             metavar = "< size of file pieces to be uploaded, in bytes >",
                             type = "int",
                             action = "store",
                             dest = "upload_item_size",
                             help = "(\"%default\", by default)",
-                            default = 10240 )
-a_option_parser.add_option( "--socket-timeout",
-                            metavar = "< socket timeout time >",
-                            type = "int",
-                            action = "store",
-                            dest = "socket_timeout",
-                            help = "(\"%default\", by default)",
-                            default = 1 )
+                            default = 8192 )
 common.add_parser_options( a_option_parser )
 amazon.add_parser_options( a_option_parser )
+amazon.add_timeout_options( a_option_parser )
     
 an_engine_dir = os.path.abspath( os.path.dirname( sys.argv[ 0 ] ) )
 
@@ -180,8 +175,7 @@ print_d( "a_study_name = '%s'\n" % a_study_name )
     
 AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY = amazon.extract_options( an_options )
 
-import socket
-socket.setdefaulttimeout( an_options.socket_timeout )
+amazon.extract_timeout_options( an_options, a_option_parser )
 
 
 print_i( "--------------------------- Connecting to Amazon S3 -----------------------------\n" )

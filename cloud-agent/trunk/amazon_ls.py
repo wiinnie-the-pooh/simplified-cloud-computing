@@ -18,7 +18,7 @@
 
 #------------------------------------------------------------------------------------------
 """
-Cleans all nodes from cloudservers and cloudfiles that correspond to defined rackspace account
+Lists all existing cloud studies or files uploaded for the given study
 """
 
 #------------------------------------------------------------------------------------------
@@ -74,22 +74,9 @@ def read_studies( the_root_bucket, the_canonical_user_id, the_printing_depth ) :
     "Reading the studies"
     for a_study_key in the_root_bucket.list() :
         a_study_name = a_study_key.name
-        a_study_api_version = extract_api_version( a_study_key )
-        print_d( "'%s' - '%s' - " % ( a_study_name, a_study_api_version ), the_printing_depth )
 
-        a_study_id, a_study_bucket_name = generate_id( the_canonical_user_id, a_study_name, a_study_api_version )
-    
-        a_study_bucket = None
-        try :
-            a_study_bucket = a_s3_conn.get_bucket( a_study_bucket_name )
-        except :
-            print_d( "There is no study with such name ('%s')\n" % a_study_name, the_printing_depth )
-            continue
-        
-        print_d( "%s\n" % a_study_bucket )
-    
-        read_files( a_study_bucket, a_study_id, the_printing_depth + 1 )
-    
+        print a_study_name
+
         pass
 
     pass
@@ -108,7 +95,7 @@ from optparse import OptionParser
 a_option_parser = OptionParser( usage = an_usage_description, version="%prog 0.1", formatter = a_help_formatter )
 
 # Definition of the command line arguments
-common.add_parser_options( a_option_parser )
+common.add_parser_options( a_option_parser, True )
 amazon.add_parser_options( a_option_parser )
 
 
