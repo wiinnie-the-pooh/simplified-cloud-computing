@@ -25,14 +25,15 @@ This script is responsible for efficient uploading of multi file data
 #------------------------------------------------------------------------------------------
 import balloon.common as common
 from balloon.common import print_d, print_i, print_e, sh_command, ssh_command
-from balloon.common import generate_id, generate_file_key, generate_item_key
-from balloon.common import extract_file_props, extract_item_props
-from balloon.common import study_api_version, file_api_version
-from balloon.common import generate_uploading_dir
 from balloon.common import Timer, WorkerPool, compute_md5
 
 import balloon.amazon as amazon
-from balloon.amazon import mark_api_version, extract_api_version
+from balloon.amazon import get_root_object
+from balloon.amazon import create_study_object, extract_study_props, get_study_object
+from balloon.amazon import create_file_object, extract_file_props, extract_item_props
+from balloon.amazon import generate_id, generate_item_key
+from balloon.amazon import generate_uploading_dir
+from balloon.amazon import api_version
 
 import boto
 from boto.s3.key import Key
@@ -216,31 +217,14 @@ print_i( "--------------------------- Connecting to Amazon S3 ------------------
 a_s3_conn = boto.connect_s3( AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY )
 print_d( "a_s3_conn = %r\n" % a_s3_conn )
 
+a_root_bucket, a_root_id = get_root_object( a_s3_conn )
+print_d( "a_root_id = '%s'\n" % a_root_id )
 
-print_i( "--------------------------- Looking for study root ------------------------------\n" )
-a_canonical_user_id = a_s3_conn.get_canonical_user_id()
-print_d( "a_canonical_user_id = '%s'\n" % a_canonical_user_id )
+an_api_version = extract_study_props( a_root_bucket, a_study_name )
+print_d( "an_api_version = '%s'\n" % an_api_version )
 
-a_root_bucket_name = hashlib.md5( a_canonical_user_id ).hexdigest()
-a_root_bucket = a_s3_conn.get_bucket( a_root_bucket_name )
-print_d( "a_root_bucket = %s\n" % a_root_bucket )
-
-
-print_i( "--------------------------- Looking for study key -------------------------------\n" )
-a_study_key = Key( a_root_bucket )
-a_study_key.key = '%s' % ( a_study_name )
-a_study_api_version = extract_api_version( a_study_key )
-print_d( "a_study_api_version = '%s'\n" % a_study_api_version )
-
-
-print_i( "----------------------- Looking for the appointed study -------------------------\n" )
-a_canonical_user_id = a_s3_conn.get_canonical_user_id()
-
-a_study_id, a_study_bucket_name = generate_id( a_canonical_user_id, a_study_name, a_study_api_version )
+a_study_bucket, a_study_id = get_study_object( a_s3_conn, a_root_id, a_study_name, an_api_version )
 print_d( "a_study_id = '%s'\n" % a_study_id )
-
-a_study_bucket = a_s3_conn.get_bucket( a_study_bucket_name )
-print_d( "a_study_bucket = '%s'\n" % a_study_bucket )
 
 
 print_i( "---------------------------- Uploading study files ------------------------------\n" )

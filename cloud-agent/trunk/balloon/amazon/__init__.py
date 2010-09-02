@@ -165,6 +165,27 @@ def get_root_object( the_s3_conn ) :
 
 
 #--------------------------------------------------------------------------------------
+class TRootObject :
+    "Represents S3 dedicated implementation of study root"
+
+    def __init__( self, the_s3_conn, the_bucket, the_id ) :
+        "Use static corresponding functions to an instance of this class"
+        self.connection = the_s3_conn
+        self.bucket = the_bucket
+        self.id = the_id
+
+        pass
+    
+    @staticmethod
+    def get( the_s3_conn ) :
+        a_bucket, an_id = get_root_object( the_s3_conn )
+
+        return TRootObject( the_s3_conn, a_bucket, an_id )
+    
+    pass
+
+
+#--------------------------------------------------------------------------------------
 def api_version() :
 
     return '0.1'
@@ -189,40 +210,43 @@ def generate_id( the_parent_id, the_child_name, the_api_version ) :
 
 
 #--------------------------------------------------------------------------------------
-def _decorate_key_name( the_name, the_api_version ) :
+def _decorate_key_name( the_name ) :
     # This workaround make possible to use '/' symbol at the beginning of the key name
 
     return '!%s' % the_name
 
 
 #--------------------------------------------------------------------------------------
-def get_name( the_key, the_api_version ) :
+def get_name( the_key ) :
 
     return the_key.name[ 1 : ]
 
 
 #--------------------------------------------------------------------------------------
-def key_eq_name( the_key, the_name, the_api_version ) :
-
-    return get_name( the_key, the_api_version ) == the_name
-
-
-#--------------------------------------------------------------------------------------
-def get_key( the_parent_bucket, the_name, the_api_version ) :
-    a_decorated_name = _decorate_key_name( the_name, the_api_version )
+def get_key( the_parent_bucket, the_name ) :
+    a_decorated_name = _decorate_key_name( the_name )
 
     return Key( the_parent_bucket, a_decorated_name )
 
 
 #--------------------------------------------------------------------------------------
 def create_object( the_s3_conn, the_parent_bucket, the_parent_id, the_name, the_attr ) :
-    a_study_key = get_key( the_parent_bucket, the_name, api_version() )
+    a_study_key = get_key( the_parent_bucket, the_name )
 
     a_study_key.set_contents_from_string( the_attr )
 
     a_backet_id, a_bucket_name = generate_id( the_parent_id, the_name, api_version() )
     
     a_bucket = the_s3_conn.create_bucket( a_bucket_name )
+
+    return a_bucket, a_backet_id
+
+
+#--------------------------------------------------------------------------------------
+def get_object( the_s3_conn, the_parent_id, the_name, the_api_version ) :
+    a_backet_id, a_bucket_name = generate_id( the_parent_id, the_name, the_api_version )
+    
+    a_bucket = the_s3_conn.get_bucket( a_bucket_name )
 
     return a_bucket, a_backet_id
 
@@ -235,18 +259,25 @@ def create_study_object( the_s3_conn, the_root_bucket, the_root_id, the_study_na
 
 
 #--------------------------------------------------------------------------------------
-def get_study_key( the_root_bucket, the_study_name, the_api_version ) :
+def get_study_object( the_s3_conn, the_root_id, the_study_name, the_api_version ) :
+    "Registering the new study"
 
-    return get_key( the_root_bucket, the_study_name, the_api_version )
+    return get_object( the_s3_conn, the_root_id, the_study_name, the_api_version )
 
 
 #--------------------------------------------------------------------------------------
-def extract_study_props( the_study_key, the_api_version ) :
-    an_api_version = the_study_key.get_contents_as_string()
+def get_study_key( the_root_bucket, the_study_name ) :
 
-    a_study_name = get_name( the_study_key, the_api_version )
+    return get_key( the_root_bucket, the_study_name )
 
-    return an_api_version, a_study_name
+
+#--------------------------------------------------------------------------------------
+def extract_study_props( the_root_bucket, the_study_name ) :
+    a_study_key = get_key( the_root_bucket, the_study_name )
+
+    an_api_version = a_study_key.get_contents_as_string()
+
+    return an_api_version
 
 
 #--------------------------------------------------------------------------------------
@@ -256,9 +287,9 @@ def create_file_object( the_s3_conn, the_study_bucket, the_study_id, the_file_pa
 
 
 #--------------------------------------------------------------------------------------
-def get_study_key( the_root_bucket, the_study_name, the_api_version ) :
+def get_file_key( the_root_bucket, the_file_path ) :
 
-    return get_key( the_root_bucket, the_study_name, the_api_version )
+    return get_key( the_root_bucket, the_file_path )
 
 
 #--------------------------------------------------------------------------------------
