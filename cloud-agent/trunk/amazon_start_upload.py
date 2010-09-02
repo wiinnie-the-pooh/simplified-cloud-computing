@@ -88,12 +88,12 @@ def upload_file( the_worker_pool, the_file_path, the_s3_conn, the_study_bucket, 
 
 
 #------------------------------------------------------------------------------------------
-def upload_files( the_files, the_s3_conn, the_study_bucket, the_study_id, the_upload_item_size, the_printing_depth ) :
+def upload_files( the_files, the_study_object, the_upload_item_size, the_printing_depth ) :
     a_worker_pool = WorkerPool( len( the_files ) )
 
     for a_file_path in the_files :
-        a_worker_pool.charge( upload_file, ( a_worker_pool, a_file_path, the_s3_conn, the_study_bucket,
-                                             the_study_id, the_upload_item_size, the_printing_depth ) )
+        a_worker_pool.charge( upload_file, ( a_worker_pool, a_file_path, the_study_object.connection(), the_study_object._bucket,
+                                             the_study_object._id, the_upload_item_size, the_printing_depth ) )
 
         pass
 
@@ -172,11 +172,9 @@ print_i( "--------------------------- Connecting to Amazon S3 ------------------
 a_s3_conn = boto.connect_s3( AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY )
 print_d( "a_s3_conn = %r\n" % a_s3_conn )
 
-a_root_bucket, a_root_id = get_root_object( a_s3_conn )
 a_root_object = TRootObject.get( a_s3_conn )
 print_d( "a_root_object = %s\n" % a_root_object )
 
-a_study_bucket, a_study_id = create_study_object( a_s3_conn, a_root_bucket, a_root_id, a_study_name )
 a_study_object = TStudyObject.create( a_root_object, a_study_name )
 print_d( "a_study_object = %s\n" % a_study_object )
 
@@ -184,7 +182,7 @@ print_d( "a_study_object = %s\n" % a_study_object )
 print_i( "---------------------------- Uploading study files ------------------------------\n" )
 a_data_loading_time = Timer()
 
-upload_files( a_files, a_s3_conn, a_study_bucket, a_study_id, an_options.upload_item_size, 0 )
+upload_files( a_files, a_study_object, an_options.upload_item_size, 0 )
 
 print_d( "a_data_loading_time = %s, sec\n" % a_data_loading_time )
 
