@@ -32,7 +32,7 @@ from balloon.amazon import get_root_object, create_study_object, create_file_obj
 from balloon.amazon import extract_file_props, extract_item_props
 from balloon.amazon import generate_id, generate_item_key
 from balloon.amazon import generate_uploading_dir
-from balloon.amazon import api_version, TRootObject, TStudyObject
+from balloon.amazon import TRootObject, TStudyObject, TFileObject
 
 import boto
 from boto.s3.key import Key
@@ -41,7 +41,7 @@ import sys, os, os.path, uuid, hashlib
 
 
 #------------------------------------------------------------------------------------------
-def upload_file( the_worker_pool, the_file_path, the_s3_conn, the_study_bucket, the_study_id, the_upload_item_size, the_printing_depth ) :
+def upload_file( the_worker_pool, the_file_path, the_study_object, the_upload_item_size, the_printing_depth ) :
     a_working_dir = generate_uploading_dir( the_file_path )
 
     import shutil
@@ -81,8 +81,8 @@ def upload_file( the_worker_pool, the_file_path, the_s3_conn, the_study_bucket, 
     a_file_pointer.close()
     os.remove( a_tmp_file )
 
-    a_file_bucket, a_file_id = create_file_object( the_s3_conn, the_study_bucket, the_study_id, the_file_path, a_hex_md5 )
-    print_d( "a_file_id = '%s'\n" % a_file_id, the_printing_depth )
+    a_file_object = TFileObject.create( the_study_object, the_file_path, a_hex_md5 )
+    print_d( "a_file_object = %s\n" % a_file_object, the_printing_depth )
 
     pass
 
@@ -92,8 +92,8 @@ def upload_files( the_files, the_study_object, the_upload_item_size, the_printin
     a_worker_pool = WorkerPool( len( the_files ) )
 
     for a_file_path in the_files :
-        a_worker_pool.charge( upload_file, ( a_worker_pool, a_file_path, the_study_object.connection(), the_study_object._bucket,
-                                             the_study_object._id, the_upload_item_size, the_printing_depth ) )
+        a_worker_pool.charge( upload_file, ( a_worker_pool, a_file_path, the_study_object, 
+                                             the_upload_item_size, the_printing_depth ) )
 
         pass
 
