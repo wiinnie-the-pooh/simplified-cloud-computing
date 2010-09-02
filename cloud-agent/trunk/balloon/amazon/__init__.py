@@ -297,14 +297,28 @@ class TStudyObject :
     def create( the_root_object, the_study_name ) :
         a_key = get_key( the_root_object._bucket, the_study_name )
 
-        a_key.set_contents_from_string( api_version() )
+        an_api_version = api_version()
 
-        an_id, a_bucket_name = generate_id( the_root_object._id, the_study_name, api_version() )
+        a_key.set_contents_from_string( an_api_version )
+
+        an_id, a_bucket_name = generate_id( the_root_object._id, the_study_name, an_api_version )
     
         a_bucket = the_root_object._connection.create_bucket( a_bucket_name )
 
-        return TStudyObject( the_root_object, a_key, a_bucket, an_id, api_version() )
+        return TStudyObject( the_root_object, a_key, a_bucket, an_id, an_api_version )
+
+    @staticmethod
+    def get( the_root_object, the_study_name ) :
+        a_key = get_key( the_root_object._bucket, the_study_name )
+
+        an_api_version = a_key.get_contents_as_string()
+
+        an_id, a_bucket_name = generate_id( the_root_object._id, the_study_name, an_api_version )
     
+        a_bucket = the_root_object._connection.get_bucket( a_bucket_name )
+    
+        return TStudyObject( the_root_object, a_key, a_bucket, an_id, an_api_version )
+
     pass
 
 

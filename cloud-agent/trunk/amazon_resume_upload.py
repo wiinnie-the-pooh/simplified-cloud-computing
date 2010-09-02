@@ -33,7 +33,7 @@ from balloon.amazon import create_study_object, extract_study_props, get_study_o
 from balloon.amazon import create_file_object, extract_file_props, extract_item_props
 from balloon.amazon import generate_id, generate_item_key
 from balloon.amazon import generate_uploading_dir
-from balloon.amazon import api_version
+from balloon.amazon import api_version, TRootObject, TStudyObject
 
 import boto
 from boto.s3.key import Key
@@ -218,13 +218,15 @@ a_s3_conn = boto.connect_s3( AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY )
 print_d( "a_s3_conn = %r\n" % a_s3_conn )
 
 a_root_bucket, a_root_id = get_root_object( a_s3_conn )
-print_d( "a_root_id = '%s'\n" % a_root_id )
+a_root_object = TRootObject.get( a_s3_conn )
+print_d( "a_root_object = %s\n" % a_root_object )
 
 an_api_version = extract_study_props( a_root_bucket, a_study_name )
 print_d( "an_api_version = '%s'\n" % an_api_version )
 
 a_study_bucket, a_study_id = get_study_object( a_s3_conn, a_root_id, a_study_name, an_api_version )
-print_d( "a_study_id = '%s'\n" % a_study_id )
+a_study_object = TStudyObject.get( a_root_object, a_study_name )
+print_d( "a_study_object = %s\n" % a_study_object )
 
 
 print_i( "---------------------------- Uploading study files ------------------------------\n" )
