@@ -125,7 +125,7 @@ a_option_parser.add_option( "--upload-item-size",
                             action = "store",
                             dest = "upload_item_size",
                             help = "(\"%default\", by default)",
-                            default = 131072 )
+                            default = 65536 )
 common.add_parser_options( a_option_parser )
 amazon.add_parser_options( a_option_parser )
 amazon.add_timeout_options( a_option_parser )

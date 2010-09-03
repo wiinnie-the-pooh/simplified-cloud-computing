@@ -470,7 +470,7 @@ class TItemObject :
 
     def __str__( self ) :
 
-        return "'%s'" % ( get_key_name( self._key ) )
+        return "%s" % ( self._key )
 
     @staticmethod
     def create( the_file_object, the_item_name, the_item_path ) :

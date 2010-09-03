@@ -60,8 +60,6 @@ def download_items( the_file_object, the_file_basename, the_output_dir, the_numb
         a_worker_pool = WorkerPool( the_number_threads )
 
         for an_item_object in the_file_object :
-            print_d( "an_item_object = %s\n" % an_item_object, the_printing_depth )
-
             if an_item_object.is_seal() :
                 an_is_everything_uploaded = True
                 print_d( "an_is_everything_uploaded = %s\n" % an_is_everything_uploaded, the_printing_depth )
@@ -80,6 +78,8 @@ def download_items( the_file_object, the_file_basename, the_output_dir, the_numb
                 os.remove( an_item_path )
 
                 pass
+
+            print_d( "an_item_path = '%s'\n" % an_item_path, the_printing_depth )
 
             a_worker_pool.charge( download_item, ( an_item_object, an_item_path, the_printing_depth + 1 ) )
             
