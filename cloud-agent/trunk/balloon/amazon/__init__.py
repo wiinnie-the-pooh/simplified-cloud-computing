@@ -184,6 +184,19 @@ class TRootObject :
         
         return TRootObject( a_s3_conn, a_bucket, an_id )
     
+    def _next( self ) :
+        for a_study_key in self._bucket.list() :
+            yield TStudyObject.get( self, get_key_name( a_study_key ) )
+            
+            pass
+        
+        pass
+
+    def __iter__( self ) :
+        "Iterates through study files"
+        
+        return self._next()
+
     pass
 
 
@@ -215,13 +228,13 @@ def generate_id( the_parent_id, the_child_name, the_api_version ) :
 def _decorate_key_name( the_name ) :
     # This workaround make possible to use '/' symbol at the beginning of the key name
 
-    return '!%s' % the_name
+    return '# %s' % the_name
 
 
 #--------------------------------------------------------------------------------------
 def get_key_name( the_key ) :
 
-    return the_key.name[ 1 : ]
+    return the_key.name[ 2 : ]
 
 
 #--------------------------------------------------------------------------------------
@@ -253,7 +266,7 @@ class TStudyObject :
 
     def __str__( self ) :
 
-        return "'%s'- %s" % ( self._id, self._bucket )
+        return "'%s' - %s - %s" % ( self._id, self._api_version, self._bucket )
 
     @staticmethod
     def create( the_root_object, the_study_name ) :
@@ -342,7 +355,7 @@ class TFileObject :
 
     def __str__( self ) :
 
-        return "'%s'- %s" % ( self._id, self._bucket )
+        return "'%s' - %s" % ( self._id, self._bucket )
 
     @staticmethod
     def create( the_study_object, the_file_path, the_hex_md5 ) :
