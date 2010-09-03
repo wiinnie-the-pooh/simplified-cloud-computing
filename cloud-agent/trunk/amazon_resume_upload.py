@@ -28,12 +28,8 @@ from balloon.common import print_d, print_i, print_e, sh_command, ssh_command
 from balloon.common import Timer, WorkerPool, compute_md5
 
 import balloon.amazon as amazon
-from balloon.amazon import get_root_object
-from balloon.amazon import create_study_object, extract_study_props, get_study_object
-from balloon.amazon import create_file_object, extract_file_props, extract_item_props
-from balloon.amazon import generate_id, generate_item_key
 from balloon.amazon import generate_uploading_dir
-from balloon.amazon import api_version, TRootObject, TStudyObject
+from balloon.amazon import TRootObject, TStudyObject, TFileObject, TItemObject
 
 import boto
 from boto.s3.key import Key
@@ -42,16 +38,9 @@ import sys, os, os.path, uuid, hashlib
 
 
 #------------------------------------------------------------------------------------------
-def mark_finished( the_working_dir, the_file_bucket, the_printing_depth ) :
+def mark_finished( the_file_object, the_working_dir, the_printing_depth ) :
     try :
-        os.rmdir( the_working_dir )
-
-        # To mark that final file item have been sucessfully uploaded
-        a_part_key = Key( the_file_bucket )
-        a_part_key.key = the_file_bucket.name
-        a_part_key.set_contents_from_string( 'dummy' )
-
-        print_d( "%s\n" % a_part_key, the_printing_depth )
+        the_file_object.seal()
 
         return True
     except :
@@ -61,22 +50,11 @@ def mark_finished( the_working_dir, the_file_bucket, the_printing_depth ) :
 
 
 #------------------------------------------------------------------------------------------
-def upload_item( the_file_item, the_file_path, the_file_bucket, the_file_api_version, the_printing_depth ) :
+def upload_item( the_file_object, the_item_name, the_item_path, the_printing_depth ) :
     "Uploading file item"
     try :
-        a_part_key = Key( the_file_bucket )
-
-        a_file_pointer = open( the_file_path, 'rb' )
-        a_md5 = compute_md5( a_file_pointer )
-        a_hex_md5, a_base64md5 = a_md5
-
-        a_part_key.key = generate_item_key( a_hex_md5, the_file_item, the_file_api_version )
-
-        # a_part_key.set_contents_from_file( a_file_pointer, md5 = a_md5 ) # this method is not thread safe
-        a_part_key.set_contents_from_file( a_file_pointer)
-        print_d( "%s\n" % a_part_key, the_printing_depth + 1 )
-        
-        os.remove( the_file_path )
+        an_item_object = TItemObject.create( the_file_object, the_item_name, the_item_path )
+        print_d( "%s\n" % an_item_object, the_printing_depth )
         
         return True
     except :
@@ -89,7 +67,7 @@ def upload_item( the_file_item, the_file_path, the_file_bucket, the_file_api_ver
 
 
 #------------------------------------------------------------------------------------------
-def upload_items( the_number_threads, the_file_bucket, the_file_api_version, the_working_dir, the_printing_depth ) :
+def upload_items( the_file_object, the_working_dir, the_number_threads, the_printing_depth ) :
     "Uploading file items"
     while True :
         a_dir_contents = os.listdir( the_working_dir )
@@ -102,18 +80,18 @@ def upload_items( the_number_threads, the_file_bucket, the_file_api_version, the
         a_dir_contents.sort()
         a_dir_contents.reverse()
         
-        a_file_bucket_names = [ an_item_key.name for an_item_key in the_file_bucket.list() ]
+        an_item_names = [ an_item.name() for an_item in the_file_object ]
         
-        for a_file_item in a_dir_contents :
-            a_file_path = os.path.join( the_working_dir, a_file_item )
-            print_d( "'%s'\n" % a_file_path, the_printing_depth + 1 )
+        for an_item_name in a_dir_contents :
+            an_item_path = os.path.join( the_working_dir, an_item_name )
+            print_d( "'%s'\n" % an_item_path, the_printing_depth + 1 )
         
-            if a_file_item in a_file_bucket_names :
-                os.remove( a_file_path )
+            if an_item_name in an_item_names :
+                os.remove( an_item_path )
 
                 continue
 
-            a_worker_pool.charge( upload_item, ( a_file_item, a_file_path, the_file_bucket, the_file_api_version, the_printing_depth + 2 ) )
+            a_worker_pool.charge( upload_item, ( the_file_object, an_item_name, an_item_path, the_printing_depth + 2 ) )
 
             pass
 
@@ -121,7 +99,7 @@ def upload_items( the_number_threads, the_file_bucket, the_file_api_version, the
         an_is_all_right = a_worker_pool.is_all_right()
 
         if an_is_all_right :
-            mark_finished( the_working_dir, the_file_bucket, the_printing_depth )
+            mark_finished( the_file_object, the_working_dir, the_printing_depth )
 
             break
 
@@ -131,33 +109,20 @@ def upload_items( the_number_threads, the_file_bucket, the_file_api_version, the
 
 
 #------------------------------------------------------------------------------------------
-def upload_file( the_s3_conn, the_number_threads, the_study_file_key, the_study_id, the_printing_depth ) :
-    a_file_api_version = extract_api_version( the_study_file_key )
-    a_hex_md5, a_file_path = extract_file_props( the_study_file_key.name, a_file_api_version )
-
-    a_working_dir = generate_uploading_dir( a_file_path )
+def upload_file( the_file_object, the_number_threads, the_printing_depth ) :
+    a_working_dir = generate_uploading_dir( the_file_object.file_path() )
     if not os.path.exists( a_working_dir ) :
         return True
 
-    print_d( "the_study_file_key = %s\n" % the_study_file_key, the_printing_depth )
     print_d( "a_working_dir = '%s'\n" % a_working_dir, the_printing_depth )
 
-    a_file_api_version = extract_api_version( the_study_file_key )
-    print_d( "a_file_api_version = '%s'\n" % a_file_api_version, the_printing_depth )
-
-    a_file_id, a_file_bucket_name = generate_id( the_study_id, the_study_file_key.name, a_file_api_version )
-    print_d( "a_file_id = '%s'\n" % a_file_id, the_printing_depth )
-
-    a_file_bucket = the_s3_conn.get_bucket( a_file_bucket_name )
-    print_d( "a_file_bucket = %s\n" % a_file_bucket, the_printing_depth )
-
-    return upload_items( the_number_threads, a_file_bucket, a_file_api_version, a_working_dir, the_printing_depth + 1 )
+    return upload_items( the_file_object, a_working_dir, the_number_threads, the_printing_depth + 1 )
 
 
 #------------------------------------------------------------------------------------------
-def upload_files( the_s3_conn, the_number_threads, the_study_bucket, the_study_id, the_printing_depth ) :
-    for a_study_file_key in the_study_bucket.list() :
-        upload_file( the_s3_conn, the_number_threads, a_study_file_key, the_study_id, the_printing_depth )
+def upload_files( the_study_object, the_number_threads, the_printing_depth ) :
+    for a_file_object in the_study_object :
+        upload_file( a_file_object, the_number_threads, the_printing_depth )
         
         pass
 
@@ -213,18 +178,10 @@ a_number_threads = amazon.extract_threading_options( an_options, a_option_parser
 amazon.extract_timeout_options( an_options, a_option_parser )
 
 
-print_i( "--------------------------- Connecting to Amazon S3 -----------------------------\n" )
-a_s3_conn = boto.connect_s3( AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY )
-print_d( "a_s3_conn = %r\n" % a_s3_conn )
-
-a_root_bucket, a_root_id = get_root_object( a_s3_conn )
-a_root_object = TRootObject.get( a_s3_conn )
+print_i( "--------------------------- Looking for study object ----------------------------\n" )
+a_root_object = TRootObject.get( AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY )
 print_d( "a_root_object = %s\n" % a_root_object )
 
-an_api_version = extract_study_props( a_root_bucket, a_study_name )
-print_d( "an_api_version = '%s'\n" % an_api_version )
-
-a_study_bucket, a_study_id = get_study_object( a_s3_conn, a_root_id, a_study_name, an_api_version )
 a_study_object = TStudyObject.get( a_root_object, a_study_name )
 print_d( "a_study_object = %s\n" % a_study_object )
 
@@ -232,7 +189,7 @@ print_d( "a_study_object = %s\n" % a_study_object )
 print_i( "---------------------------- Uploading study files ------------------------------\n" )
 a_data_loading_time = Timer()
 
-upload_files( a_s3_conn, a_number_threads, a_study_bucket, a_study_id, 0 )
+upload_files( a_study_object, a_number_threads, 0 )
 
 print_d( "a_data_loading_time = %s, sec\n" % a_data_loading_time )
 

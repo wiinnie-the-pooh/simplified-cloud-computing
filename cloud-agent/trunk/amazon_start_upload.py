@@ -28,11 +28,8 @@ from balloon.common import print_d, print_i, print_e, sh_command, ssh_command
 from balloon.common import Timer, WorkerPool, compute_md5
 
 import balloon.amazon as amazon
-from balloon.amazon import get_root_object, create_study_object, create_file_object
-from balloon.amazon import extract_file_props, extract_item_props
-from balloon.amazon import generate_id, generate_item_key
 from balloon.amazon import generate_uploading_dir
-from balloon.amazon import TRootObject, TStudyObject, TFileObject
+from balloon.amazon import TRootObject, TStudyObject, TFileObject, TItemObject
 
 import boto
 from boto.s3.key import Key
@@ -168,11 +165,8 @@ AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY = amazon.extract_options( an_options )
 amazon.extract_timeout_options( an_options, a_option_parser )
 
 
-print_i( "--------------------------- Connecting to Amazon S3 -----------------------------\n" )
-a_s3_conn = boto.connect_s3( AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY )
-print_d( "a_s3_conn = %r\n" % a_s3_conn )
-
-a_root_object = TRootObject.get( a_s3_conn )
+print_i( "--------------------------- Defining the study object ---------------------------\n" )
+a_root_object = TRootObject.get( AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY )
 print_d( "a_root_object = %s\n" % a_root_object )
 
 a_study_object = TStudyObject.create( a_root_object, a_study_name )

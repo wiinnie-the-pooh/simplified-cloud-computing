@@ -149,22 +149,6 @@ def wait_activation( the_instance, the_ssh_connect, the_ssh_client ) :
 
 
 #--------------------------------------------------------------------------------------
-def get_root_object( the_s3_conn ) :
-    "Looking for study root"
-    a_backet_id = the_s3_conn.get_canonical_user_id()
-    a_bucket_name = hashlib.md5( a_backet_id ).hexdigest()
-
-    a_bucket = None
-    try :
-        a_bucket = the_s3_conn.get_bucket( a_bucket_name )
-    except :
-        a_bucket = the_s3_conn.create_bucket( a_bucket_name )
-        pass
-
-    return a_bucket, a_backet_id
-
-
-#--------------------------------------------------------------------------------------
 class TRootObject :
     "Represents S3 dedicated implementation of study root"
 
@@ -181,10 +165,23 @@ class TRootObject :
         return "'%s'" % ( self._id )
 
     @staticmethod
-    def get( the_s3_conn ) :
-        a_bucket, an_id = get_root_object( the_s3_conn )
+    def get( AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY ) :
+        "Looking for study root"
+        import boto
+        a_s3_conn = boto.connect_s3( AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY )
+        an_id = a_s3_conn.get_canonical_user_id()
 
-        return TRootObject( the_s3_conn, a_bucket, an_id )
+        import hashlib
+        a_bucket_name = hashlib.md5( an_id ).hexdigest()
+
+        a_bucket = None
+        try :
+            a_bucket = a_s3_conn.get_bucket( a_bucket_name )
+        except :
+            a_bucket = a_s3_conn.create_bucket( a_bucket_name )
+            pass
+        
+        return TRootObject( a_s3_conn, a_bucket, an_id )
     
     pass
 
@@ -231,42 +228,6 @@ def get_key( the_parent_bucket, the_name ) :
     a_decorated_name = _decorate_key_name( the_name )
 
     return Key( the_parent_bucket, a_decorated_name )
-
-
-#--------------------------------------------------------------------------------------
-def create_object( the_s3_conn, the_parent_bucket, the_parent_id, the_name, the_attr ) :
-    a_study_key = get_key( the_parent_bucket, the_name )
-
-    a_study_key.set_contents_from_string( the_attr )
-
-    a_backet_id, a_bucket_name = generate_id( the_parent_id, the_name, api_version() )
-    
-    a_bucket = the_s3_conn.create_bucket( a_bucket_name )
-
-    return a_bucket, a_backet_id
-
-
-#--------------------------------------------------------------------------------------
-def get_object( the_s3_conn, the_parent_id, the_name, the_api_version ) :
-    a_backet_id, a_bucket_name = generate_id( the_parent_id, the_name, the_api_version )
-    
-    a_bucket = the_s3_conn.get_bucket( a_bucket_name )
-
-    return a_bucket, a_backet_id
-
-
-#--------------------------------------------------------------------------------------
-def create_study_object( the_s3_conn, the_root_bucket, the_root_id, the_study_name ) :
-    "Registering the new study"
-
-    return create_object( the_s3_conn, the_root_bucket, the_root_id, the_study_name, api_version() )
-
-
-#--------------------------------------------------------------------------------------
-def get_study_object( the_s3_conn, the_root_id, the_study_name, the_api_version ) :
-    "Registering the new study"
-
-    return get_object( the_s3_conn, the_root_id, the_study_name, the_api_version )
 
 
 #--------------------------------------------------------------------------------------
@@ -319,27 +280,25 @@ class TStudyObject :
     
         return TStudyObject( the_root_object, a_key, a_bucket, an_id, an_api_version )
 
+    def _next( self ) :
+        for a_file_key in self._bucket.list() :
+            yield TFileObject.get( self, get_name( a_file_key ) )
+            
+            pass
+        
+        pass
+
+    def __iter__( self ) :
+        "Iterates through study files"
+        
+        return self._next()
+
     pass
 
 
 #--------------------------------------------------------------------------------------
-def extract_study_props( the_root_bucket, the_study_name ) :
-    a_study_key = get_key( the_root_bucket, the_study_name )
-
-    an_api_version = a_study_key.get_contents_as_string()
-
-    return an_api_version
-
-
-#--------------------------------------------------------------------------------------
-def create_file_object( the_s3_conn, the_study_bucket, the_study_id, the_file_path, the_hex_md5 ) :
-    
-    return create_object( the_s3_conn, the_study_bucket, the_study_id, the_file_path, the_hex_md5 )
-
-
-#--------------------------------------------------------------------------------------
 class TFileObject :
-    "Represents S3 dedicated implementation of study object"
+    "Represents S3 dedicated implementation of file object"
 
     def __init__( self, the_study_object, the_key, the_bucket, the_id, the_hex_md5 ) :
         "Use static corresponding functions to an instance of this class"
@@ -353,9 +312,21 @@ class TFileObject :
 
         pass
     
+    def file_path( self ) :
+
+        return get_name( self._key )
+
+    def hex_md5( self ) :
+
+        return self._hex_md5
+
     def connection( self ) :
 
         return self._study_object._connection
+
+    def api_version( self ) :
+
+        return self._study_object._api_version
 
     def __str__( self ) :
 
@@ -373,24 +344,101 @@ class TFileObject :
     
         a_bucket = the_study_object.connection().create_bucket( a_bucket_name )
 
-        return TStudyObject( the_study_object, a_key, a_bucket, an_id, the_hex_md5 )
+        return TFileObject( the_study_object, a_key, a_bucket, an_id, the_hex_md5 )
+
+    @staticmethod
+    def get( the_study_object, the_file_path ) :
+        a_key = get_key( the_study_object._bucket, the_file_path )
+
+        a_hex_md5 = a_key.get_contents_as_string()
+
+        an_api_version = the_study_object._api_version
+
+        an_id, a_bucket_name = generate_id( the_study_object._id, the_file_path, an_api_version )
+
+        a_bucket = the_study_object.connection().get_bucket( a_bucket_name )
+
+        return TFileObject( the_study_object, a_key, a_bucket, an_id, a_hex_md5 )
+
+    def _next( self ) :
+        for an_item_key in self._bucket.list() :
+            yield TItemObject.get( self, an_item_key )
+            
+            pass
+        
+        pass
+
+    def __iter__( self ) :
+        "Iterates through file items"
+        
+        return self._next()
+
+    def seal( self, the_working_dir ) :
+        "To mark the everything was sucessfuly uploaded"
+        os.rmdir( the_working_dir )
+
+        # To mark that final file item have been sucessfully uploaded
+        an_item_key = Key( self._bucket, get_name( self._key ) )
+        an_item_key.set_contents_from_string( 'dummy' )
+
+        pass
 
     pass
 
 
 #--------------------------------------------------------------------------------------
-def get_file_key( the_root_bucket, the_file_path ) :
+class TItemObject :
+    "Represents S3 dedicated implementation of item object"
 
-    return get_key( the_root_bucket, the_file_path )
+    def __init__( self, the_file_object, the_key, the_name, the_hex_md5 ) :
+        "Use static corresponding functions to an instance of this class"
+        self._file_object = the_file_object
 
+        self._key = the_key
+        self._name = the_name
+        self._hex_md5 = the_hex_md5
 
-#--------------------------------------------------------------------------------------
-def extract_file_props( the_file_key, the_api_version ) :
-    a_hex_md5 = the_file_key_name.get_contents_as_string()
+        pass
+    
+    def name( self ) :
 
-    a_file_path = get_name( the_file_key, the_api_version )
+        return self._name
 
-    return a_hex_md5, a_file_path
+    def hex_md5( self ) :
+
+        return self._hex_md5
+
+    def __str__( self ) :
+
+        return "'%s'" % ( get_name( self._key ) )
+
+    @staticmethod
+    def create( the_file_object, the_item_name, the_item_path ) :
+        a_file_pointer = open( the_item_path, 'rb' )
+
+        from balloon.common import compute_md5
+        a_md5 = compute_md5( a_file_pointer )
+        a_hex_md5, a_base64md5 = a_md5
+
+        an_api_version = the_file_object.api_version()
+        an_item_key = Key( the_file_object._bucket, generate_item_key( a_hex_md5, the_item_path, an_api_version ) )
+
+        # a_part_key.set_contents_from_file( a_file_pointer, md5 = a_md5 ) # this method is not thread safe
+        an_item_key.set_contents_from_file( a_file_pointer)
+        
+        os.remove( the_item_path )
+
+        return TItemObject( the_file_object, an_item_key, the_item_name, a_hex_md5 )
+
+    @staticmethod
+    def get( the_file_object, the_item_key ) :
+        an_api_version = the_file_object.api_version()
+
+        a_hex_md5, a_item_name = extract_item_props( get_name( the_item_key ), an_api_version )
+
+        return TItemObject( the_file_object, the_item_key, a_item_name, a_hex_md5 )
+
+    pass
 
 
 #--------------------------------------------------------------------------------------
