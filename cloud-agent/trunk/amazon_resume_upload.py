@@ -37,10 +37,13 @@ import sys, os, os.path, uuid, hashlib
 #------------------------------------------------------------------------------------------
 def mark_finished( the_file_object, the_working_dir, the_printing_depth ) :
     try :
-        the_file_object.seal()
+        the_file_object.seal( the_working_dir )
 
         return True
     except :
+        import sys, traceback
+        traceback.print_exc( file = sys.stderr )
+
         pass
 
     return False
@@ -77,7 +80,7 @@ def upload_items( the_file_object, the_working_dir, the_number_threads, the_prin
         a_dir_contents.sort()
         a_dir_contents.reverse()
         
-        an_item_names = [ an_item.name() for an_item in the_file_object ]
+        an_item_names = [ an_item_object.name() for an_item_object in the_file_object ]
         
         for an_item_name in a_dir_contents :
             an_item_path = os.path.join( the_working_dir, an_item_name )
@@ -119,7 +122,9 @@ def upload_file( the_file_object, the_number_threads, the_printing_depth ) :
 #------------------------------------------------------------------------------------------
 def upload_files( the_study_object, the_number_threads, the_printing_depth ) :
     for a_file_object in the_study_object :
-        upload_file( a_file_object, the_number_threads, the_printing_depth )
+        print_d( "a_file_object = %s\n" % a_file_object, the_printing_depth )
+
+        upload_file( a_file_object, the_number_threads, the_printing_depth + 1 )
         
         pass
 

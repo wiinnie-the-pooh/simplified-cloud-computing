@@ -25,13 +25,10 @@ This script is responsible for efficient downloading of multi file data
 #------------------------------------------------------------------------------------------
 import balloon.common as common
 from balloon.common import print_d, print_i, print_e, sh_command, ssh_command
-from balloon.common import generate_id, generate_file_key, generate_item_key
-from balloon.common import extract_file_props, extract_item_props
-from balloon.common import study_api_version, file_api_version
 from balloon.common import Timer, WorkerPool, compute_md5
 
 import balloon.amazon as amazon
-from balloon.amazon import mark_api_version, extract_api_version
+from balloon.amazon import TRootObject, TStudyObject, TFileObject, TItemObject
 
 import boto
 from boto.s3.key import Key
@@ -40,10 +37,10 @@ import sys, os, os.path, uuid, hashlib
 
 
 #------------------------------------------------------------------------------------------
-def download_item( the_item_key, the_file_path, the_printing_depth ) :
+def download_item( the_item_object, the_file_path, the_printing_depth ) :
     try :
-        the_item_key.get_contents_to_filename( the_file_path )
-        print_d( "an_item_key = %s\n" % the_item_key, the_printing_depth )
+        the_item_object.download( the_file_path )
+        print_d( "the_item_object = %s\n" % the_item_object, the_printing_depth )
         
         return True
     except :
@@ -56,33 +53,35 @@ def download_item( the_item_key, the_file_path, the_printing_depth ) :
 
 
 #------------------------------------------------------------------------------------------
-def download_items( the_number_threads, the_file_bucket, the_file_api_version, the_file_basename, the_output_dir, the_printing_depth ) :
+def download_items( the_file_object, the_file_basename, the_output_dir, the_number_threads, the_printing_depth ) :
     an_is_download_ok = False
     an_is_everything_uploaded = False
     while not an_is_everything_uploaded or not an_is_download_ok :
         a_worker_pool = WorkerPool( the_number_threads )
 
-        for an_item_key in the_file_bucket.list() :
-            if an_item_key.name == the_file_bucket.name :
+        for an_item_object in the_file_object :
+            print_d( "an_item_object = %s\n" % an_item_object, the_printing_depth )
+
+            if an_item_object.is_seal() :
                 an_is_everything_uploaded = True
+                print_d( "an_is_everything_uploaded = %s\n" % an_is_everything_uploaded, the_printing_depth )
                 continue
 
-            a_hex_md5, a_file_path = extract_item_props( an_item_key.name, the_file_api_version )
-            a_file_path = os.path.join( the_output_dir, a_file_path )
+            a_hex_md5 = an_item_object.hex_md5()
+            an_item_path = os.path.join( the_output_dir, an_item_object.name() )
 
-            if os.path.exists( a_file_path ) :
-                a_file_pointer = open( a_file_path, 'rb' )
+            if os.path.exists( an_item_path ) :
+                a_file_pointer = open( an_item_path, 'rb' )
                 a_md5 = compute_md5( a_file_pointer )[ 0 ]
+
                 if a_hex_md5 == a_md5 :
                     continue
 
-                os.remove( a_file_path )
+                os.remove( an_item_path )
 
                 pass
 
-            print_d( "a_file_path = %s\n" % a_file_path, the_printing_depth + 1 )
-
-            a_worker_pool.charge( download_item, ( an_item_key, a_file_path, the_printing_depth + 2 ) )
+            a_worker_pool.charge( download_item, ( an_item_object, an_item_path, the_printing_depth + 1 ) )
             
             pass
 
@@ -95,16 +94,17 @@ def download_items( the_number_threads, the_file_bucket, the_file_api_version, t
 
 
 #------------------------------------------------------------------------------------------
-def download_file( the_number_threads, the_enable_fresh, the_s3_conn, the_study_file_key, the_study_id, the_output_dir, the_printing_depth ) :
-    a_file_api_version = extract_api_version( the_study_file_key )
-    a_hex_md5, a_file_path = extract_file_props( the_study_file_key.name, a_file_api_version )
-    print_d( "a_file_path = '%s'\n" % a_file_path, the_printing_depth )
+def download_file( the_file_object, the_output_dir, the_number_threads, the_enable_fresh, the_printing_depth ) :
+    print_d( "the_file_object = %s\n" % the_file_object, the_printing_depth )
 
-    a_file_dirname = os.path.dirname( a_file_path )
-    a_file_basename = os.path.basename( a_file_path )
+    a_hex_md5 = the_file_object.hex_md5()
+    a_source_file_path = the_file_object.file_path()
+
+    a_file_dirname = os.path.dirname( a_source_file_path )
+    a_file_basename = os.path.basename( a_source_file_path )
 
     an_output_dir = os.path.join( the_output_dir, a_file_dirname[ 1 : ] )
-    print_d( "an_output_dir = '%s'\n" % an_output_dir, the_printing_depth )
+    print_d( "an_output_dir = '%s'\n" % an_output_dir, the_printing_depth + 1 )
     
     if the_enable_fresh :
         import shutil
@@ -118,25 +118,14 @@ def download_file( the_number_threads, the_enable_fresh, the_s3_conn, the_study_
         pass
 
     a_file_path = os.path.join( an_output_dir, a_file_basename )
-    print_d( "a_file_path = '%s'\n" % a_file_path, the_printing_depth )
+    print_d( "a_file_path = '%s'\n" % a_file_path, the_printing_depth + 2 )
     if os.path.exists( a_file_path ) :
-        print_d( "nothing to be done, already downloaded\n", the_printing_depth + 1 )
+        print_d( "nothing to be done, already downloaded\n", the_printing_depth + 3 )
 
         return True
 
-    print_d( "the_study_file_key = %s\n" % the_study_file_key, the_printing_depth )
-
-    a_file_api_version = extract_api_version( the_study_file_key )
-    print_d( "a_file_api_version = '%s'\n" % a_file_api_version, the_printing_depth )
-
-    a_file_id, a_file_bucket_name = generate_id( the_study_id, the_study_file_key.name, a_file_api_version )
-    print_d( "a_file_id = '%s'\n" % a_file_id, the_printing_depth )
-
-    a_file_bucket = the_s3_conn.get_bucket( a_file_bucket_name )
-    print_d( "a_file_bucket = %s\n" % a_file_bucket, the_printing_depth )
-
     while True :
-        download_items( the_number_threads, a_file_bucket, a_file_api_version, a_file_basename, an_output_dir, the_printing_depth + 1 )
+        download_items( the_file_object, a_file_basename, an_output_dir, the_number_threads, the_printing_depth + 3 )
         
         an_archive_name = "%s.tgz" % a_file_basename
 
@@ -153,22 +142,21 @@ def download_file( the_number_threads, the_enable_fresh, the_s3_conn, the_study_
 
         pass
 
-    sh_command( "tar -xzf '%s' -C '%s'" % ( an_archive_path, an_output_dir ), the_printing_depth )
+    sh_command( "tar -xzf '%s' -C '%s'" % ( an_archive_path, an_output_dir ), the_printing_depth + 2 )
 
-    # sh_command( "cd '%s' && rm %s-*" % ( an_output_dir, an_archive_name ), the_printing_depth )
+    sh_command( "cd '%s' && rm %s-*" % ( an_output_dir, an_archive_name ), the_printing_depth + 2 )
 
-    # os.remove( an_archive_path )
+    os.remove( an_archive_path )
 
     return True
 
 
 #------------------------------------------------------------------------------------------
-def download_files( the_number_threads, the_enable_fresh, the_s3_conn, the_study_bucket, the_study_id, the_output_dir, the_printing_depth ) :
-    a_study_file_keys = the_study_bucket.get_all_keys()
-    a_worker_pool = WorkerPool( len( a_study_file_keys ) )
+def download_files( the_study_object, the_output_dir, the_number_threads, the_enable_fresh, the_printing_depth ) :
+    a_worker_pool = WorkerPool( the_number_threads )
 
-    for a_study_file_key in the_study_bucket.list() :
-        a_worker_pool.charge( download_file, ( the_number_threads, the_enable_fresh, the_s3_conn, a_study_file_key, the_study_id, the_output_dir, the_printing_depth ) )
+    for a_file_object in the_study_object :
+        a_worker_pool.charge( download_file, ( a_file_object, the_output_dir, the_number_threads, the_enable_fresh, the_printing_depth ) )
         
         pass
 
@@ -236,15 +224,15 @@ if a_study_name == None :
 
 print_d( "a_study_name = '%s'\n" % a_study_name )
     
-an_enable_fresh = an_options.enable_fresh
-print_d( "an_enable_fresh = %s\n" % an_enable_fresh )
-
 an_output_dir = an_options.output_dir
 if an_output_dir == None :
     an_output_dir = os.path.join( an_engine_dir, a_study_name )
     pass
 
 print_d( "an_output_dir = '%s'\n" % an_output_dir )
+
+an_enable_fresh = an_options.enable_fresh
+print_d( "an_enable_fresh = %s\n" % an_enable_fresh )
 
 AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY = amazon.extract_options( an_options )
 
@@ -255,60 +243,25 @@ print_d( "a_number_threads = %d\n" % a_number_threads )
 amazon.extract_timeout_options( an_options, a_option_parser )
 
 
-print_i( "--------------------------- Connecting to Amazon S3 -----------------------------\n" )
-a_s3_conn = boto.connect_s3( AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY )
-print_d( "a_s3_conn = %r\n" % a_s3_conn )
+print_i( "--------------------------- Looking for study object ----------------------------\n" )
+a_root_object = TRootObject.get( AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY )
+print_d( "a_root_object = %s\n" % a_root_object )
 
-
-print_i( "--------------------------- Looking for study root ------------------------------\n" )
-a_canonical_user_id = a_s3_conn.get_canonical_user_id()
-print_d( "a_canonical_user_id = '%s'\n" % a_canonical_user_id )
-
-a_root_bucket_name = hashlib.md5( a_canonical_user_id ).hexdigest()
-a_root_bucket = a_s3_conn.get_bucket( a_root_bucket_name )
-print_d( "a_root_bucket = %s\n" % a_root_bucket )
-
-
-print_i( "--------------------------- Looking for study key -------------------------------\n" )
-a_study_key = Key( a_root_bucket )
-a_study_key.key = '%s' % ( a_study_name )
-a_study_api_version = extract_api_version( a_study_key )
-print_d( "a_study_api_version = '%s'\n" % a_study_api_version )
-
-
-print_i( "------------------------ Looking for the study bucket ---------------------------\n" )
-a_study_id, a_study_bucket_name = generate_id( a_canonical_user_id, a_study_name, a_study_api_version )
-print_d( "a_study_id = '%s'\n" % a_study_id )
-
-a_study_bucket = None
-try :
-    a_study_bucket = a_s3_conn.get_bucket( a_study_bucket_name )
-except :
-    print_e( "There is no study with such name ('%s')\n" % a_study_name )
-    pass
-
-print_d( "a_study_bucket = '%s'\n" % a_study_bucket.name )
+a_study_object = TStudyObject.get( a_root_object, a_study_name )
+print_d( "a_study_object = %s\n" % a_study_object )
 
 
 print_i( "--------------------------- Reading the study files -----------------------------\n" )
 a_data_loading_time = Timer()
 
-a_target_file_name = an_options.file_name
-if a_target_file_name == None :
-    download_files( a_number_threads, an_enable_fresh, a_s3_conn, a_study_bucket, a_study_id, an_output_dir, 0 )
+a_file_name = an_options.file_name
+if a_file_name == None :
+    download_files( a_study_object, an_output_dir, a_number_threads, an_enable_fresh, 0 )
 
 else :
-    for a_study_file_key in a_study_bucket.list() :
-        a_file_api_version = extract_api_version( a_study_file_key )
-        a_hex_md5, a_file_path = extract_file_props( a_study_file_key.name, a_file_api_version )
-        print_d( "a_file_path = '%s'\n" % a_file_path, 0 )
+    a_file_object = TFileObject.get( a_study_object, a_file_name )
 
-        if a_file_path == a_target_file_name :
-            download_file( a_number_threads, an_enable_fresh, a_s3_conn, a_study_file_key, a_study_id, an_output_dir, 1 )
-
-            pass
-
-        pass
+    download_file( a_file_object, an_output_dir, a_number_threads, an_enable_fresh, 0 )
 
     pass
 

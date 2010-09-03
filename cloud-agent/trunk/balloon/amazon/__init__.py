@@ -155,6 +155,7 @@ class TRootObject :
     def __init__( self, the_s3_conn, the_bucket, the_id ) :
         "Use static corresponding functions to an instance of this class"
         self._connection = the_s3_conn
+
         self._bucket = the_bucket
         self._id = the_id
 
@@ -162,7 +163,7 @@ class TRootObject :
     
     def __str__( self ) :
 
-        return "'%s'" % ( self._id )
+        return "'%s'- %s" % ( self._id, self._bucket )
 
     @staticmethod
     def get( AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY ) :
@@ -218,7 +219,7 @@ def _decorate_key_name( the_name ) :
 
 
 #--------------------------------------------------------------------------------------
-def get_name( the_key ) :
+def get_key_name( the_key ) :
 
     return the_key.name[ 1 : ]
 
@@ -252,7 +253,7 @@ class TStudyObject :
 
     def __str__( self ) :
 
-        return "'%s'" % ( self._id )
+        return "'%s'- %s" % ( self._id, self._bucket )
 
     @staticmethod
     def create( the_root_object, the_study_name ) :
@@ -282,7 +283,7 @@ class TStudyObject :
 
     def _next( self ) :
         for a_file_key in self._bucket.list() :
-            yield TFileObject.get( self, get_name( a_file_key ) )
+            yield TFileObject.get( self, get_key_name( a_file_key ) )
             
             pass
         
@@ -294,6 +295,17 @@ class TStudyObject :
         return self._next()
 
     pass
+
+
+#--------------------------------------------------------------------------------------
+def generate_uploading_dir( the_file_path ) :
+    a_file_dirname = os.path.dirname( the_file_path )
+    a_file_basename = os.path.basename( the_file_path )
+
+    a_sub_folder = hashlib.md5( a_file_basename ).hexdigest()
+    a_working_dir = os.path.join( a_file_dirname, a_sub_folder )
+    
+    return a_working_dir
 
 
 #--------------------------------------------------------------------------------------
@@ -314,7 +326,7 @@ class TFileObject :
     
     def file_path( self ) :
 
-        return get_name( self._key )
+        return get_key_name( self._key )
 
     def hex_md5( self ) :
 
@@ -330,7 +342,7 @@ class TFileObject :
 
     def __str__( self ) :
 
-        return "'%s'" % ( self._id )
+        return "'%s'- %s" % ( self._id, self._bucket )
 
     @staticmethod
     def create( the_study_object, the_file_path, the_hex_md5 ) :
@@ -373,17 +385,56 @@ class TFileObject :
         
         return self._next()
 
+    def seal_name( self ) :
+
+        return self._bucket.name
+
     def seal( self, the_working_dir ) :
         "To mark the everything was sucessfuly uploaded"
         os.rmdir( the_working_dir )
 
         # To mark that final file item have been sucessfully uploaded
-        an_item_key = Key( self._bucket, get_name( self._key ) )
+        an_item_key = get_key( self._bucket, self.seal_name() )
         an_item_key.set_contents_from_string( 'dummy' )
 
         pass
 
     pass
+
+
+#--------------------------------------------------------------------------------------
+def _item_key_separator( the_api_version ) :
+    if the_api_version == 'dummy' :
+        return ':'
+
+    return ' % '
+
+
+#--------------------------------------------------------------------------------------
+def generate_item_name( the_hex_md5, the_file_item, the_api_version ) :
+    a_separator = _item_key_separator( the_api_version )
+
+    if the_api_version == 'dummy' :
+        return '%s%s%s' % ( the_file_item, a_separator, the_hex_md5 )
+
+    return '%s%s%s' % ( the_hex_md5, a_separator, the_file_item )
+
+
+#--------------------------------------------------------------------------------------
+def extract_item_props( the_item_key_name, the_api_version ) :
+    a_separator = _item_key_separator( the_api_version )
+
+    an_item_name, a_hex_md5 = None, None
+    try :
+        if the_api_version == 'dummy' :
+            an_item_name, a_hex_md5 = the_item_key_name.split( a_separator )
+        else:
+            a_hex_md5, an_item_name = the_item_key_name.split( a_separator )
+            pass
+    except :
+        pass
+
+    return a_hex_md5, an_item_name
 
 
 #--------------------------------------------------------------------------------------
@@ -408,9 +459,18 @@ class TItemObject :
 
         return self._hex_md5
 
+    def is_seal( self ) :
+        
+        return self._name == None
+
+    def download( self, the_file_path ) :
+        self._key.get_contents_to_filename( the_file_path )
+
+        pass
+
     def __str__( self ) :
 
-        return "'%s'" % ( get_name( self._key ) )
+        return "'%s'" % ( get_key_name( self._key ) )
 
     @staticmethod
     def create( the_file_object, the_item_name, the_item_path ) :
@@ -421,8 +481,9 @@ class TItemObject :
         a_hex_md5, a_base64md5 = a_md5
 
         an_api_version = the_file_object.api_version()
-        an_item_key = Key( the_file_object._bucket, generate_item_key( a_hex_md5, the_item_path, an_api_version ) )
+        an_item_name = generate_item_name( a_hex_md5, the_item_name, an_api_version )
 
+        an_item_key = get_key( the_file_object._bucket, an_item_name )
         # a_part_key.set_contents_from_file( a_file_pointer, md5 = a_md5 ) # this method is not thread safe
         an_item_key.set_contents_from_file( a_file_pointer)
         
@@ -434,55 +495,11 @@ class TItemObject :
     def get( the_file_object, the_item_key ) :
         an_api_version = the_file_object.api_version()
 
-        a_hex_md5, a_item_name = extract_item_props( get_name( the_item_key ), an_api_version )
+        a_hex_md5, a_item_name = extract_item_props( get_key_name( the_item_key ), an_api_version )
 
         return TItemObject( the_file_object, the_item_key, a_item_name, a_hex_md5 )
 
     pass
-
-
-#--------------------------------------------------------------------------------------
-def _item_key_separator( the_api_version ) :
-    if the_api_version == 'dummy' :
-        return ':'
-
-    return ' % '
-
-
-#--------------------------------------------------------------------------------------
-def generate_item_key( the_hex_md5, the_file_item, the_api_version ) :
-    a_separator = _item_key_separator( the_api_version )
-
-    if the_api_version == 'dummy' :
-        return '%s%s%s' % ( the_file_item, a_separator, the_hex_md5 )
-
-    return '%s%s%s' % ( the_hex_md5, a_separator, the_file_item )
-
-
-#--------------------------------------------------------------------------------------
-def extract_item_props( the_file_item_key_name, the_api_version ) :
-    a_separator = _item_key_separator( the_api_version )
-
-    a_file_name, a_hex_md5 = None, None
-
-    if the_api_version == 'dummy' :
-        a_file_name, a_hex_md5 = the_file_item_key_name.split( a_separator )
-    else:
-        a_hex_md5, a_file_name = the_file_item_key_name.split( a_separator )
-        pass
-
-    return a_hex_md5, a_file_name
-
-
-#--------------------------------------------------------------------------------------
-def generate_uploading_dir( the_file_path ) :
-    a_file_dirname = os.path.dirname( the_file_path )
-    a_file_basename = os.path.basename( the_file_path )
-
-    a_sub_folder = hashlib.md5( a_file_basename ).hexdigest()
-    a_working_dir = os.path.join( a_file_dirname, a_sub_folder )
-    
-    return a_working_dir
 
 
 #--------------------------------------------------------------------------------------
