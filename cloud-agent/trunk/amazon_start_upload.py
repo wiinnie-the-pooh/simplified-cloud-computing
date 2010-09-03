@@ -31,9 +31,6 @@ import balloon.amazon as amazon
 from balloon.amazon import generate_uploading_dir
 from balloon.amazon import TRootObject, TStudyObject, TFileObject, TItemObject
 
-import boto
-from boto.s3.key import Key
-
 import sys, os, os.path, uuid, hashlib
 
 
