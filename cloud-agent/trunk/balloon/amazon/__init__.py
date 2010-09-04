@@ -260,6 +260,10 @@ class TStudyObject :
 
         pass
     
+    def name( self ) :
+
+        return get_key_name( self._key )
+
     def connection( self ) :
 
         return self._root_object._connection
