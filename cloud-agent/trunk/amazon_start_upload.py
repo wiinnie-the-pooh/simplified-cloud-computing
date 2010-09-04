@@ -29,13 +29,13 @@ from balloon.common import Timer, WorkerPool, compute_md5
 
 import balloon.amazon as amazon
 from balloon.amazon import generate_uploading_dir
-from balloon.amazon import TRootObject, TStudyObject, TFileObject, TItemObject
+from balloon.amazon import TRootObject, TStudyObject, TFileObject, TSeedObject
 
 import sys, os, os.path, uuid, hashlib
 
 
 #------------------------------------------------------------------------------------------
-def upload_file( the_worker_pool, the_file_path, the_study_object, the_upload_item_size, the_printing_depth ) :
+def upload_file( the_worker_pool, the_file_path, the_study_object, the_upload_seed_size, the_printing_depth ) :
     a_working_dir = generate_uploading_dir( the_file_path )
 
     import shutil
@@ -56,7 +56,7 @@ def upload_file( the_worker_pool, the_file_path, the_study_object, the_upload_it
     print_d( "a_statinfo.st_size = %d, bytes\n" % a_statinfo.st_size, the_printing_depth )
 
     import math
-    a_suffix_length = math.log10( float( a_statinfo.st_size ) / the_upload_item_size )
+    a_suffix_length = math.log10( float( a_statinfo.st_size ) / the_upload_seed_size )
     if a_suffix_length > 0 :
         a_suffix_length = int( a_suffix_length + 1.0 )
     else:
@@ -64,9 +64,9 @@ def upload_file( the_worker_pool, the_file_path, the_study_object, the_upload_it
         pass
     print_d( "a_suffix_length = %d, digits\n" % a_suffix_length, the_printing_depth )
 
-    a_file_item_target = os.path.join( a_working_dir, a_file_basename )
+    a_file_seed_target = os.path.join( a_working_dir, a_file_basename )
     sh_command( "cat '%s' | split --bytes=%d --numeric-suffixes --suffix-length=%d - %s.tgz-" % 
-                ( a_tmp_file, the_upload_item_size, a_suffix_length, a_file_item_target ), the_printing_depth )
+                ( a_tmp_file, the_upload_seed_size, a_suffix_length, a_file_seed_target ), the_printing_depth )
 
     a_file_pointer = open( a_tmp_file, 'rb' )
     a_md5 = compute_md5( a_file_pointer )
@@ -82,12 +82,12 @@ def upload_file( the_worker_pool, the_file_path, the_study_object, the_upload_it
 
 
 #------------------------------------------------------------------------------------------
-def upload_files( the_files, the_study_object, the_upload_item_size, the_printing_depth ) :
+def upload_files( the_files, the_study_object, the_upload_seed_size, the_printing_depth ) :
     a_worker_pool = WorkerPool( len( the_files ) )
 
     for a_file_path in the_files :
         a_worker_pool.charge( upload_file, ( a_worker_pool, a_file_path, the_study_object, 
-                                             the_upload_item_size, the_printing_depth ) )
+                                             the_upload_seed_size, the_printing_depth ) )
 
         pass
 
@@ -123,7 +123,7 @@ a_option_parser.add_option( "--upload-item-size",
                             metavar = "< size of file pieces to be uploaded, in bytes >",
                             type = "int",
                             action = "store",
-                            dest = "upload_item_size",
+                            dest = "upload_seed_size",
                             help = "(\"%default\", by default)",
                             default = 65536 )
 common.add_parser_options( a_option_parser )
@@ -173,7 +173,7 @@ print_d( "a_study_object = %s\n" % a_study_object )
 print_i( "---------------------------- Uploading study files ------------------------------\n" )
 a_data_loading_time = Timer()
 
-upload_files( a_files, a_study_object, an_options.upload_item_size, 0 )
+upload_files( a_files, a_study_object, an_options.upload_seed_size, 0 )
 
 print_d( "a_data_loading_time = %s, sec\n" % a_data_loading_time )
 

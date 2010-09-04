@@ -27,7 +27,7 @@ from balloon.common import print_d, print_i, print_e, sh_command, ssh_command
 from balloon.common import Timer, WorkerPool, compute_md5
 
 import balloon.amazon as amazon
-from balloon.amazon import TRootObject, TStudyObject, TFileObject, TItemObject
+from balloon.amazon import TRootObject, TStudyObject, TFileObject, TSeedObject
 
 import sys, os, os.path, uuid, hashlib
 

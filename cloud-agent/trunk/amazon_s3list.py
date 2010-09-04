@@ -27,16 +27,16 @@ from balloon.common import print_d, print_i, print_e, sh_command, ssh_command
 from balloon.common import Timer, WorkerPool, compute_md5
 
 import balloon.amazon as amazon
-from balloon.amazon import TRootObject, TStudyObject, TFileObject, TItemObject
+from balloon.amazon import TRootObject, TStudyObject, TFileObject, TSeedObject
 
 import sys, os, os.path, uuid, hashlib
 
 
 #------------------------------------------------------------------------------------------
-def read_items( the_file_object, the_printing_depth ) :
+def read_seeds( the_file_object, the_printing_depth ) :
     "Reading the file items"
-    for an_item_object in the_file_object :
-        print_d( "%s\n" % an_item_object, the_printing_depth )
+    for a_seed_object in the_file_object :
+        print_d( "%s\n" % a_seed_object, the_printing_depth )
 
         pass
 
@@ -49,7 +49,7 @@ def read_files( the_study_object, the_printing_depth ) :
     for a_file_object in the_study_object :
         print_d( "%s\n" % a_file_object, the_printing_depth )
 
-        read_items( a_file_object, the_printing_depth + 1 )
+        read_seeds( a_file_object, the_printing_depth + 1 )
 
         pass
     

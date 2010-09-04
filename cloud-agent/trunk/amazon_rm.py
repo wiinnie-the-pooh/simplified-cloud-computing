@@ -27,7 +27,7 @@ from balloon.common import print_d, print_i, print_e, sh_command, ssh_command
 from balloon.common import Timer, WorkerPool, compute_md5
 
 import balloon.amazon as amazon
-from balloon.amazon import TRootObject, TStudyObject, TFileObject, TItemObject
+from balloon.amazon import TRootObject, TStudyObject, TFileObject, TSeedObject
 
 import sys, os, os.path, uuid, hashlib
 
@@ -58,11 +58,12 @@ amazon.add_threading_parser_options( a_option_parser )
 
 an_options, an_args = a_option_parser.parse_args()
 
+a_study_name = None
 if len( an_args ) == 0 :
-    print_e( "You need to give a study name, at least, to perform this command" )
+    a_study_name = raw_input()
+else :
+    a_study_name = an_args[ 0 ]
     pass
-
-a_study_name = an_args[ 0 ]
 
 common.extract_options( an_options )
 

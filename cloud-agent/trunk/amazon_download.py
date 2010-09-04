@@ -35,16 +35,16 @@ import sys, os, os.path, uuid, hashlib
 
 
 #------------------------------------------------------------------------------------------
-def download_items( the_file_bucket, the_file_basename, the_output_dir, the_printing_depth ) :
+def download_seeds( the_file_bucket, the_file_basename, the_output_dir, the_printing_depth ) :
     import tempfile
     a_working_dir = tempfile.mkdtemp( dir = the_output_dir )
     a_working_dir = os.path.join( the_output_dir, a_working_dir )
     print_d( "a_working_dir = '%s'\n" % a_working_dir, the_printing_depth )
 
-    for an_item_key in the_file_bucket.list() :
-        a_file_path = os.path.join( a_working_dir, an_item_key.name )
-        an_item_key.get_contents_to_filename( a_file_path )
-        print_d( "an_item_key = %s\n" % an_item_key, the_printing_depth )
+    for a_seed_key in the_file_bucket.list() :
+        a_file_path = os.path.join( a_working_dir, a_seed_key.name )
+        a_seed_key.get_contents_to_filename( a_file_path )
+        print_d( "a_seed_key = %s\n" % a_seed_key, the_printing_depth )
         
         pass
 
@@ -75,7 +75,7 @@ def download_files( the_s3_conn, the_study_bucket, the_study_id, the_output_dir,
         a_file_bucket = the_s3_conn.get_bucket( a_file_bucket_name )
         print_d( "a_file_bucket = %s\n" % a_file_bucket, the_printing_depth )
 
-        download_items( a_file_bucket, a_file_basename, the_output_dir, the_printing_depth + 1 )
+        download_seeds( a_file_bucket, a_file_basename, the_output_dir, the_printing_depth + 1 )
         
         pass
 

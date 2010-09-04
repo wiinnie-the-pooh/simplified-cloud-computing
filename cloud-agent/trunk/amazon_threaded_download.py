@@ -28,7 +28,7 @@ from balloon.common import print_d, print_i, print_e, sh_command, ssh_command
 from balloon.common import Timer, WorkerPool, compute_md5
 
 import balloon.amazon as amazon
-from balloon.amazon import TRootObject, TStudyObject, TFileObject, TItemObject
+from balloon.amazon import TRootObject, TStudyObject, TFileObject, TSeedObject
 
 import boto
 from boto.s3.key import Key
@@ -37,10 +37,10 @@ import sys, os, os.path, uuid, hashlib
 
 
 #------------------------------------------------------------------------------------------
-def download_item( the_item_object, the_file_path, the_printing_depth ) :
+def download_seed( the_seed_object, the_file_path, the_printing_depth ) :
     try :
-        the_item_object.download( the_file_path )
-        print_d( "the_item_object = %s\n" % the_item_object, the_printing_depth )
+        the_seed_object.download( the_file_path )
+        print_d( "the_seed_object = %s\n" % the_seed_object, the_printing_depth )
         
         return True
     except :
@@ -53,35 +53,35 @@ def download_item( the_item_object, the_file_path, the_printing_depth ) :
 
 
 #------------------------------------------------------------------------------------------
-def download_items( the_file_object, the_file_basename, the_output_dir, the_number_threads, the_printing_depth ) :
+def download_seeds( the_file_object, the_file_basename, the_output_dir, the_number_threads, the_printing_depth ) :
     an_is_download_ok = False
     an_is_everything_uploaded = False
     while not an_is_everything_uploaded or not an_is_download_ok :
         a_worker_pool = WorkerPool( the_number_threads )
 
-        for an_item_object in the_file_object :
-            if an_item_object.is_seal() :
+        for a_seed_object in the_file_object :
+            if a_seed_object.is_seal() :
                 an_is_everything_uploaded = True
                 print_d( "an_is_everything_uploaded = %s\n" % an_is_everything_uploaded, the_printing_depth )
                 continue
 
-            a_hex_md5 = an_item_object.hex_md5()
-            an_item_path = os.path.join( the_output_dir, an_item_object.name() )
+            a_hex_md5 = a_seed_object.hex_md5()
+            a_seed_path = os.path.join( the_output_dir, a_seed_object.name() )
 
-            if os.path.exists( an_item_path ) :
-                a_file_pointer = open( an_item_path, 'rb' )
+            if os.path.exists( a_seed_path ) :
+                a_file_pointer = open( a_seed_path, 'rb' )
                 a_md5 = compute_md5( a_file_pointer )[ 0 ]
 
                 if a_hex_md5 == a_md5 :
                     continue
 
-                os.remove( an_item_path )
+                os.remove( a_seed_path )
 
                 pass
 
-            print_d( "an_item_path = '%s'\n" % an_item_path, the_printing_depth )
+            print_d( "a_seed_path = '%s'\n" % a_seed_path, the_printing_depth )
 
-            a_worker_pool.charge( download_item, ( an_item_object, an_item_path, the_printing_depth + 1 ) )
+            a_worker_pool.charge( download_seed, ( a_seed_object, a_seed_path, the_printing_depth + 1 ) )
             
             pass
 
@@ -125,7 +125,7 @@ def download_file( the_file_object, the_output_dir, the_number_threads, the_enab
         return True
 
     while True :
-        download_items( the_file_object, a_file_basename, an_output_dir, the_number_threads, the_printing_depth + 3 )
+        download_seeds( the_file_object, a_file_basename, an_output_dir, the_number_threads, the_printing_depth + 3 )
         
         an_archive_name = "%s.tgz" % a_file_basename
 

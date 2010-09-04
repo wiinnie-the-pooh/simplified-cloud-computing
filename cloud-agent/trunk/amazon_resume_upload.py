@@ -29,7 +29,7 @@ from balloon.common import Timer, WorkerPool, compute_md5
 
 import balloon.amazon as amazon
 from balloon.amazon import generate_uploading_dir
-from balloon.amazon import TRootObject, TStudyObject, TFileObject, TItemObject
+from balloon.amazon import TRootObject, TStudyObject, TFileObject, TSeedObject
 
 import sys, os, os.path, uuid, hashlib
 
@@ -50,11 +50,11 @@ def mark_finished( the_file_object, the_working_dir, the_printing_depth ) :
 
 
 #------------------------------------------------------------------------------------------
-def upload_item( the_file_object, the_item_name, the_item_path, the_printing_depth ) :
+def upload_seed( the_file_object, the_seed_name, the_seed_path, the_printing_depth ) :
     "Uploading file item"
     try :
-        an_item_object = TItemObject.create( the_file_object, the_item_name, the_item_path )
-        print_d( "%s\n" % an_item_object, the_printing_depth )
+        a_seed_object = TSeedObject.create( the_file_object, the_seed_name, the_seed_path )
+        print_d( "%s\n" % a_seed_object, the_printing_depth )
         
         return True
     except :
@@ -67,7 +67,7 @@ def upload_item( the_file_object, the_item_name, the_item_path, the_printing_dep
 
 
 #------------------------------------------------------------------------------------------
-def upload_items( the_file_object, the_working_dir, the_number_threads, the_printing_depth ) :
+def upload_seeds( the_file_object, the_working_dir, the_number_threads, the_printing_depth ) :
     "Uploading file items"
     while True :
         a_dir_contents = os.listdir( the_working_dir )
@@ -80,18 +80,18 @@ def upload_items( the_file_object, the_working_dir, the_number_threads, the_prin
         a_dir_contents.sort()
         a_dir_contents.reverse()
         
-        an_item_names = [ an_item_object.name() for an_item_object in the_file_object ]
+        a_seed_names = [ a_seed_object.name() for a_seed_object in the_file_object ]
         
-        for an_item_name in a_dir_contents :
-            an_item_path = os.path.join( the_working_dir, an_item_name )
-            print_d( "'%s'\n" % an_item_path, the_printing_depth + 1 )
+        for a_seed_name in a_dir_contents :
+            a_seed_path = os.path.join( the_working_dir, a_seed_name )
+            print_d( "'%s'\n" % a_seed_path, the_printing_depth + 1 )
         
-            if an_item_name in an_item_names :
-                os.remove( an_item_path )
+            if a_seed_name in a_seed_names :
+                os.remove( a_seed_path )
 
                 continue
 
-            a_worker_pool.charge( upload_item, ( the_file_object, an_item_name, an_item_path, the_printing_depth + 2 ) )
+            a_worker_pool.charge( upload_seed, ( the_file_object, a_seed_name, a_seed_path, the_printing_depth + 2 ) )
 
             pass
 
@@ -116,7 +116,7 @@ def upload_file( the_file_object, the_number_threads, the_printing_depth ) :
 
     print_d( "a_working_dir = '%s'\n" % a_working_dir, the_printing_depth )
 
-    return upload_items( the_file_object, a_working_dir, the_number_threads, the_printing_depth + 1 )
+    return upload_seeds( the_file_object, a_working_dir, the_number_threads, the_printing_depth + 1 )
 
 
 #------------------------------------------------------------------------------------------

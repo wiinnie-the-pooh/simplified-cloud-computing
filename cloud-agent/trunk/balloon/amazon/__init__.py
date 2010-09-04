@@ -203,7 +203,7 @@ class TRootObject :
 #--------------------------------------------------------------------------------------
 def api_version() :
 
-    return '0.1'
+    return '0.2'
 
 
 #--------------------------------------------------------------------------------------
@@ -270,7 +270,7 @@ class TStudyObject :
 
     def __str__( self ) :
 
-        return "'%s' - %s - %s" % ( self._id, self._api_version, self._bucket )
+        return "'%s' - '%s' - %s" % ( self._id, self._api_version, self._bucket )
 
     @staticmethod
     def create( the_root_object, the_study_name ) :
@@ -370,7 +370,7 @@ class TFileObject :
 
     def __str__( self ) :
 
-        return "'%s' - %s" % ( self._id, self._bucket )
+        return "'%s' - '%s' - %s" % ( self._id, self._hex_md5, self._bucket )
 
     @staticmethod
     def create( the_study_object, the_file_path, the_hex_md5 ) :
@@ -401,8 +401,8 @@ class TFileObject :
         return TFileObject( the_study_object, a_key, a_bucket, an_id, a_hex_md5 )
 
     def _next( self ) :
-        for an_item_key in self._bucket.list() :
-            yield TItemObject.get( self, an_item_key )
+        for a_seed_key in self._bucket.list() :
+            yield TSeedObject.get( self, a_seed_key )
             
             pass
         
@@ -414,8 +414,8 @@ class TFileObject :
         return self._next()
 
     def delete( self ) :
-        for an_item_object in self :
-            an_item_object.delete()
+        for a_seed_object in self :
+            a_seed_object.delete()
         
             pass
 
@@ -433,8 +433,8 @@ class TFileObject :
         os.rmdir( the_working_dir )
 
         # To mark that final file item have been sucessfully uploaded
-        an_item_key = get_key( self._bucket, self.seal_name() )
-        an_item_key.set_contents_from_string( 'seal' )
+        a_seed_key = get_key( self._bucket, self.seal_name() )
+        a_seed_key.set_contents_from_string( 'seal' )
 
         pass
 
@@ -442,7 +442,7 @@ class TFileObject :
 
 
 #--------------------------------------------------------------------------------------
-def _item_key_separator( the_api_version ) :
+def _seed_key_separator( the_api_version ) :
     if the_api_version == 'dummy' :
         return ':'
 
@@ -450,34 +450,39 @@ def _item_key_separator( the_api_version ) :
 
 
 #--------------------------------------------------------------------------------------
-def generate_item_name( the_hex_md5, the_file_item, the_api_version ) :
-    a_separator = _item_key_separator( the_api_version )
+def generate_seed_name( the_hex_md5, the_file_seed, the_api_version ) :
+    a_separator = _seed_key_separator( the_api_version )
 
     if the_api_version == 'dummy' :
-        return '%s%s%s' % ( the_file_item, a_separator, the_hex_md5 )
+        return '%s%s%s' % ( the_file_seed, a_separator, the_hex_md5 )
 
-    return '%s%s%s' % ( the_hex_md5, a_separator, the_file_item )
+    if the_api_version == '0.1' :
+        return '%s%s%s' % ( the_hex_md5, a_separator, the_file_seed )
+
+    return '%s%s%s' % ( the_file_seed, a_separator, the_hex_md5 )
 
 
 #--------------------------------------------------------------------------------------
-def extract_item_props( the_item_key_name, the_api_version ) :
-    a_separator = _item_key_separator( the_api_version )
+def extract_seed_props( the_seed_key_name, the_api_version ) :
+    a_separator = _seed_key_separator( the_api_version )
 
-    an_item_name, a_hex_md5 = None, None
+    a_seed_name, a_hex_md5 = None, None
     try :
         if the_api_version == 'dummy' :
-            an_item_name, a_hex_md5 = the_item_key_name.split( a_separator )
-        else:
-            a_hex_md5, an_item_name = the_item_key_name.split( a_separator )
+            a_seed_name, a_hex_md5 = the_seed_key_name.split( a_separator )
+        elif the_api_version == '0.1' :
+            a_hex_md5, a_seed_name = the_seed_key_name.split( a_separator )
+        else :
+            a_seed_name, a_hex_md5 = the_seed_key_name.split( a_separator )
             pass
     except :
         pass
 
-    return a_hex_md5, an_item_name
+    return a_hex_md5, a_seed_name
 
 
 #--------------------------------------------------------------------------------------
-class TItemObject :
+class TSeedObject :
     "Represents S3 dedicated implementation of item object"
 
     def __init__( self, the_file_object, the_key, the_name, the_hex_md5 ) :
@@ -512,31 +517,31 @@ class TItemObject :
         return "%s" % ( self._key )
 
     @staticmethod
-    def create( the_file_object, the_item_name, the_item_path ) :
-        a_file_pointer = open( the_item_path, 'rb' )
+    def create( the_file_object, the_seed_name, the_seed_path ) :
+        a_file_pointer = open( the_seed_path, 'rb' )
 
         from balloon.common import compute_md5
         a_md5 = compute_md5( a_file_pointer )
         a_hex_md5, a_base64md5 = a_md5
 
         an_api_version = the_file_object.api_version()
-        an_item_name = generate_item_name( a_hex_md5, the_item_name, an_api_version )
+        a_seed_name = generate_seed_name( a_hex_md5, the_seed_name, an_api_version )
 
-        an_item_key = get_key( the_file_object._bucket, an_item_name )
+        a_seed_key = get_key( the_file_object._bucket, a_seed_name )
         # a_part_key.set_contents_from_file( a_file_pointer, md5 = a_md5 ) # this method is not thread safe
-        an_item_key.set_contents_from_file( a_file_pointer)
+        a_seed_key.set_contents_from_file( a_file_pointer)
         
-        os.remove( the_item_path )
+        os.remove( the_seed_path )
 
-        return TItemObject( the_file_object, an_item_key, the_item_name, a_hex_md5 )
+        return TSeedObject( the_file_object, a_seed_key, the_seed_name, a_hex_md5 )
 
     @staticmethod
-    def get( the_file_object, the_item_key ) :
+    def get( the_file_object, the_seed_key ) :
         an_api_version = the_file_object.api_version()
 
-        a_hex_md5, a_item_name = extract_item_props( get_key_name( the_item_key ), an_api_version )
+        a_hex_md5, a_seed_name = extract_seed_props( get_key_name( the_seed_key ), an_api_version )
 
-        return TItemObject( the_file_object, the_item_key, a_item_name, a_hex_md5 )
+        return TSeedObject( the_file_object, the_seed_key, a_seed_name, a_hex_md5 )
 
     def delete( self ) :
         self._key.delete()
