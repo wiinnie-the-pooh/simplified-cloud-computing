@@ -311,6 +311,17 @@ class TStudyObject :
         
         return self._next()
 
+    def delete( self ) :
+        for a_file_object in self :
+            a_file_object.delete()
+        
+            pass
+
+        self._bucket.delete()
+        self._key.delete()
+
+        pass
+
     pass
 
 
@@ -402,6 +413,17 @@ class TFileObject :
         
         return self._next()
 
+    def delete( self ) :
+        for an_item_object in self :
+            an_item_object.delete()
+        
+            pass
+
+        self._bucket.delete()
+        self._key.delete()
+
+        pass
+
     def seal_name( self ) :
 
         return self._bucket.name
@@ -412,7 +434,7 @@ class TFileObject :
 
         # To mark that final file item have been sucessfully uploaded
         an_item_key = get_key( self._bucket, self.seal_name() )
-        an_item_key.set_contents_from_string( 'dummy' )
+        an_item_key.set_contents_from_string( 'seal' )
 
         pass
 
@@ -515,6 +537,11 @@ class TItemObject :
         a_hex_md5, a_item_name = extract_item_props( get_key_name( the_item_key ), an_api_version )
 
         return TItemObject( the_file_object, the_item_key, a_item_name, a_hex_md5 )
+
+    def delete( self ) :
+        self._key.delete()
+
+        pass
 
     pass
 

@@ -36,6 +36,7 @@ import sys, os, os.path, uuid, hashlib
 def read_files( the_study_object, the_printing_depth ) :
     "Reading the study files"
     for a_file_object in the_study_object :
+        print_d( "a_file_object = %s\n" % a_file_object, the_printing_depth )
         print a_file_object.file_path()
         
         pass
@@ -47,6 +48,7 @@ def read_files( the_study_object, the_printing_depth ) :
 def read_studies( the_root_object, the_printing_depth ) :
     "Reading the studies"
     for a_study_object in the_root_object :
+        print_d( "a_study_object = %s\n" % a_study_object, the_printing_depth )
         print a_study_object.name()
 
         pass
@@ -67,7 +69,7 @@ from optparse import OptionParser
 a_option_parser = OptionParser( usage = an_usage_description, version="%prog 0.1", formatter = a_help_formatter )
 
 # Definition of the command line arguments
-common.add_parser_options( a_option_parser, False )
+common.add_parser_options( a_option_parser, True )
 amazon.add_parser_options( a_option_parser )
 
 
