@@ -29,6 +29,7 @@ AWS_SECRET_ACCESS_KEY = os.getenv( "AWS_SECRET_ACCESS_KEY" )
 
 #--------------------------------------------------------------------------------------
 import boto
+import boto.ec2
 
 import balloon.common as common
 from balloon.common import print_d, print_i, print_e, sh_command, ssh_command, Timer, WorkerPool
@@ -47,45 +48,56 @@ def stop_instance( the_instance ) :
 
 
 #--------------------------------------------------------------------------------------
-print "-------------- Delete EC2 instances --------------"
-an_ec2_conn = boto.connect_ec2( AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY )
-for a_reservation in an_ec2_conn.get_all_instances() :
-    # print "%s" % ( a_reservation )
-    for an_instance in a_reservation.instances :
-        stop_instance( an_instance )
+for a_region in boto.ec2.regions( aws_access_key_id = AWS_ACCESS_KEY_ID, aws_secret_access_key = AWS_SECRET_ACCESS_KEY ) :
+    an_ec2_conn = a_region.connect()
+    print a_region
+
+    print "-------------- Delete EC2 instances --------------"
+    for a_reservation in an_ec2_conn.get_all_instances() :
+        print a_reservation
+        for an_instance in a_reservation.instances :
+            stop_instance( an_instance )
+
+            pass
+
+        a_reservation.stop_all()
         pass
-    a_reservation.stop_all()
-    pass
 
-print
+    print
 
 
-print "-------------- Delete EC2 key pairs --------------"
-for a_key_pair in an_ec2_conn.get_all_key_pairs() :
-    print a_key_pair.name
-    # an_ec2_conn.delete_key_pair( a_key_pair ) # Does not work (bug)
-    a_key_pair.delete()
+    print "-------------- Delete EC2 key pairs --------------"
+    for a_key_pair in an_ec2_conn.get_all_key_pairs() :
+        print a_key_pair.name
+        # an_ec2_conn.delete_key_pair( a_key_pair ) # Does not work (bug)
+        a_key_pair.delete()
 
-    a_key_pair_dir = os.path.expanduser( "~/.ssh")
-    a_key_pair_file = os.path.join( a_key_pair_dir, a_key_pair.name ) + os.path.extsep + "pem"
+        a_key_pair_dir = os.path.expanduser( "~/.ssh")
+        a_key_pair_file = os.path.join( a_key_pair_dir, a_key_pair.name ) + os.path.extsep + "pem"
 
-    if os.path.isfile( a_key_pair_file ) :
-        os.remove( a_key_pair_file )
+        if os.path.isfile( a_key_pair_file ) :
+            os.remove( a_key_pair_file )
+            
+            pass
+        
         pass
-    pass
 
-print
+    print
 
 
-print "----------- Delete EC2 security groups -----------"
-for a_security_group in an_ec2_conn.get_all_security_groups() :
-    if a_security_group.name != 'default' :
-        print a_security_group.name
-        an_ec2_conn.delete_security_group( a_security_group.name )
+    print "----------- Delete EC2 security groups -----------"
+    for a_security_group in an_ec2_conn.get_all_security_groups() :
+        if a_security_group.name != 'default' :
+            print a_security_group.name
+            an_ec2_conn.delete_security_group( a_security_group.name )
+
+            pass
+
         pass
-    pass
 
-print
+    print
+
+    pass
 
 
 #--------------------------------------------------------------------------------------
