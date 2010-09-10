@@ -58,16 +58,19 @@ common.extract_options( an_options )
 
 AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY = amazon.extract_options( an_options )
 
-an_image_id, an_image_location, an_instance_type, a_min_count, a_max_count, a_user_name = amazon_ec2.extract_options( an_options )
+an_image_id, an_image_location, an_instance_type, a_min_count, a_max_count, a_ssh_host_port = amazon_ec2.extract_options( an_options )
 
 
-print_d( "\n------------------------ Running actual functionality ---------------------\n" )
-an_instance, a_ssh_client = amazon_ec2.run_instance( an_image_id, an_image_location, an_instance_type, 
-                                                     a_min_count, a_max_count, 
-                                                     a_user_name, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY )
+#--------------------------------------------------------------------------------------
+# Running actual functionality
 
-print_d( "\n--------------------------- Closing SSH connection ------------------------\n" )
-a_ssh_client.close()
+an_instance, a_key_pair_file = amazon_ec2.run_instance( an_image_id, an_image_location, an_instance_type, 
+                                                        a_min_count, a_max_count, a_ssh_host_port,
+                                                        AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY )
+print a_key_pair_file
+print an_instance.dns_name
+print a_ssh_host_port
+
 
 
 print_d( "\n-------------------------------------- OK ---------------------------------\n" )

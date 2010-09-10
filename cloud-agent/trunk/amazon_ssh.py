@@ -35,9 +35,9 @@ from balloon.amazon import ec2 as amazon_ec2
 
 an_usage_description = "%prog"
 an_usage_description += " --identity-file='~/.ssh/tmpraDD2j.pem'"
+an_usage_description += " --host-port=22"
 an_usage_description += " --login-name='ubuntu'"
 an_usage_description += " --host-name='ec2-184-73-11-20.compute-1.amazonaws.com'"
-an_usage_description += " --host-port=22"
 an_usage_description += amazon.add_usage_description()
 an_usage_description += common.add_usage_description()
 
@@ -98,9 +98,6 @@ an_identity_file = os.path.expanduser( an_identity_file )
 an_identity_file = os.path.abspath( an_identity_file )
 
 a_login_name = an_options.login_name
-if a_login_name == None :
-    a_login_name = raw_input()
-    pass
 
 a_host_name = an_options.host_name
 if a_host_name == None :
@@ -117,12 +114,14 @@ a_command = an_options.command
 import sys
 an_engine = sys.argv[ 0 ]
 
-print_d( "%s --identity_file='%s' --login-name='%s' --host-name='%s' --host-port=%d\n" % 
-         ( an_engine, an_identity_file, a_login_name, a_host_name, a_host_port ) )
-print_d( 'ssh -i %s %s@%s:%d\n' % ( an_identity_file, a_login_name, a_host_name, a_host_port ) )
+print_d( "%s --identity-file='%s' --host-port=%d --login-name='%s' --host-name='%s'\n" % 
+         ( an_engine, an_identity_file, a_host_port, a_login_name, a_host_name ) )
+print_d( 'ssh -i %s -p %d %s@%s\n' % ( an_identity_file, a_host_port, a_login_name, a_host_name ) )
 
 
-print_d( "\n------------------------ Running actual functionality ---------------------\n" )
+#--------------------------------------------------------------------------------------
+# Running actual functionality
+
 import paramiko
 a_ssh_client = paramiko.SSHClient()
 a_ssh_client.set_missing_host_key_policy( paramiko.AutoAddPolicy() )
@@ -131,6 +130,12 @@ a_rsa_key = paramiko.RSAKey( filename = an_identity_file )
 a_ssh_connect = lambda : a_ssh_client.connect( hostname = a_host_name, port = a_host_port, username = a_login_name, pkey = a_rsa_key )
 
 amazon_ec2.wait_ssh( a_ssh_connect, a_ssh_client, a_command )
+
+# print_d( "\n----------------------- Additional customization steps --------------------\n" )
+# ssh_command( a_ssh_client, """sudo cat /etc/ssh/ssh_config""" )
+# ssh_command( a_ssh_client, """sudo sh -c 'echo "\n    ClientAliveInterval 10\n    Port 22" >> /etc/ssh/ssh_config'""" )
+# ssh_command( a_ssh_client, """sudo cat /etc/ssh/ssh_config""" )
+# ssh_command( a_ssh_client, """sudo /etc/init.d/ssh restart""" )
 
 
 print_d( "\n--------------------------- Closing SSH connection ------------------------\n" )

@@ -27,6 +27,7 @@ import balloon.common as common
 from balloon.common import print_d, print_e, sh_command, ssh_command, Timer
 
 import balloon.amazon as amazon
+from balloon.amazon import wait_activation, wait_ssh
 
 import sys, os, os.path, uuid
 
@@ -186,6 +187,7 @@ an_instance_type = 'm1.small'
 # an_instance_type = 'm1.large' # 64-bit version
 a_reservation = an_image.run( instance_type = an_instance_type, min_count = 1, max_count = 1, key_name = a_key_pair_name, security_groups = [ a_security_group.name ] )
 an_instance = a_reservation.instances[ 0 ]
+wait_activation( an_instance )
 
 # Instantiating ssh connection with root access
 import paramiko
@@ -197,8 +199,7 @@ a_username = 'ubuntu'
 a_ssh_connect = lambda : a_ssh_client.connect( hostname = an_instance.dns_name, port = 22, username = a_username, pkey = a_rsa_key )
 
 # Making sure that corresponding instances are ready to use
-from balloon.amazon import wait_activation
-wait_activation( an_instance, a_ssh_connect, a_ssh_client )
+wait_ssh( a_ssh_connect, a_ssh_client, 'echo  > /dev/null' )
 print_d( 'ssh -i %s %s@%s\n' % ( a_key_pair_file, a_username, an_instance.dns_name ) )
 
 print_d( "an_instance_reservation_time = %s, sec\n" % an_instance_reservation_time )

@@ -63,14 +63,13 @@ def add_parser_options( the_option_parser ) :
                                   dest = "max_count",
                                   help = "(\"%default\", by default)",
                                   default = "1" )
-    
-    the_option_parser.add_option( "--user-name",
-                                  metavar = "< SSH connection user name >",
-                                  action = "store",
-                                  dest = "user_name",
-                                  help = "(\"%default\", by default)",
-                                  default = "ubuntu" )
 
+    the_option_parser.add_option( "--ssh-host-port",
+                                  metavar = "< port to be used for ssh >",
+                                  type = "int",
+                                  action = "store",
+                                  dest = "ssh_host_port",
+                                  default = 22 )
     pass
 
 
@@ -81,9 +80,9 @@ def extract_options( the_options ) :
     an_instance_type = the_options.instance_type
     a_min_count = the_options.min_count
     a_max_count = the_options.max_count
-    a_user_name = the_options.user_name
+    a_ssh_host_port = the_options.ssh_host_port
 
-    return an_image_id, an_image_location, an_instance_type, a_min_count, a_max_count, a_user_name
+    return an_image_id, an_image_location, an_instance_type, a_min_count, a_max_count, a_ssh_host_port
 
 
 #--------------------------------------------------------------------------------------
@@ -93,9 +92,11 @@ def wait_ssh( the_ssh_connect, the_ssh_client, the_command ) :
         try :
             print_d( '.' )
             the_ssh_connect()
-            ssh_command( the_ssh_client, 'echo  > /dev/null' )
+            ssh_command( the_ssh_client, the_command )
             break
         except :
+            # import sys, traceback
+            # traceback.print_exc( file = sys.stderr )
             continue
         pass
 
@@ -103,7 +104,7 @@ def wait_ssh( the_ssh_connect, the_ssh_client, the_command ) :
 
 
 #--------------------------------------------------------------------------------------
-def wait_activation( the_instance, the_ssh_connect, the_ssh_client ) :
+def wait_activation( the_instance ) :
     while True :
         try :
             print_d( '%s ' % the_instance.update() )
@@ -123,16 +124,13 @@ def wait_activation( the_instance, the_ssh_connect, the_ssh_client ) :
         pass
     
     print_d( ' %s\n' % the_instance.update() )
-
-    wait_ssh( the_ssh_connect, the_ssh_client, 'echo  > /dev/null' )
-
     pass
 
 
 #--------------------------------------------------------------------------------------
 def run_instance( the_image_id, the_image_location, the_instance_type, 
-                  the_min_count, the_max_count, 
-                  the_user_name, the_aws_access_key_id, the_aws_secret_access_key ) :
+                  the_min_count, the_max_count, the_ssh_host_port,
+                  the_aws_access_key_id, the_aws_secret_access_key ) :
     print_d( "\n-------------------------- Defining image location ------------------------\n" )
     an_instance_reservation_time = Timer()
 
@@ -186,7 +184,7 @@ def run_instance( the_image_id, the_image_location, the_instance_type,
     # Asking EC2 to generate a new "sequirity group" & apply corresponding firewall permissions
     a_security_group = an_ec2_conn.create_security_group( an_unique_name, 'temporaly generated' )
     a_security_group.authorize( 'tcp', 80, 80, '0.0.0.0/0' )
-    a_security_group.authorize( 'tcp', 22, 22, '0.0.0.0/0' )
+    a_security_group.authorize( 'tcp', the_ssh_host_port, the_ssh_host_port, '0.0.0.0/0' )
     
     
     print_d( "\n---------------------------- Running actual image -------------------------\n" )
@@ -196,31 +194,12 @@ def run_instance( the_image_id, the_image_location, the_instance_type,
     an_instance = a_reservation.instances[ 0 ]
     print_d( 'a_reservation.instances = %s\n' % a_reservation.instances )
 
-
-    print_d( "\n-------------- Instantiating ssh connection with root access --------------\n" )
-    # Instantiating ssh connection with root access
-    import paramiko
-    a_ssh_client = paramiko.SSHClient()
-    a_ssh_client.set_missing_host_key_policy( paramiko.AutoAddPolicy() )
-    a_rsa_key = paramiko.RSAKey( filename = a_key_pair_file )
-
-    a_ssh_connect = lambda : a_ssh_client.connect( hostname = an_instance.dns_name, port = 22, username = the_user_name, pkey = a_rsa_key )
-
     # Making sure that corresponding instances are ready to use
-    wait_activation( an_instance, a_ssh_connect, a_ssh_client )
-    print_d( 'ssh -i %s %s@%s\n' % ( a_key_pair_file, the_user_name, an_instance.dns_name ) )
+    wait_activation( an_instance )
 
-    print_d( "an_instance_reservation_time = %s, sec\n" % an_instance_reservation_time )
+    print_d( 'ssh -i %s %s@%s\n' % ( a_key_pair_file, 'ubuntu', an_instance.dns_name ) )
 
-
-    # print_d( "\n----------------------- Additional customization steps --------------------\n" )
-    # ssh_command( a_ssh_client, """sudo cat /etc/ssh/ssh_config""" )
-    # ssh_command( a_ssh_client, """sudo sh -c 'echo "\n    ClientAliveInterval 10\n    Port 22" >> /etc/ssh/ssh_config'""" )
-    # ssh_command( a_ssh_client, """sudo cat /etc/ssh/ssh_config""" )
-    # ssh_command( a_ssh_client, """sudo /etc/init.d/ssh restart""" )
-
-
-    return an_instance, a_ssh_client
+    return an_instance, a_key_pair_file
 
 
 #--------------------------------------------------------------------------------------
