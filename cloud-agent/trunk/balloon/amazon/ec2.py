@@ -189,7 +189,7 @@ def run_instance( the_image_id, the_image_location, the_instance_type,
     a_security_group.authorize( 'tcp', 22, 22, '0.0.0.0/0' )
     
     
-    print_d( "\n-------------------------- Running actual the image -----------------------\n" )
+    print_d( "\n---------------------------- Running actual image -------------------------\n" )
     # Creating a EC2 "reservation" with all the parameters mentioned above
     a_reservation = an_image.run( instance_type = the_instance_type, min_count = the_min_count, max_count = the_max_count, 
                                   key_name = a_key_pair_name, security_groups = [ a_security_group.name ] )

@@ -44,7 +44,6 @@ a_help_formatter = IndentedHelpFormatter( width = 127 )
 from optparse import OptionParser
 a_option_parser = OptionParser( usage = an_usage_description, version="%prog 0.1", formatter = a_help_formatter )
 
-# Definition of the command line arguments
 common.add_parser_options( a_option_parser )
 amazon.add_parser_options( a_option_parser )
 amazon_ec2.add_parser_options( a_option_parser )
