@@ -34,9 +34,9 @@ from balloon.amazon import ec2 as amazon_ec2
 # Defining utility command-line interface
 
 an_usage_description = "%prog"
-an_usage_description += common.add_usage_description()
-an_usage_description += amazon.add_usage_description()
 an_usage_description += amazon_ec2.add_usage_description()
+an_usage_description += amazon.add_usage_description()
+an_usage_description += common.add_usage_description()
 
 from optparse import IndentedHelpFormatter
 a_help_formatter = IndentedHelpFormatter( width = 127 )
@@ -44,9 +44,9 @@ a_help_formatter = IndentedHelpFormatter( width = 127 )
 from optparse import OptionParser
 a_option_parser = OptionParser( usage = an_usage_description, version="%prog 0.1", formatter = a_help_formatter )
 
-common.add_parser_options( a_option_parser )
-amazon.add_parser_options( a_option_parser )
 amazon_ec2.add_parser_options( a_option_parser )
+amazon.add_parser_options( a_option_parser )
+common.add_parser_options( a_option_parser )
   
  
 #--------------------------------------------------------------------------------------
