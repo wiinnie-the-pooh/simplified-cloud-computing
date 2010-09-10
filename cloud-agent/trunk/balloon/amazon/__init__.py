@@ -136,8 +136,10 @@ def wait_activation( the_instance, the_ssh_connect, the_ssh_client ) :
     
     print_d( ' %s\n' % the_instance.update() )
 
+    print_d( "ssh'ing " )
     while True :
         try :
+            print_d( '.' )
             the_ssh_connect()
             ssh_command( the_ssh_client, 'echo  > /dev/null' )
             break
