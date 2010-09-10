@@ -23,6 +23,70 @@ import os, os.path
 
 
 #--------------------------------------------------------------------------------------
+def add_usage_description() :
+    return " --image-id='ami-2d4aa444' --image-location='us-east-1' --instance-type='m1.small' --min-count=1 --max-count=1 --user-name='ubuntu'"
+
+
+#--------------------------------------------------------------------------------------
+def add_parser_options( the_option_parser ) :
+    the_option_parser.add_option( "--image-id",
+                                  metavar = "< Amazon EC2 AMI ID >",
+                                  action = "store",
+                                  dest = "image_id",
+                                  help = "(\"%default\", by default)",
+                                  default = "ami-2d4aa444" ) # ami-fd4aa494
+    
+    the_option_parser.add_option( "--image-location",
+                                  metavar = "< location of the AMI >",
+                                  action = "store",
+                                  dest = "image_location",
+                                  help = "(\"%default\", by default)",
+                                  default = "us-east-1" )
+
+    the_option_parser.add_option( "--instance-type",
+                                  metavar = "< type of the instance in terms of EC2 >",
+                                  action = "store",
+                                  dest = "instance_type",
+                                  help = "(\"%default\", by default)",
+                                  default = "m1.small" ) # m1.large
+    
+    the_option_parser.add_option( "--min-count",
+                                  metavar = "< minimum number of instances to start >",
+                                  action = "store",
+                                  dest = "min_count",
+                                  help = "(\"%default\", by default)",
+                                  default = "1" )
+    
+    the_option_parser.add_option( "--max-count",
+                                  metavar = "< minimum number of instances to start >",
+                                  action = "store",
+                                  dest = "max_count",
+                                  help = "(\"%default\", by default)",
+                                  default = "1" )
+    
+    the_option_parser.add_option( "--user-name",
+                                  metavar = "< SSH connection user name >",
+                                  action = "store",
+                                  dest = "user_name",
+                                  help = "(\"%default\", by default)",
+                                  default = "ubuntu" )
+
+    pass
+
+
+#--------------------------------------------------------------------------------------
+def extract_options( the_options ) :
+    an_image_id = the_options.image_id
+    an_image_location = the_options.image_location
+    an_instance_type = the_options.instance_type
+    a_min_count = the_options.min_count
+    a_max_count = the_options.max_count
+    a_user_name = the_options.user_name
+
+    return an_image_id, an_image_location, an_instance_type, a_min_count, a_max_count, a_user_name
+
+
+#--------------------------------------------------------------------------------------
 def wait_ssh( the_ssh_connect, the_ssh_client, the_command ) :
     print_d( "ssh'ing " )
     while True :
@@ -144,7 +208,7 @@ def run_instance( the_image_id, the_image_location, the_instance_type,
 
     # Making sure that corresponding instances are ready to use
     wait_activation( an_instance, a_ssh_connect, a_ssh_client )
-    print_d( 'ssh -i %s %s@%s\n' % ( a_key_pair_file, a_username, an_instance.dns_name ) )
+    print_d( 'ssh -i %s %s@%s\n' % ( a_key_pair_file, the_user_name, an_instance.dns_name ) )
 
     print_d( "an_instance_reservation_time = %s, sec\n" % an_instance_reservation_time )
 
