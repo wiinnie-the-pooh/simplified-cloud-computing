@@ -132,9 +132,9 @@ a_ssh_connect = lambda : a_ssh_client.connect( hostname = a_host_name, port = a_
 amazon_ec2.wait_ssh( a_ssh_connect, a_ssh_client, a_command )
 
 # print_d( "\n----------------------- Additional customization steps --------------------\n" )
-# ssh_command( a_ssh_client, """sudo cat /etc/ssh/ssh_config""" )
+# ssh_command( a_ssh_client, """sudo cat /etc/ssh/sshd_config""" )
 # ssh_command( a_ssh_client, """sudo sh -c 'echo "\n    ClientAliveInterval 10\n    Port 22" >> /etc/ssh/ssh_config'""" )
-# ssh_command( a_ssh_client, """sudo cat /etc/ssh/ssh_config""" )
+# ssh_command( a_ssh_client, """sudo cat /etc/ssh/sshd_config""" )
 # ssh_command( a_ssh_client, """sudo /etc/init.d/ssh restart""" )
 
 
