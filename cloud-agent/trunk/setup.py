@@ -21,7 +21,6 @@
 This script is responsible for the task packaging and sending it for execution in a cloud
 """
 
-
 #--------------------------------------------------------------------------------------
 def sh_command( the_command ) :
     import os
@@ -37,12 +36,16 @@ from distutils.command.install import install
 
 class InstallCmd( install ) :
     def run( self ) :
+        sh_command( "apt-get -y install python-software-properties" )
+        sh_command( "apt-get -y install python-virtualenv" )
+
+        sh_command( "easy_install workerpool" )
+
         sh_command( "apt-get -y install python-boto" )
         sh_command( "apt-get -y install python-paramiko" )
-        sh_command( "apt-get -y install python-libcloud" )
-        sh_command( "apt-get -y install python-software-properties" )
-        sh_command( "add-apt-repository ppa:chmouel/rackspace-cloud-files" )
-        sh_command( "apt-get -y install python-rackspace-cloudfiles" )
+        # sh_command( "apt-get -y install python-libcloud" )
+        # sh_command( "add-apt-repository ppa:chmouel/rackspace-cloud-files" )
+        # sh_command( "apt-get -y install python-rackspace-cloudfiles" )
 
         install.run( self )
         pass
@@ -52,8 +55,9 @@ class InstallCmd( install ) :
 
 #--------------------------------------------------------------------------------------
 from distutils.core import setup, Extension
+import balloon
 
-setup( name = 'balloon',
+setup( name = balloon.NAME,
        description = 'Set of cloud computing automation utilities',
        long_description = 
        """These utilities provide seemless mode for:
@@ -68,7 +72,7 @@ setup( name = 'balloon',
        license = 'Apache License, Version 2.0',
        url = 'http://www.simplified-cloud-computing.org',
        platforms = [ 'linux' ],
-       version = '0.6-alfa',
+       version = balloon.VERSION,
        classifiers = [ 'Development Status :: 3 - Alpha',
                        'Environment :: Console',
                        'Intended Audience :: Science/Research',
