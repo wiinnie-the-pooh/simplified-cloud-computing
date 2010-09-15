@@ -59,6 +59,9 @@ import sys, os, os.path
 an_engine = sys.argv[ 0 ]
 an_engine_dir = os.path.abspath( os.path.dirname( sys.argv[ 0 ] ) )
 
+print_d( "%s --identity-file='%s' --host-port=%d --login-name='%s' --host-name='%s'\n" % 
+         ( an_engine, an_identity_file, a_host_port, a_login_name, a_host_name ) )
+
 
 #--------------------------------------------------------------------------------------
 # Running actual functionality

@@ -82,10 +82,6 @@ def extract_options( the_options ) :
 
     a_command = the_options.command
 
-    import sys
-    an_engine = sys.argv[ 0 ]
-    print_d( "%s --identity-file='%s' --host-port=%d --login-name='%s' --host-name='%s'\n" % 
-             ( an_engine, an_identity_file, a_host_port, a_login_name, a_host_name ) )
     print_d( 'ssh -i %s -p %d %s@%s\n' % ( an_identity_file, a_host_port, a_login_name, a_host_name ) )
 
     return an_identity_file, a_host_port, a_login_name, a_host_name, a_command

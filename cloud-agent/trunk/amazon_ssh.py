@@ -67,6 +67,11 @@ an_options, an_args = a_option_parser.parse_args()
 an_enable_debug = common.extract_options( an_options )
 an_identity_file, a_host_port, a_login_name, a_host_name, a_command = amazon_ssh.extract_options( an_options )
 
+import sys
+an_engine = sys.argv[ 0 ]
+a_call = "%s --identity-file='%s' --host-port=%d --login-name='%s' --host-name='%s'" % \
+    ( an_engine, an_identity_file, a_host_port, a_login_name, a_host_name )
+
 import os.path
 
 a_script_file = an_options.script_file
@@ -75,6 +80,7 @@ if a_script_file != None :
     if not os.path.isfile( a_script_file ) :
         a_option_parser.error( "--script-file='%s' must be a file" % a_script_file )
         pass
+    a_call += " --script-file='%s'" % a_script_file
     pass
 
 a_sequence_file = an_options.sequence_file
@@ -83,7 +89,10 @@ if a_sequence_file != None :
     if not os.path.isfile( a_sequence_file ) :
         a_option_parser.error( "--sequence-file='%s' must be a file" % a_sequence_file )
         pass
+    a_call += " --sequence-file='%s'" % a_sequence_file
     pass
+
+print_d( a_call + '\n' )
 
 
 #--------------------------------------------------------------------------------------
@@ -114,6 +123,8 @@ if a_script_file != None :
 if a_sequence_file != None :
     a_file = open( a_sequence_file )
     for a_line in a_file.readlines() :
+        if a_line[ 0 ] == "#" or a_line[ 0 ] == "\n" :
+            continue
         ssh_command( a_ssh_client, '%s' % a_line[ : -1 ] )
         pass
     a_file.close()
