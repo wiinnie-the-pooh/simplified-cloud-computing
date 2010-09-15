@@ -69,8 +69,8 @@ an_identity_file, a_host_port, a_login_name, a_host_name, a_command = amazon_ssh
 
 import sys
 an_engine = sys.argv[ 0 ]
-a_call = "%s --identity-file='%s' --host-port=%d --login-name='%s' --host-name='%s'" % \
-    ( an_engine, an_identity_file, a_host_port, a_login_name, a_host_name )
+a_call = "%s --identity-file='%s' --host-port=%d --login-name='%s' --host-name='%s' --command='%s'" % \
+    ( an_engine, an_identity_file, a_host_port, a_login_name, a_host_name, a_command )
 
 import os.path
 
@@ -108,7 +108,7 @@ amazon_ssh.wait_ssh( a_ssh_connect, a_ssh_client, a_command )
 
 if a_script_file != None :
     a_working_dir = ssh_command( a_ssh_client, 'python -c "import os, os.path, tempfile; print tempfile.mkdtemp()"' )[ 0 ][ : -1 ]
-    a_target_file = os.path.join( a_working_dir, os.path.basename( a_script_file ) )
+    a_target_script = os.path.join( a_working_dir, os.path.basename( a_script_file ) )
 
     a_sftp_client = a_ssh_client.open_sftp() # Instantiating a sftp client
     a_sftp_client.put( a_script_file, a_target_script )
