@@ -35,7 +35,7 @@ from balloon.amazon import ssh as amazon_ssh
 #--------------------------------------------------------------------------------------
 # Defining utility command-line interface
 
-an_usage_description = "%prog"
+an_usage_description = "%prog [ --file='./config_sshd.sh' ]"
 an_usage_description += amazon_ssh.add_usage_description()
 an_usage_description += common.add_usage_description()
 
@@ -45,6 +45,11 @@ a_help_formatter = IndentedHelpFormatter( width = 127 )
 from optparse import OptionParser
 a_option_parser = OptionParser( usage = an_usage_description, version="%prog 0.1", formatter = a_help_formatter )
 
+a_option_parser.add_option( "--file",
+                            metavar = "< command sequence file to be executed >",
+                            action = "store",
+                            dest = "file",
+                            default = None )
 amazon_ssh.add_parser_options( a_option_parser )
 common.add_parser_options( a_option_parser )
   
@@ -57,6 +62,15 @@ an_options, an_args = a_option_parser.parse_args()
 an_enable_debug = common.extract_options( an_options )
 an_identity_file, a_host_port, a_login_name, a_host_name, a_command = amazon_ssh.extract_options( an_options )
 
+import os.path
+a_file = an_options.file
+if a_file != None :
+    a_file = os.path.abspath( an_options.file )
+    if not os.path.isfile( a_file ) :
+        a_option_parser.error( "--file='%s' must be a file" % a_file )
+        print_e( "The task 'control' should contain 'launch' start-up script\n" )
+    pass
+
 
 #--------------------------------------------------------------------------------------
 # Running actual functionality
@@ -68,6 +82,19 @@ a_rsa_key = paramiko.RSAKey( filename = an_identity_file )
 
 a_ssh_connect = lambda : a_ssh_client.connect( hostname = a_host_name, port = a_host_port, username = a_login_name, pkey = a_rsa_key )
 amazon_ssh.wait_ssh( a_ssh_connect, a_ssh_client, a_command ) 
+
+if a_file != None :
+    a_working_dir = ssh_command( a_ssh_client, 'python -c "import os, os.path, tempfile; print tempfile.mkdtemp()"' )[ 0 ][ : -1 ]
+    a_target_file = os.path.join( a_working_dir, os.path.basename( a_file ) )
+
+    a_sftp_client = a_ssh_client.open_sftp() # Instantiating a sftp client
+    a_sftp_client.put( a_file, a_target_file )
+    
+    ssh_command( a_ssh_client, 'chmod 755 "%s"' % a_target_file )
+    ssh_command( a_ssh_client, '"%s"' % a_target_file )
+    
+    ssh_command( a_ssh_client, """python -c 'import shutil; shutil.rmtree( "%s" )'""" % a_working_dir )
+    pass
 
 
 print_d( "\n--------------------------- Closing SSH connection ------------------------\n" )

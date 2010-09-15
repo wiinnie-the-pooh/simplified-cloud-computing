@@ -111,14 +111,17 @@ def sh_command( the_command, the_printing_depth = 0 ) :
 
     a_return_code = os.waitpid( a_pipe.pid, 0 )[ 1 ]
 
-    for a_line in a_pipe.stderr.readlines() : print_d( "\t%s" % a_line )
-    for a_line in a_pipe.stdout.readlines() : print_d( "\t%s" % a_line )
+    a_stderr_lines = a_pipe.stderr.readlines()
+    for a_line in a_stderr_lines : print_d( "\t%s" % a_line )
+
+    a_stdout_lines = a_pipe.stdout.readlines()
+    for a_line in a_stdout_lines : print_d( "\t%s" % a_line )
 
     if a_return_code != 0 :
         os._exit( os.EX_USAGE )
         pass
     
-    pass
+    return a_stdout_lines
 
 
 #---------------------------------------------------------------------------
@@ -127,11 +130,14 @@ def ssh_command( the_ssh_client, the_command ) :
     print_d( "[%s]\n" % the_command )
     
     stdin, stdout, stderr = the_ssh_client.exec_command( the_command )
-    
-    for a_line in stderr.readlines() : print_d( "\t%s" % a_line )
-    for a_line in stdout.readlines() : print_d( "\t%s" % a_line )
 
-    pass
+    a_stderr_lines = stderr.readlines()
+    for a_line in a_stderr_lines : print_d( "\t%s" % a_line )
+
+    a_stdout_lines = stdout.readlines()
+    for a_line in a_stdout_lines : print_d( "\t%s" % a_line )
+
+    return a_stdout_lines
 
 
 #---------------------------------------------------------------------------
