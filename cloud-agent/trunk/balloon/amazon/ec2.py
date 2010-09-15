@@ -19,6 +19,8 @@
 #--------------------------------------------------------------------------------------
 from balloon.common import print_e, print_d, ssh_command, Timer
 
+from balloon.amazon.ssh import wait_ssh
+
 import os, os.path
 
 
@@ -83,24 +85,6 @@ def extract_options( the_options ) :
     a_ssh_host_port = the_options.ssh_host_port
 
     return an_image_id, an_image_location, an_instance_type, a_min_count, a_max_count, a_ssh_host_port
-
-
-#--------------------------------------------------------------------------------------
-def wait_ssh( the_ssh_connect, the_ssh_client, the_command ) :
-    print_d( "ssh'ing " )
-    while True :
-        try :
-            print_d( '.' )
-            the_ssh_connect()
-            ssh_command( the_ssh_client, the_command )
-            break
-        except :
-            # import sys, traceback
-            # traceback.print_exc( file = sys.stderr )
-            continue
-        pass
-
-    pass
 
 
 #--------------------------------------------------------------------------------------
