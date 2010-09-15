@@ -18,7 +18,7 @@
 
 #--------------------------------------------------------------------------------------
 """
-This script is responsible for the task packaging and sending it for execution in a cloud
+This script is responsible for the adjusting cloud instance ssh server configuration
 """
 
 

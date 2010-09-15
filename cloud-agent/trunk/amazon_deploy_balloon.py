@@ -18,7 +18,7 @@
 
 #--------------------------------------------------------------------------------------
 """
-This script is responsible for the task packaging and sending it for execution in a cloud
+This script is responsible for the deployng of the 'balloon' package into appointed cloud instance
 """
 
 
