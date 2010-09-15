@@ -23,7 +23,7 @@ set -x
 sudo apt-get -y install python-software-properties
 sudo add-apt-repository ppa:cae-team/ppa
 sudo apt-get update
-sudo apt-get install openfoam-dev-1.5
+sudo apt-get -y install openfoam-dev-1.5
 
 
 #--------------------------------------------------------------------------------------
