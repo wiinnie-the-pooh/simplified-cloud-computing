@@ -149,6 +149,7 @@ ssh_command( a_ssh_client, 'echo "export EC2_PRIVATE_KEY=%s" >> %s' % ( a_remote
 ssh_command( a_ssh_client, 'echo "export EC2_CERT=%s" >> %s' % ( a_remote_ec2_cert, a_remote_rcfile ) )
 
 ssh_command( a_ssh_client, 'source %s && env | grep -E "AWS|EC2"' % ( a_remote_rcfile ) )
+ssh_command( a_ssh_client, 'cat %s' % ( a_remote_rcfile ) )
 
 
 print_d( "\n--------------------------- Closing SSH connection ------------------------\n" )
