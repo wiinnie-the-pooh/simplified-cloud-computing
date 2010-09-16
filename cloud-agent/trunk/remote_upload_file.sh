@@ -28,7 +28,7 @@ mkdir --parents ${a_folder}
 wget ${a_source} --directory-prefix=${a_folder}
 
 a_study_name=`basename ${a_file_path}`
-source /mnt/.credentialsrc
+source /mnt/.aws_credentialsrc
 
 ./amazon_start_upload.py --study-name=${a_study_name} a_file_path | ./amazon_resume_upload.py
 

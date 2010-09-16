@@ -64,6 +64,18 @@ a_option_parser.add_option( "--aws-user-id",
                             dest = "aws_user_id",
                             help = "(\"%default\", by default)",
                             default = os.getenv( "AWS_USER_ID" ) )
+a_option_parser.add_option( "--ec2-private-key",
+                            metavar = "< EC2 Private Key >",
+                            action = "store",
+                            dest = "ec2_private_key",
+                            help = "(\"%default\", by default)",
+                            default = os.getenv( "EC2_PRIVATE_KEY" ) )
+a_option_parser.add_option( "--ec2-cert",
+                            metavar = "<EC2 Certificate >",
+                            action = "store",
+                            dest = "ec2_cert",
+                            help = "(\"%default\", by default)",
+                            default = os.getenv( "EC2_CERT" ) )
 amazon_ssh.add_parser_options( a_option_parser )
 amazon.add_parser_options( a_option_parser )
 common.add_parser_options( a_option_parser )
@@ -90,6 +102,16 @@ if AWS_USER_ID == None or AWS_USER_ID == "" :
     a_option_parser.error( "use '--aws-user-id' option to define proper AWS User ID" )
     pass
 
+EC2_PRIVATE_KEY = os.path.abspath( an_options.ec2_private_key )
+if not os.path.isfile( EC2_PRIVATE_KEY ) :
+    a_option_parser.error( "--ec2-private-key='%s' must be a file" % EC2_PRIVATE_KEY )
+    pass
+
+EC2_CERT = os.path.abspath( an_options.ec2_cert )
+if not os.path.isfile( EC2_CERT ) :
+    a_option_parser.error( "--ec2-cert='%s' must be a file" % EC2_CERT )
+    pass
+
 import sys
 an_engine = sys.argv[ 0 ]
 print_d( "%s --source-location='%s' --remote-location='%s' --identity-file='%s' --host-port=%d --login-name='%s' --host-name='%s'\n" % 
@@ -107,16 +129,24 @@ a_rsa_key = paramiko.RSAKey( filename = an_identity_file )
 a_ssh_connect = lambda : a_ssh_client.connect( hostname = a_host_name, port = a_host_port, username = a_login_name, pkey = a_rsa_key )
 amazon_ssh.wait_ssh( a_ssh_connect, a_ssh_client, a_command ) # Wait for execution of the first 'dummy' command
 
-sh_command( "rsync --rsh='ssh -i %s' --rsync-path='sudo rsync' %s/{cert,pk}-*.pem %s@%s:%s" % 
-            ( an_identity_file, a_source_location, a_login_name, a_host_name, a_remote_location ) )
+a_sftp_client = a_ssh_client.open_sftp()
+ssh_command( a_ssh_client, 'sudo mkdir --parents %s' % a_remote_location )
+ssh_command( a_ssh_client, 'sudo chmod 777 %s' % a_remote_location )
+ssh_command( a_ssh_client, 'ls --color=no -alF %s' % a_remote_location )
+
+a_remote_ec2_private_key = os.path.join( a_remote_location, os.path.basename( EC2_PRIVATE_KEY ) )
+a_sftp_client.put( EC2_PRIVATE_KEY, a_remote_ec2_private_key )
+
+a_remote_ec2_cert = os.path.join( a_remote_location, os.path.basename( EC2_CERT ) )
+a_sftp_client.put( EC2_CERT, a_remote_ec2_cert )
 
 a_remote_rcfile = os.path.join( a_remote_location, ".aws_credentialsrc")
-ssh_command( a_ssh_client, 'echo "# AWS Credentials" > %s' % ( a_working_dir, a_remote_rcfile ) )
-ssh_command( a_ssh_client, 'echo "export AWS_ACCESS_KEY_ID=%s" >> %s' % ( a_working_dir, AWS_ACCESS_KEY_ID, a_remote_rcfile ) )
-ssh_command( a_ssh_client, 'echo "export AWS_SECRET_ACCESS_KEY=%s" >> %s' % ( a_working_dir, AWS_SECRET_ACCESS_KEY, a_remote_rcfile ) )
-ssh_command( a_ssh_client, 'echo "export AWS_USER_ID=%s" >> %s' % ( a_working_dir, AWS_USER_ID, a_remote_rcfile ) )
-ssh_command( a_ssh_client, 'echo "export EC2_PRIVATE_KEY=`%s/pk-*.pem`" >> %s' % ( a_working_dir, a_remote_location, a_remote_rcfile ) )
-ssh_command( a_ssh_client, 'echo "export EC2_CERT=`%s/cert-*.pem`" >> %s' % ( a_working_dir, a_remote_location, a_remote_rcfile ) )
+ssh_command( a_ssh_client, 'echo "# AWS Credentials" > %s' % ( a_remote_rcfile ) )
+ssh_command( a_ssh_client, 'echo "export AWS_ACCESS_KEY_ID=%s" >> %s' % ( AWS_ACCESS_KEY_ID, a_remote_rcfile ) )
+ssh_command( a_ssh_client, 'echo "export AWS_SECRET_ACCESS_KEY=%s" >> %s' % ( AWS_SECRET_ACCESS_KEY, a_remote_rcfile ) )
+ssh_command( a_ssh_client, 'echo "export AWS_USER_ID=%s" >> %s' % ( AWS_USER_ID, a_remote_rcfile ) )
+ssh_command( a_ssh_client, 'echo "export EC2_PRIVATE_KEY=%s" >> %s' % ( a_remote_ec2_private_key, a_remote_rcfile ) )
+ssh_command( a_ssh_client, 'echo "export EC2_CERT=%s" >> %s' % ( a_remote_ec2_cert, a_remote_rcfile ) )
 
 ssh_command( a_ssh_client, 'source %s && env | grep -E "AWS|EC2"' % ( a_remote_rcfile ) )
 
