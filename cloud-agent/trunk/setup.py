@@ -54,6 +54,20 @@ class InstallCmd( install ) :
 
 
 #--------------------------------------------------------------------------------------
+import sys, os, os.path
+
+an_engine = sys.argv[ 0 ]
+an_engine_dir = os.path.abspath( os.path.dirname( sys.argv[ 0 ] ) )
+os.remove( os.path.join( an_engine_dir, 'MANIFEST' ) )
+
+a_scripts = []
+for a_file in os.listdir( os.curdir ) :
+    if not os.path.isfile( a_file ) :
+        continue
+    a_scripts.append( a_file )
+    pass
+
+#--------------------------------------------------------------------------------------
 from distutils.core import setup, Extension
 import balloon
 
@@ -83,21 +97,7 @@ setup( name = balloon.NAME,
                        'Topic :: Utilities' ],
        cmdclass = { 'install': InstallCmd },
        packages = [ 'balloon', 'balloon/common', 'balloon/amazon', 'balloon/rackspace' ],
-       scripts = [ 'rackspace_send2cloud.py', 
-                   'rackspace_fetch4queue.py', 
-                   'rackspace_clean.py', 
-                   'amazon_clean.py', 
-                   'amazon_download.py', 
-                   'amazon_ls.py', 
-                   'amazon_resume_upload.py', 
-                   'amazon_rm.py', 
-                   'amazon_s3clean.py', 
-                   'amazon_s3list.py', 
-                   'amazon_send2cloud.py', 
-                   'amazon_start_upload.py', 
-                   'amazon_test.py', 
-                   'amazon_threaded_download.py', 
-                   'amazon_upload.py' ] )
+       scripts = a_scripts )
 
 
 #--------------------------------------------------------------------------------------

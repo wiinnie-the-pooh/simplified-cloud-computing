@@ -20,17 +20,17 @@
 # This command sequence adjusts cloud instance user profile
 set -x 
 
-a_source = "http://appldnld.apple.com/iTunes10/061-8246.20100901.Zxsew3/iTunesSetup.exe"
+a_source="http://appldnld.apple.com/iTunes10/061-8246.20100901.Zxsew3/iTunesSetup.exe"
 
-a_file_path = `echo ${a_source} | sed -e 's%^http:/%%g'`
-a_folder = `dirname ${a_file_path}`
+a_file_path=`echo ${a_source} | sed -e 's%^http:/%%g'`
+a_folder=`dirname ${a_file_path}`
 mkdir --parents ${a_folder}
 wget ${a_source} --directory-prefix=${a_folder}
 
 a_study_name=`basename ${a_file_path}`
 source /mnt/.aws_credentialsrc
 
-amazon_start_upload.py --study-name=${a_study_name} a_file_path | amazon_resume_upload.py
+amazon_start_upload.py --study-name=${a_study_name} ${a_file_path} | amazon_resume_upload.py
 
 
 #--------------------------------------------------------------------------------------
