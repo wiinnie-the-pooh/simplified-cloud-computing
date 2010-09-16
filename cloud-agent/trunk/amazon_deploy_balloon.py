@@ -101,7 +101,7 @@ print_d( "\n--------------------------- Closing SSH connection -----------------
 a_ssh_client.close()
 
 import shutil
-shutil.rmtree( a_working_dir ) # Cleaning tempral working folder
+shutil.rmtree( a_working_dir ) # Cleaning temporal working folder
 
 print an_identity_file
 print a_host_name
