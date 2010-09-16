@@ -50,6 +50,11 @@ a_option_parser.add_option( "--script-file",
                             action = "store",
                             dest = "script_file",
                             default = None )
+a_option_parser.add_option( "--script-args",
+                            metavar = "< arguments for the remote script execution >",
+                            action = "store",
+                            dest = "script_args",
+                            default = "" )
 a_option_parser.add_option( "--sequence-file",
                             metavar = "< file with sequence of commands to be executed >",
                             action = "store",
@@ -75,12 +80,16 @@ a_call = "%s --identity-file='%s' --host-port=%d --login-name='%s' --host-name='
 import os.path
 
 a_script_file = an_options.script_file
+a_script_args = an_options.script_args
 if a_script_file != None :
     a_script_file = os.path.abspath( a_script_file )
     if not os.path.isfile( a_script_file ) :
         a_option_parser.error( "--script-file='%s' must be a file" % a_script_file )
         pass
     a_call += " --script-file='%s'" % a_script_file
+    if a_script_args != "" :
+        a_call += " --script-args='%s'" % a_script_args
+        pass
     pass
 
 a_sequence_file = an_options.sequence_file
@@ -114,7 +123,7 @@ if a_script_file != None :
     a_sftp_client.put( a_script_file, a_target_script )
     
     ssh_command( a_ssh_client, 'chmod 755 "%s"' % a_target_script )
-    ssh_command( a_ssh_client, 'sudo "%s"' % a_target_script )
+    ssh_command( a_ssh_client, 'sudo "%s" %s' % ( a_target_script, a_script_args ) )
     
     ssh_command( a_ssh_client, """python -c 'import shutil; shutil.rmtree( "%s" )'""" % a_working_dir )
     pass

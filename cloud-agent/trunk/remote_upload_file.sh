@@ -20,7 +20,7 @@
 # This command sequence adjusts cloud instance user profile
 set -x 
 
-a_source="http://appldnld.apple.com/iTunes10/061-8246.20100901.Zxsew3/iTunesSetup.exe"
+a_source="$1"
 
 a_file_path=`echo ${a_source} | sed -e 's%^http:/%%g'`
 a_folder=`dirname ${a_file_path}`
