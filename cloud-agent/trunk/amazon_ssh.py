@@ -114,7 +114,7 @@ if a_script_file != None :
     a_sftp_client.put( a_script_file, a_target_script )
     
     ssh_command( a_ssh_client, 'chmod 755 "%s"' % a_target_script )
-    ssh_command( a_ssh_client, '"%s"' % a_target_script )
+    ssh_command( a_ssh_client, 'sudo "%s"' % a_target_script )
     
     ssh_command( a_ssh_client, """python -c 'import shutil; shutil.rmtree( "%s" )'""" % a_working_dir )
     pass
@@ -125,7 +125,7 @@ if a_sequence_file != None :
     for a_line in a_file.readlines() :
         if a_line[ 0 ] == "#" or a_line[ 0 ] == "\n" :
             continue
-        ssh_command( a_ssh_client, '%s' % a_line[ : -1 ] )
+        ssh_command( a_ssh_client, 'sudo %s' % a_line[ : -1 ] )
         pass
     a_file.close()
     pass

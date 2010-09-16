@@ -58,7 +58,10 @@ import sys, os, os.path
 
 an_engine = sys.argv[ 0 ]
 an_engine_dir = os.path.abspath( os.path.dirname( sys.argv[ 0 ] ) )
-os.remove( os.path.join( an_engine_dir, 'MANIFEST' ) )
+a_manifest_file = os.path.join( an_engine_dir, 'MANIFEST' )
+if os.path.isfile( a_manifest_file ) :
+    os.remove( a_manifest_file )
+    pass
 
 a_scripts = []
 for a_file in os.listdir( os.curdir ) :
