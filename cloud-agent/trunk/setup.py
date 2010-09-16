@@ -64,11 +64,17 @@ if os.path.isfile( a_manifest_file ) :
     pass
 
 a_scripts = []
+an_engine = os.path.basename( an_engine )
 for a_file in os.listdir( os.curdir ) :
-    if not os.path.isfile( a_file ) :
+    if a_file == an_engine :
         continue
-    a_scripts.append( a_file )
+    if os.path.isfile( a_file ) and os.access( a_file, os.X_OK ) :
+        a_scripts.append( a_file )
+        pass
     pass
+
+print a_scripts
+
 
 #--------------------------------------------------------------------------------------
 from distutils.core import setup, Extension
