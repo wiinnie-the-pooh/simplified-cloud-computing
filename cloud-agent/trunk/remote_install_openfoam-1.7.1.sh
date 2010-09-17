@@ -25,7 +25,8 @@ sudo add-apt-repository ppa:cae-team/ppa
 sudo apt-get update
 
 wget http://garr.dl.sourceforge.net/project/foam/foam/1.7.1/openfoam171_0-1_amd64.deb
-sudo apt-get -y install ./openfoam171_0-1_amd64.deb
+sudo dpkg --install ./openfoam171_0-1_amd64.deb
+sudo apt-get -y -f install
 
 
 #--------------------------------------------------------------------------------------
