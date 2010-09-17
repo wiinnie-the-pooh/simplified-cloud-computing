@@ -142,7 +142,7 @@ a_ssh_client.set_missing_host_key_policy( paramiko.AutoAddPolicy() )
 a_username = 'root'
 a_ssh_host_port = 22
 a_password = a_node.extra.get( 'password' )
-print_d( 'sshpass -p %s ssh %s@%s\n' % ( a_password, a_username, a_node.public_ip[ 0 ] ) )
+print_d( 'sshpass -p %s ssh -p %d %s@%s\n' % ( a_password, a_ssh_host_port, a_username, a_node.public_ip[ 0 ] ) )
 
 a_ssh_connect = lambda : a_ssh_client.connect( hostname = a_node.public_ip[ 0 ], port = a_ssh_host_port, username = a_username, password = a_password )
 wait_ssh( a_ssh_connect, a_ssh_client, 'echo  > /dev/null' ) # Wait for execution of the first 'dummy' command
