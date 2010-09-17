@@ -16,7 +16,7 @@
 
 
 #--------------------------------------------------------------------------------------
-from balloon.common import print_e, print_d, ssh_command, Timer
+from balloon.common import print_e, print_d, ssh_command, Timer, wait_ssh
 
 
 #--------------------------------------------------------------------------------------
@@ -85,24 +85,6 @@ def extract_options( the_options ) :
     print_d( 'ssh -i %s -p %d %s@%s\n' % ( an_identity_file, a_host_port, a_login_name, a_host_name ) )
 
     return an_identity_file, a_host_port, a_login_name, a_host_name, a_command
-
-
-#--------------------------------------------------------------------------------------
-def wait_ssh( the_ssh_connect, the_ssh_client, the_command ) :
-    print_d( "ssh'ing " )
-    while True :
-        try :
-            print_d( '.' )
-            the_ssh_connect()
-            ssh_command( the_ssh_client, the_command )
-            break
-        except :
-            # import sys, traceback
-            # traceback.print_exc( file = sys.stderr )
-            continue
-        pass
-
-    pass
 
 
 #--------------------------------------------------------------------------------------

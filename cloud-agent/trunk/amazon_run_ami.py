@@ -54,7 +54,7 @@ common.add_parser_options( a_option_parser )
 
 an_options, an_args = a_option_parser.parse_args()
 
-common.extract_options( an_options )
+an_enable_debug = common.extract_options( an_options )
 
 AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY = amazon.extract_options( an_options )
 
