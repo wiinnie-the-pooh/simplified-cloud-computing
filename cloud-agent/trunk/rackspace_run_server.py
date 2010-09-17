@@ -34,7 +34,7 @@ import sys, os, os.path, uuid
 #--------------------------------------------------------------------------------------
 # Defining utility command-line interface
 
-an_usage_description = "%prog"
+an_usage_description = "%prog --image-id=49 --size-id=1"
 an_usage_description += common.add_usage_description()
 an_usage_description += rackspace.add_usage_description()
 
