@@ -46,8 +46,11 @@ def extract_options( the_options ) :
     ENABLE_DEBUG = the_options.enable_debug
 
     if the_options.enable_debug :
+        import os.path
+        a_filename = os.path.expanduser( "~/balloon.log" )
+
         import logging
-        logging.basicConfig( filename = "~/balloon.log", level = logging.DEBUG )
+        logging.basicConfig( filename = a_filename, level = logging.DEBUG )
 
         pass
 
