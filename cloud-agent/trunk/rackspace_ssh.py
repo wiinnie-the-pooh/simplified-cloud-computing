@@ -43,7 +43,7 @@ from optparse import IndentedHelpFormatter
 a_help_formatter = IndentedHelpFormatter( width = 127 )
 
 from optparse import OptionParser
-a_option_parser = OptionParser( usage = an_usage_description, version="%prog 0.1", formatter = a_help_formatter )
+an_option_parser = OptionParser( usage = an_usage_description, version="%prog 0.1", formatter = a_help_formatter )
 
 an_option_parser.add_option( "--password",
                              metavar = "< password for the given host and user name >",
@@ -88,7 +88,6 @@ an_option_parser.add_option( "--sequence-file",
                              action = "store",
                              dest = "sequence_file",
                              default = None )
-amazon_ssh.add_parser_options( an_option_parser )
 common.add_parser_options( an_option_parser )
   
  
@@ -178,7 +177,7 @@ a_ssh_client = paramiko.SSHClient()
 a_ssh_client.set_missing_host_key_policy( paramiko.AutoAddPolicy() )
 
 a_ssh_connect = lambda : a_ssh_client.connect( hostname = a_host_name, port = a_host_port, username = a_login_name, password = a_password )
-amazon_ssh.wait_ssh( a_ssh_connect, a_ssh_client, a_command ) 
+wait_ssh( a_ssh_connect, a_ssh_client, a_command ) 
 
 if a_scripts != None :
     for an_id in range( len( a_scripts ) ) :
