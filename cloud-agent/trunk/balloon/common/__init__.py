@@ -47,7 +47,7 @@ def extract_options( the_options ) :
 
     if the_options.enable_debug :
         import logging
-        logging.basicConfig( filename = "balloon.log", level = logging.DEBUG )
+        logging.basicConfig( filename = "~/balloon.log", level = logging.DEBUG )
 
         pass
 
