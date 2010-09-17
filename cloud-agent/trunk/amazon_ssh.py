@@ -35,7 +35,7 @@ from balloon.amazon import ssh as amazon_ssh
 #--------------------------------------------------------------------------------------
 # Defining utility command-line interface
 
-an_usage_description = "%prog [ --script-file='./config_sshd.sh' ] [ --sequence-file='./config_sshd.sh' ]"
+an_usage_description = "%prog [ --script-file='./remote_adjust_profile.sh|./remote_update_sources-list.sh' ] [ --sequence-file='./remote_sshd-config.sh' ]"
 an_usage_description += amazon_ssh.add_usage_description()
 an_usage_description += common.add_usage_description()
 
@@ -46,12 +46,12 @@ from optparse import OptionParser
 a_option_parser = OptionParser( usage = an_usage_description, version="%prog 0.1", formatter = a_help_formatter )
 
 a_option_parser.add_option( "--script-file",
-                            metavar = "< script to be executed on the remote host >",
+                            metavar = "< script (or list of scripts separated by '|') to be executed on the remote host >",
                             action = "store",
                             dest = "script_file",
                             default = None )
 a_option_parser.add_option( "--script-args",
-                            metavar = "< arguments for the remote script execution >",
+                            metavar = "< arguments (or list of arguments separated by '|') for the remote script execution >",
                             action = "store",
                             dest = "script_args",
                             default = "" )
@@ -79,13 +79,31 @@ a_call = "%s --identity-file='%s' --host-port=%d --login-name='%s' --host-name='
 
 import os.path
 
+an_args = None
+a_scripts = None
 a_script_file = an_options.script_file
-a_script_args = an_options.script_args
 if a_script_file != None :
-    a_script_file = os.path.abspath( a_script_file )
-    if not os.path.isfile( a_script_file ) :
-        a_option_parser.error( "--script-file='%s' must be a file" % a_script_file )
+    # First, check that all appointed scripts exists and regular files
+    a_scripts = a_script_file.split( '|' )
+    for a_script in a_scripts :
+        if not os.path.isfile( a_script ) :
+            a_option_parser.error( "--script-file='%s' must be a file" % a_script )
+            pass
         pass
+
+    # Next, check wether number of 'scripts' match number of script's args
+    a_script_args = an_options.script_args
+    if a_script_args != "" :
+        an_args = a_script_args.split( '|' )
+        if len( an_args ) != len( a_scripts ) :
+            a_option_parser.error( "number of items in --script-file='%s'"
+                                   " must the same or zero as for --script-args='%s' " 
+                                   % ( a_script_files, a_script_args ) )
+            pass
+    else :
+        an_args = [ "" for a_script in a_scripts ]
+        pass
+    
     a_call += " --script-file='%s'" % a_script_file
     if a_script_args != "" :
         a_call += " --script-args='%s'" % a_script_args
@@ -115,7 +133,10 @@ a_rsa_key = paramiko.RSAKey( filename = an_identity_file )
 a_ssh_connect = lambda : a_ssh_client.connect( hostname = a_host_name, port = a_host_port, username = a_login_name, pkey = a_rsa_key )
 amazon_ssh.wait_ssh( a_ssh_connect, a_ssh_client, a_command ) 
 
-if a_script_file != None :
+for an_id in range( len( a_scripts ) ) :
+    a_script_file = a_scripts[ an_id ]
+    a_script_args = an_args[ an_id ]
+
     a_working_dir = ssh_command( a_ssh_client, 'python -c "import os, os.path, tempfile; print tempfile.mkdtemp()"' )[ 0 ][ : -1 ]
     a_target_script = os.path.join( a_working_dir, os.path.basename( a_script_file ) )
 
