@@ -133,20 +133,22 @@ a_rsa_key = paramiko.RSAKey( filename = an_identity_file )
 a_ssh_connect = lambda : a_ssh_client.connect( hostname = a_host_name, port = a_host_port, username = a_login_name, pkey = a_rsa_key )
 amazon_ssh.wait_ssh( a_ssh_connect, a_ssh_client, a_command ) 
 
-for an_id in range( len( a_scripts ) ) :
-    a_script_file = a_scripts[ an_id ]
-    a_script_args = an_args[ an_id ]
+if a_scripts != None :
+    for an_id in range( len( a_scripts ) ) :
+        a_script_file = a_scripts[ an_id ]
+        a_script_args = an_args[ an_id ]
+        
+        a_working_dir = ssh_command( a_ssh_client, 'python -c "import os, os.path, tempfile; print tempfile.mkdtemp()"' )[ 0 ][ : -1 ]
+        a_target_script = os.path.join( a_working_dir, os.path.basename( a_script_file ) )
+        
+        a_sftp_client = a_ssh_client.open_sftp() # Instantiating a sftp client
+        a_sftp_client.put( a_script_file, a_target_script )
+        
+        ssh_command( a_ssh_client, 'chmod 755 "%s"' % a_target_script )
+        ssh_command( a_ssh_client, 'sudo "%s" %s' % ( a_target_script, a_script_args ) )
 
-    a_working_dir = ssh_command( a_ssh_client, 'python -c "import os, os.path, tempfile; print tempfile.mkdtemp()"' )[ 0 ][ : -1 ]
-    a_target_script = os.path.join( a_working_dir, os.path.basename( a_script_file ) )
-
-    a_sftp_client = a_ssh_client.open_sftp() # Instantiating a sftp client
-    a_sftp_client.put( a_script_file, a_target_script )
-    
-    ssh_command( a_ssh_client, 'chmod 755 "%s"' % a_target_script )
-    ssh_command( a_ssh_client, 'sudo "%s" %s' % ( a_target_script, a_script_args ) )
-    
-    ssh_command( a_ssh_client, """python -c 'import shutil; shutil.rmtree( "%s" )'""" % a_working_dir )
+        ssh_command( a_ssh_client, """python -c 'import shutil; shutil.rmtree( "%s" )'""" % a_working_dir )
+        pass
     pass
 
 

@@ -92,6 +92,26 @@ def print_i( the_message, the_printing_depth = 0 ) :
 
 
 #---------------------------------------------------------------------------
+def print_list( the_caption, the_list, the_numbering = True, the_printing_depth = 0 ) :
+    "Optional printing of debug messages"
+    if ENABLE_DEBUG : 
+        sys.stderr.write( get_preffix( "    ", the_printing_depth ) + the_caption )
+        if the_numbering == True :
+            for an_id in range( len( the_list ) ) :
+                an_item = the_list[ an_id ]
+                sys.stderr.write( get_preffix( "    ", the_printing_depth + 1 ) + "%02d : [ %s ]\n" % ( an_id, an_item ) )
+                pass
+        else :
+            for an_item in the_list :
+                an_item = the_list[ an_id ]
+                sys.stderr.write( get_preffix( "    ", the_printing_depth + 1 ) + "[ %s ]\n" % ( an_item ) )
+                pass
+            pass
+        pass
+    pass
+
+
+#---------------------------------------------------------------------------
 def print_e( the_message ) :
     "Printing of error message and quit"
     print_d( "\n---------------------------------------------------------------------------\n" )

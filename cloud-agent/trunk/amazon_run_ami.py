@@ -61,16 +61,30 @@ AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY = amazon.extract_options( an_options )
 an_image_id, an_image_location, an_instance_type, a_min_count, a_max_count, a_ssh_host_port = amazon_ec2.extract_options( an_options )
 
 
-#--------------------------------------------------------------------------------------
-# Running actual functionality
-
+print_d( "\n----------------------- Running actual functionality ----------------------\n" )
 an_instance, a_key_pair_file = amazon_ec2.run_instance( an_image_id, an_image_location, an_instance_type, 
                                                         a_min_count, a_max_count, a_ssh_host_port,
+
                                                         AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY )
+
+
+print_d( "\n------------------ Apply workaround for ssh connection bug asap -----------\n" )
+import paramiko
+a_ssh_client = paramiko.SSHClient()
+a_ssh_client.set_missing_host_key_policy( paramiko.AutoAddPolicy() )
+a_rsa_key = paramiko.RSAKey( filename = a_key_pair_file )
+
+from balloon.common import wait_ssh
+a_ssh_connect = lambda : a_ssh_client.connect( hostname = an_instance.dns_name, port = a_ssh_host_port, username = 'ubuntu', pkey = a_rsa_key )
+wait_ssh( a_ssh_connect, a_ssh_client, 'sudo chmod -x /etc/update-motd.d/90-updates-available' ) 
+
+a_ssh_client.close()
+
+
+print_d( "\n------------------ Printing succussive pipeline arguments -----------------\n" )
 print a_key_pair_file
 print an_instance.dns_name
 print a_ssh_host_port
-
 
 
 print_d( "\n-------------------------------------- OK ---------------------------------\n" )
