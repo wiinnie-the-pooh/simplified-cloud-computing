@@ -128,18 +128,23 @@ print_d( "a_node_name = '%s'\n" % a_node_name )
 a_node = a_libcloud_conn.create_node( name = a_node_name, image = an_image , size = a_size ) 
 print_d( "a_node = %r\n" % a_node )
 
-a_username = 'root'
-a_ssh_host_port = 22
-a_password = a_node.extra.get( 'password' )
-print_d( 'sshpass -p %s ssh -p %d %s@%s\n' % ( a_password, a_ssh_host_port, a_username, a_node.public_ip[ 0 ] ) )
-
 print_d( "an_instance_reservation_time = %s, sec\n" % an_instance_reservation_time )
 
 
 print_d( "\n------------------ Printing succussive pipeline arguments -----------------\n" )
+a_password = a_node.extra.get( 'password' )
+an_identity_file = "" # No identity file
+a_host_port = 22
+a_login_name = 'root'
+a_host_name = a_node.public_ip[ 0 ]
+
+print_d( 'sshpass -p %s ssh -p %d %s@%s\n' % ( a_password, a_host_port, a_login_name, a_host_name ) )
+
 print a_password
-print a_node.public_ip[ 0 ]
-print a_ssh_host_port
+print an_identity_file
+print a_host_port
+print a_login_name
+print a_host_name
 
 
 print_d( "\n-------------------------------------- OK ---------------------------------\n" )

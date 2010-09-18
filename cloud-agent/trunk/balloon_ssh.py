@@ -27,16 +27,16 @@ This script helps to perform a command into remote cloud instance through ssh pr
 #--------------------------------------------------------------------------------------
 import balloon.common as common
 from balloon.common import print_d, print_e, sh_command, ssh_command, Timer
+from balloon.common import ssh as common_ssh
 
 from balloon import amazon
-from balloon.amazon import ssh as amazon_ssh
 
 
 #--------------------------------------------------------------------------------------
 # Defining utility command-line interface
 
 an_usage_description = "%prog [ --script-file='./remote_adjust_profile.sh|./remote_update_sources-list.sh' ] [ --sequence-file='./remote_sshd-config.sh' ]"
-an_usage_description += amazon_ssh.add_usage_description()
+an_usage_description += common_ssh.add_usage_description()
 an_usage_description += common.add_usage_description()
 
 from optparse import IndentedHelpFormatter
@@ -60,7 +60,7 @@ a_option_parser.add_option( "--sequence-file",
                             action = "store",
                             dest = "sequence_file",
                             default = None )
-amazon_ssh.add_parser_options( a_option_parser )
+common_ssh.add_parser_options( a_option_parser )
 common.add_parser_options( a_option_parser )
   
  
@@ -70,7 +70,7 @@ common.add_parser_options( a_option_parser )
 an_options, an_args = a_option_parser.parse_args()
 
 an_enable_debug = common.extract_options( an_options )
-an_identity_file, a_host_port, a_login_name, a_host_name, a_command = amazon_ssh.extract_options( an_options )
+a_password, an_identity_file, a_host_port, a_login_name, a_host_name, a_command = common_ssh.extract_options( an_options )
 
 import sys
 an_engine = sys.argv[ 0 ]
@@ -122,16 +122,19 @@ if a_sequence_file != None :
 print_d( a_call + '\n' )
 
 
-#--------------------------------------------------------------------------------------
-# Running actual functionality
-
+print_d( "\n----------------------- Running actual functionality ----------------------\n" )
 import paramiko
 a_ssh_client = paramiko.SSHClient()
 a_ssh_client.set_missing_host_key_policy( paramiko.AutoAddPolicy() )
-a_rsa_key = paramiko.RSAKey( filename = an_identity_file )
 
-a_ssh_connect = lambda : a_ssh_client.connect( hostname = a_host_name, port = a_host_port, username = a_login_name, pkey = a_rsa_key )
-amazon_ssh.wait_ssh( a_ssh_connect, a_ssh_client, a_command ) 
+a_ssh_connect = None
+if a_password != "" :
+    a_ssh_connect = lambda : a_ssh_client.connect( hostname = a_host_name, port = a_host_port, username = a_login_name, password = a_password )
+else :
+    a_rsa_key = paramiko.RSAKey( filename = an_identity_file )
+    a_ssh_connect = lambda : a_ssh_client.connect( hostname = a_host_name, port = a_host_port, username = a_login_name, pkey = a_rsa_key )
+    pass
+common_ssh.wait_ssh( a_ssh_connect, a_ssh_client, a_command ) 
 
 if a_scripts != None :
     for an_id in range( len( a_scripts ) ) :
@@ -162,13 +165,11 @@ if a_sequence_file != None :
     a_file.close()
     pass
 
-
-print_d( "\n--------------------------- Closing SSH connection ------------------------\n" )
 a_ssh_client.close()
 
-print an_identity_file
-print a_host_name
-print a_host_port
+
+print_d( "\n------------------ Printing succussive pipeline arguments -----------------\n" )
+common_ssh.print_options( an_options )
 
 
 print_d( "\n-------------------------------------- OK ---------------------------------\n" )

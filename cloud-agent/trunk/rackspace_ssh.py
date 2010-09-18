@@ -95,12 +95,14 @@ common.add_parser_options( an_option_parser )
 # Extracting and verifying command-line arguments
 
 an_options, an_args = an_option_parser.parse_args()
-
+print an_options, an_args
 an_enable_debug = common.extract_options( an_options )
 
 a_password = an_options.password
+print a_password
 if a_password == None :
     a_password = raw_input()
+    print a_password
     pass
 
 a_host_port = an_options.host_port

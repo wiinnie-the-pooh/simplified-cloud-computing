@@ -19,8 +19,6 @@
 #--------------------------------------------------------------------------------------
 from balloon.common import print_e, print_d, ssh_command, Timer
 
-from balloon.amazon.ssh import wait_ssh
-
 import os, os.path
 
 
