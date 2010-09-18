@@ -62,7 +62,6 @@ def compose_call( the_options ) :
     return a_call
 
 
-
 #--------------------------------------------------------------------------------------
 def extract_options( the_options ) :
     RACKSPACE_USER = the_options.rackspace_user

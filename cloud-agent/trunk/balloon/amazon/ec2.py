@@ -17,7 +17,7 @@
 
 
 #--------------------------------------------------------------------------------------
-from balloon.common import print_e, print_d, ssh_command, Timer
+from balloon.common import print_e, print_d, Timer
 
 import os, os.path
 
@@ -52,25 +52,49 @@ def add_parser_options( the_option_parser ) :
     
     the_option_parser.add_option( "--min-count",
                                   metavar = "< minimum number of instances to start >",
+                                  type = "int",
                                   action = "store",
                                   dest = "min_count",
-                                  help = "(\"%default\", by default)",
-                                  default = "1" )
+                                  help = "(%default, by default)",
+                                  default = 1 )
     
     the_option_parser.add_option( "--max-count",
                                   metavar = "< minimum number of instances to start >",
+                                  type = "int",
                                   action = "store",
                                   dest = "max_count",
-                                  help = "(\"%default\", by default)",
-                                  default = "1" )
+                                  help = "(%default, by default)",
+                                  default = 1 )
 
-    the_option_parser.add_option( "--ssh-host-port",
+    the_option_parser.add_option( "--host-port",
                                   metavar = "< port to be used for ssh >",
                                   type = "int",
                                   action = "store",
-                                  dest = "ssh_host_port",
+                                  dest = "host_port",
                                   default = 22 )
     pass
+
+
+#--------------------------------------------------------------------------------------
+def unpuck( the_options ) :
+    an_image_id = the_options.image_id
+    an_image_location = the_options.image_location
+    an_instance_type = the_options.instance_type
+    a_min_count = the_options.min_count
+    a_max_count = the_options.max_count
+    a_host_port = the_options.host_port
+
+    return an_image_id, an_image_location, an_instance_type, a_min_count, a_max_count, a_host_port
+
+
+#--------------------------------------------------------------------------------------
+def compose_call( the_options ) :
+    an_image_id, an_image_location, an_instance_type, a_min_count, a_max_count, a_host_port = unpuck( the_options )
+
+    a_call = "--image-id='%s' --image-location='%s' --instance-type='%s' --min-count=%d --max-count=%d --host_port=%d" % \
+        ( an_image_id, an_image_location, an_instance_type, a_min_count, a_max_count, a_host_port )
+    
+    return a_call
 
 
 #--------------------------------------------------------------------------------------
@@ -80,13 +104,13 @@ def extract_options( the_options ) :
     an_instance_type = the_options.instance_type
     a_min_count = the_options.min_count
     a_max_count = the_options.max_count
-    a_ssh_host_port = the_options.ssh_host_port
+    a_host_port = the_options.host_port
 
-    return an_image_id, an_image_location, an_instance_type, a_min_count, a_max_count, a_ssh_host_port
+    return an_image_id, an_image_location, an_instance_type, a_min_count, a_max_count, a_host_port
 
 
 #--------------------------------------------------------------------------------------
-def wait_activation( the_instance ) :
+def wait4activation( the_instance ) :
     while True :
         try :
             print_d( '%s ' % the_instance.update() )
@@ -111,7 +135,7 @@ def wait_activation( the_instance ) :
 
 #--------------------------------------------------------------------------------------
 def run_instance( the_image_id, the_image_location, the_instance_type, 
-                  the_min_count, the_max_count, the_ssh_host_port,
+                  the_min_count, the_max_count, the_host_port,
                   the_aws_access_key_id, the_aws_secret_access_key ) :
     print_d( "\n-------------------------- Defining image location ------------------------\n" )
     an_instance_reservation_time = Timer()
@@ -157,19 +181,19 @@ def run_instance( the_image_id, the_image_location, the_instance_type,
     # Saving the generated ssh "key pair" locally
     a_key_pair_dir = os.path.expanduser( "~/.ssh")
     a_key_pair.save( a_key_pair_dir )
-    a_key_pair_file = os.path.join( a_key_pair_dir, a_key_pair.name ) + os.path.extsep + "pem"
-    print_d( "a_key_pair_file = '%s'\n" % a_key_pair_file )
+    an_identity_file = os.path.join( a_key_pair_dir, a_key_pair.name ) + os.path.extsep + "pem"
+    print_d( "an_identity_file = '%s'\n" % an_identity_file )
 
     import stat
-    os.chmod( a_key_pair_file, stat.S_IRUSR )
+    os.chmod( an_identity_file, stat.S_IRUSR )
 
     # Asking EC2 to generate a new "sequirity group" & apply corresponding firewall permissions
     a_security_group = an_ec2_conn.create_security_group( an_unique_name, 'temporaly generated' )
     a_security_group.authorize( 'tcp', 80, 80, '0.0.0.0/0' )
-    a_security_group.authorize( 'tcp', the_ssh_host_port, the_ssh_host_port, '0.0.0.0/0' )
+    a_security_group.authorize( 'tcp', the_host_port, the_host_port, '0.0.0.0/0' )
     
     
-    print_d( "\n---------------------------- Running actual image -------------------------\n" )
+    print_d( "\n-------------------------------- Running image ----------------------------\n" )
     # Creating a EC2 "reservation" with all the parameters mentioned above
     a_reservation = an_image.run( instance_type = the_instance_type, min_count = the_min_count, max_count = the_max_count, 
                                   key_name = a_key_pair_name, security_groups = [ a_security_group.name ] )
@@ -177,11 +201,9 @@ def run_instance( the_image_id, the_image_location, the_instance_type,
     print_d( 'a_reservation.instances = %s\n' % a_reservation.instances )
 
     # Making sure that corresponding instances are ready to use
-    wait_activation( an_instance )
+    wait4activation( an_instance )
 
-    print_d( 'ssh -i %s %s@%s\n' % ( a_key_pair_file, 'ubuntu', an_instance.dns_name ) )
-
-    return an_instance, a_key_pair_file
+    return an_instance, an_identity_file
 
 
 #--------------------------------------------------------------------------------------

@@ -49,6 +49,23 @@ def add_parser_options( the_option_parser ) :
 
 
 #--------------------------------------------------------------------------------------
+def unpuck( the_options ) :
+    AWS_ACCESS_KEY_ID = the_options.aws_access_key_id
+    AWS_SECRET_ACCESS_KEY = the_options.aws_secret_access_key
+
+    return AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
+
+
+#--------------------------------------------------------------------------------------
+def compose_call( the_options ) :
+    AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY = unpuck( the_options )
+
+    a_call = "--aws-access-key-id='%s' --aws-secret-access-key='%s'" % ( AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY )
+    
+    return a_call
+
+
+#--------------------------------------------------------------------------------------
 def extract_options( the_options ) :
     AWS_ACCESS_KEY_ID = the_options.aws_access_key_id
     if AWS_ACCESS_KEY_ID == None :
