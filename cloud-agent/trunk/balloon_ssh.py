@@ -114,6 +114,9 @@ if a_sequence_file != None :
     a_call += " --sequence-file='%s'" % a_sequence_file
     pass
 
+
+print_d( "\n--------------------------- Canonical substitution ------------------------\n" )
+ssh.print_call( an_options )
 print_d( a_call + '\n' )
 
 
@@ -153,8 +156,12 @@ a_ssh_client.close()
 
 
 print_d( "\n------------------ Printing succussive pipeline arguments -----------------\n" )
-print_d( a_call + '\n' )
 ssh.print_options( an_options )
+
+
+print_d( "\n--------------------------- Canonical substitution ------------------------\n" )
+ssh.print_call( an_options )
+print_d( a_call + '\n' )
 
 
 print_d( "\n-------------------------------------- OK ---------------------------------\n" )

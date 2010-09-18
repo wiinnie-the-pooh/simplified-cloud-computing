@@ -75,12 +75,15 @@ def unpuck( the_options ) :
 
 
 #--------------------------------------------------------------------------------------
-def print_call( the_password, the_identity_file, the_host_port, the_login_name, the_host_name ) :
-    if the_password != "" :
-        print_d( 'sshpass -p %s ssh -p %d %s@%s\n' % ( the_password, the_host_port, the_login_name, the_host_name ) )
+def print_call( the_options ) :
+    a_password, an_identity_file, a_host_port, a_login_name, a_host_name, a_command = unpuck( the_options )
+
+    if a_password != "" :
+        print_d( 'sshpass -p %s ssh -p %d %s@%s\n' % ( a_password, a_host_port, a_login_name, a_host_name ) )
     else :
-        print_d( 'ssh -i %s -p %d %s@%s\n' % ( the_identity_file, the_host_port, the_login_name, the_host_name ) )
+        print_d( 'ssh -i %s -p %d %s@%s\n' % ( an_identity_file, a_host_port, a_login_name, a_host_name ) )
         pass
+
     pass
 
 
@@ -138,8 +141,6 @@ def extract_options( the_options ) :
     the_options.host_name = a_host_name
 
     a_command = the_options.command
-
-    print_call( a_password, an_identity_file, a_host_port, a_login_name, a_host_name )
 
     return a_password, an_identity_file, a_host_port, a_login_name, a_host_name, a_command
 
@@ -203,8 +204,6 @@ def connect( the_options ) :
 #--------------------------------------------------------------------------------------
 def print_options( the_options ) :
     a_password, an_identity_file, a_host_port, a_login_name, a_host_name, a_command = unpuck( the_options )
-
-    print_call( a_password, an_identity_file, a_host_port, a_login_name, a_host_name )
 
     print a_password
     print an_identity_file
