@@ -131,7 +131,7 @@ if a_scripts != None :
         a_script_file = a_scripts[ an_id ]
         a_script_args = an_args[ an_id ]
         
-        a_working_dir = ssh_command( a_ssh_client, 'python -c "import os, os.path, tempfile; print tempfile.mkdtemp()"' )[ 0 ][ : -1 ]
+        a_working_dir = ssh.command( a_ssh_client, 'python -c "import os, os.path, tempfile; print tempfile.mkdtemp()"' )[ 0 ][ : -1 ]
         a_target_script = os.path.join( a_working_dir, os.path.basename( a_script_file ) )
         
         a_sftp_client = a_ssh_client.open_sftp() # Instantiating a sftp client
