@@ -57,7 +57,7 @@ def unpuck( the_options ) :
 def compose_call( the_options ) :
     RACKSPACE_USER, RACKSPACE_KEY = unpuck( the_options )
 
-    a_call = "--rackspace-user='%s' --rackspace-key='%s'" % ( RACKSPACE_USER, RACKSPACE_KEY )
+    a_call = "--rackspace-user=${RACKSPACE_USER} --rackspace-key=${RACKSPACE_KEY}"
     
     return a_call
 

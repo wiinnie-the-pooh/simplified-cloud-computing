@@ -180,6 +180,7 @@ def run_instance( the_image_id, the_image_location, the_instance_type,
     
     # Saving the generated ssh "key pair" locally
     a_key_pair_dir = os.path.expanduser( "~/.ssh")
+    os.makedirs( a_key_pair_dir )
     a_key_pair.save( a_key_pair_dir )
     an_identity_file = os.path.join( a_key_pair_dir, a_key_pair.name ) + os.path.extsep + "pem"
     print_d( "an_identity_file = '%s'\n" % an_identity_file )

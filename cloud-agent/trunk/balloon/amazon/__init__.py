@@ -19,7 +19,7 @@
 #--------------------------------------------------------------------------------------
 from balloon.common import print_e, print_d
 
-from ec2 import run_instance, wait_activation
+from ec2 import run_instance, wait4activation
 from s3 import TRootObject, TStudyObject, TFileObject, TSeedObject, generate_uploading_dir
 
 import os
@@ -60,7 +60,7 @@ def unpuck( the_options ) :
 def compose_call( the_options ) :
     AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY = unpuck( the_options )
 
-    a_call = "--aws-access-key-id='%s' --aws-secret-access-key='%s'" % ( AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY )
+    a_call = "--aws-access-key-id=${AWS_ACCESS_KEY_ID} --aws-secret-access-key=${AWS_SECRET_ACCESS_KEY}"
     
     return a_call
 
