@@ -63,7 +63,19 @@ def add_parser_options( the_option_parser ) :
 
 
 #--------------------------------------------------------------------------------------
-def print_ssh( the_password, the_identity_file, the_host_port, the_login_name, the_host_name ) :
+def unpuck( the_options ) :
+    a_password = the_options.password
+    an_identity_file = the_options.identity_file
+    a_host_port = the_options.host_port
+    a_login_name = the_options.login_name
+    a_host_name = the_options.host_name
+    a_command = the_options.command
+
+    return a_password, an_identity_file, a_host_port, a_login_name, a_host_name, a_command
+
+
+#--------------------------------------------------------------------------------------
+def print_call( the_password, the_identity_file, the_host_port, the_login_name, the_host_name ) :
     if the_password != "" :
         print_d( 'sshpass -p %s ssh -p %d %s@%s\n' % ( the_password, the_host_port, the_login_name, the_host_name ) )
     else :
@@ -73,17 +85,33 @@ def print_ssh( the_password, the_identity_file, the_host_port, the_login_name, t
 
 
 #--------------------------------------------------------------------------------------
+def compose_call( the_options ) :
+    import sys
+    an_engine = sys.argv[ 0 ]
+
+    a_password, an_identity_file, a_host_port, a_login_name, a_host_name, a_command = unpuck( the_options )
+
+    if a_password != "" :
+        a_call = "%s --password='%s' --host-port=%d --login-name='%s' --host-name='%s' --command='%s'" % \
+            ( an_engine, a_password, a_host_port, a_login_name, a_host_name, a_command )
+    else :
+        a_call = "%s --identity-file='%s' --host-port=%d --login-name='%s' --host-name='%s' --command='%s'" % \
+            ( an_engine, an_identity_file, a_host_port, a_login_name, a_host_name, a_command )
+        pass
+    
+    return a_call
+
+
+#--------------------------------------------------------------------------------------
 def extract_options( the_options ) :
     a_password = the_options.password
-    if a_password == "" :
-        a_password = raw_input()
-        pass
-    the_options.password = a_password
-
     an_identity_file = the_options.identity_file
-    if an_identity_file == "" :
+
+    if a_password == "" and an_identity_file == "" :
+        a_password = raw_input()
         an_identity_file = raw_input()
         pass
+
     if an_identity_file != "" :
         import os.path
         an_identity_file = os.path.expanduser( an_identity_file )
@@ -111,13 +139,13 @@ def extract_options( the_options ) :
 
     a_command = the_options.command
 
-    print_ssh( the_options.password, the_options.identity_file, the_options.host_port, the_options.login_name, the_options.host_name )
+    print_call( a_password, an_identity_file, a_host_port, a_login_name, a_host_name )
 
     return a_password, an_identity_file, a_host_port, a_login_name, a_host_name, a_command
 
 
 #---------------------------------------------------------------------------
-def ssh_command( the_ssh_client, the_command ) :
+def command( the_ssh_client, the_command ) :
     "Execution of secure shell command"
     print_d( "[%s]\n" % the_command )
     
@@ -133,13 +161,13 @@ def ssh_command( the_ssh_client, the_command ) :
 
 
 #--------------------------------------------------------------------------------------
-def wait_ssh( the_ssh_connect, the_ssh_client, the_command ) :
+def wait( the_ssh_connect, the_ssh_client, the_command ) :
     print_d( "ssh'ing " )
     while True :
         try :
             print_d( '.' )
             the_ssh_connect()
-            ssh_command( the_ssh_client, the_command )
+            command( the_ssh_client, the_command )
             break
         except :
             # import sys, traceback
@@ -152,12 +180,7 @@ def wait_ssh( the_ssh_connect, the_ssh_client, the_command ) :
 
 #--------------------------------------------------------------------------------------
 def connect( the_options ) :
-    a_password = the_options.password
-    an_identity_file = the_options.identity_file
-    a_host_port = the_options.host_port
-    a_login_name = the_options.login_name
-    a_host_name = the_options.host_name
-    a_command = the_options.command
+    a_password, an_identity_file, a_host_port, a_login_name, a_host_name, a_command = unpuck( the_options )
 
     import paramiko
     a_ssh_client = paramiko.SSHClient()
@@ -165,27 +188,31 @@ def connect( the_options ) :
 
     a_ssh_connect = None
     if a_password != "" :
+        print a_password, an_identity_file, a_host_port, a_login_name, a_host_name, a_command
         a_ssh_connect = lambda : a_ssh_client.connect( hostname = a_host_name, port = a_host_port, username = a_login_name, password = a_password )
     else :
         a_rsa_key = paramiko.RSAKey( filename = an_identity_file )
         a_ssh_connect = lambda : a_ssh_client.connect( hostname = a_host_name, port = a_host_port, username = a_login_name, pkey = a_rsa_key )
         pass
     
-    wait_ssh( a_ssh_connect, a_ssh_client, a_command ) 
+    wait( a_ssh_connect, a_ssh_client, a_command ) 
     
     return a_ssh_client
 
 
 #--------------------------------------------------------------------------------------
 def print_options( the_options ) :
-    print_ssh( the_options.password, the_options.identity_file, the_options.host_port, the_options.login_name, the_options.host_name )
+    a_password, an_identity_file, a_host_port, a_login_name, a_host_name, a_command = unpuck( the_options )
 
-    print the_options.password
-    print the_options.identity_file
-    print the_options.host_port
-    print the_options.login_name
-    print the_options.host_name
+    print_call( a_password, an_identity_file, a_host_port, a_login_name, a_host_name )
+
+    print a_password
+    print an_identity_file
+    print a_host_port
+    print a_login_name
+    print a_host_name
 
     pass
+
 
 #--------------------------------------------------------------------------------------
