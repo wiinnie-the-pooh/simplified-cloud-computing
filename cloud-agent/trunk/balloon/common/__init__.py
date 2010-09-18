@@ -148,40 +148,6 @@ def sh_command( the_command, the_printing_depth = 0 ) :
 
 
 #---------------------------------------------------------------------------
-def ssh_command( the_ssh_client, the_command ) :
-    "Execution of secure shell command"
-    print_d( "[%s]\n" % the_command )
-    
-    stdin, stdout, stderr = the_ssh_client.exec_command( the_command )
-
-    a_stderr_lines = stderr.readlines()
-    for a_line in a_stderr_lines : print_d( "\t%s" % a_line )
-
-    a_stdout_lines = stdout.readlines()
-    for a_line in a_stdout_lines : print_d( "\t%s" % a_line )
-
-    return a_stdout_lines
-
-
-#--------------------------------------------------------------------------------------
-def wait_ssh( the_ssh_connect, the_ssh_client, the_command ) :
-    print_d( "ssh'ing " )
-    while True :
-        try :
-            print_d( '.' )
-            the_ssh_connect()
-            ssh_command( the_ssh_client, the_command )
-            break
-        except :
-            # import sys, traceback
-            # traceback.print_exc( file = sys.stderr )
-            continue
-        pass
-
-    pass
-
-
-#---------------------------------------------------------------------------
 def generate_queue_name( the_container_name, the_queue_suffix ) :
     "Generating composite queue name"
     

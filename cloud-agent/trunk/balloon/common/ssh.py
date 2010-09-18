@@ -16,7 +16,7 @@
 
 
 #--------------------------------------------------------------------------------------
-from balloon.common import print_e, print_d, ssh_command, Timer, wait_ssh
+from balloon.common import print_e, print_d, Timer
 
 
 #--------------------------------------------------------------------------------------
@@ -63,8 +63,8 @@ def add_parser_options( the_option_parser ) :
 
 
 #--------------------------------------------------------------------------------------
-def print_ssh( the_password, the_identity_file, the_host_port, the_login_name, the_host_name )
-    if a_password != "" :
+def print_ssh( the_password, the_identity_file, the_host_port, the_login_name, the_host_name ) :
+    if the_password != "" :
         print_d( 'sshpass -p %s ssh -p %d %s@%s\n' % ( the_password, the_host_port, the_login_name, the_host_name ) )
     else :
         print_d( 'ssh -i %s -p %d %s@%s\n' % ( the_identity_file, the_host_port, the_login_name, the_host_name ) )
@@ -114,6 +114,66 @@ def extract_options( the_options ) :
     print_ssh( the_options.password, the_options.identity_file, the_options.host_port, the_options.login_name, the_options.host_name )
 
     return a_password, an_identity_file, a_host_port, a_login_name, a_host_name, a_command
+
+
+#---------------------------------------------------------------------------
+def ssh_command( the_ssh_client, the_command ) :
+    "Execution of secure shell command"
+    print_d( "[%s]\n" % the_command )
+    
+    stdin, stdout, stderr = the_ssh_client.exec_command( the_command )
+
+    a_stderr_lines = stderr.readlines()
+    for a_line in a_stderr_lines : print_d( "\t%s" % a_line )
+
+    a_stdout_lines = stdout.readlines()
+    for a_line in a_stdout_lines : print_d( "\t%s" % a_line )
+
+    return a_stdout_lines
+
+
+#--------------------------------------------------------------------------------------
+def wait_ssh( the_ssh_connect, the_ssh_client, the_command ) :
+    print_d( "ssh'ing " )
+    while True :
+        try :
+            print_d( '.' )
+            the_ssh_connect()
+            ssh_command( the_ssh_client, the_command )
+            break
+        except :
+            # import sys, traceback
+            # traceback.print_exc( file = sys.stderr )
+            continue
+        pass
+
+    pass
+
+
+#--------------------------------------------------------------------------------------
+def connect( the_options ) :
+    a_password = the_options.password
+    an_identity_file = the_options.identity_file
+    a_host_port = the_options.host_port
+    a_login_name = the_options.login_name
+    a_host_name = the_options.host_name
+    a_command = the_options.command
+
+    import paramiko
+    a_ssh_client = paramiko.SSHClient()
+    a_ssh_client.set_missing_host_key_policy( paramiko.AutoAddPolicy() )
+
+    a_ssh_connect = None
+    if a_password != "" :
+        a_ssh_connect = lambda : a_ssh_client.connect( hostname = a_host_name, port = a_host_port, username = a_login_name, password = a_password )
+    else :
+        a_rsa_key = paramiko.RSAKey( filename = an_identity_file )
+        a_ssh_connect = lambda : a_ssh_client.connect( hostname = a_host_name, port = a_host_port, username = a_login_name, pkey = a_rsa_key )
+        pass
+    
+    wait_ssh( a_ssh_connect, a_ssh_client, a_command ) 
+    
+    return a_ssh_client
 
 
 #--------------------------------------------------------------------------------------

@@ -24,7 +24,7 @@ This script is responsible for the task packaging and sending it for execution i
 
 #--------------------------------------------------------------------------------------
 import balloon.common as common
-from balloon.common import print_d, print_list, print_e, sh_command, ssh_command, wait_ssh, Timer
+from balloon.common import print_d, print_list, print_e, sh_command, Timer
 
 import balloon.rackspace as rackspace
 

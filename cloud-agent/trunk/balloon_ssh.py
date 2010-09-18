@@ -26,17 +26,15 @@ This script helps to perform a command into remote cloud instance through ssh pr
 
 #--------------------------------------------------------------------------------------
 import balloon.common as common
-from balloon.common import print_d, print_e, sh_command, ssh_command, Timer
-from balloon.common import ssh as common_ssh
-
-from balloon import amazon
+from balloon.common import print_d, print_e, sh_command, Timer
+from balloon.common import ssh
 
 
 #--------------------------------------------------------------------------------------
 # Defining utility command-line interface
 
 an_usage_description = "%prog [ --script-file='./remote_adjust_profile.sh|./remote_update_sources-list.sh' ] [ --sequence-file='./remote_sshd-config.sh' ]"
-an_usage_description += common_ssh.add_usage_description()
+an_usage_description += ssh.add_usage_description()
 an_usage_description += common.add_usage_description()
 
 from optparse import IndentedHelpFormatter
@@ -60,7 +58,7 @@ a_option_parser.add_option( "--sequence-file",
                             action = "store",
                             dest = "sequence_file",
                             default = None )
-common_ssh.add_parser_options( a_option_parser )
+ssh.add_parser_options( a_option_parser )
 common.add_parser_options( a_option_parser )
   
  
@@ -70,7 +68,7 @@ common.add_parser_options( a_option_parser )
 an_options, an_args = a_option_parser.parse_args()
 
 an_enable_debug = common.extract_options( an_options )
-a_password, an_identity_file, a_host_port, a_login_name, a_host_name, a_command = common_ssh.extract_options( an_options )
+a_password, an_identity_file, a_host_port, a_login_name, a_host_name, a_command = ssh.extract_options( an_options )
 
 import sys
 an_engine = sys.argv[ 0 ]
@@ -123,18 +121,7 @@ print_d( a_call + '\n' )
 
 
 print_d( "\n----------------------- Running actual functionality ----------------------\n" )
-import paramiko
-a_ssh_client = paramiko.SSHClient()
-a_ssh_client.set_missing_host_key_policy( paramiko.AutoAddPolicy() )
-
-a_ssh_connect = None
-if a_password != "" :
-    a_ssh_connect = lambda : a_ssh_client.connect( hostname = a_host_name, port = a_host_port, username = a_login_name, password = a_password )
-else :
-    a_rsa_key = paramiko.RSAKey( filename = an_identity_file )
-    a_ssh_connect = lambda : a_ssh_client.connect( hostname = a_host_name, port = a_host_port, username = a_login_name, pkey = a_rsa_key )
-    pass
-common_ssh.wait_ssh( a_ssh_connect, a_ssh_client, a_command ) 
+a_ssh_client = ssh.connect( an_options )
 
 if a_scripts != None :
     for an_id in range( len( a_scripts ) ) :
@@ -147,10 +134,10 @@ if a_scripts != None :
         a_sftp_client = a_ssh_client.open_sftp() # Instantiating a sftp client
         a_sftp_client.put( a_script_file, a_target_script )
         
-        ssh_command( a_ssh_client, 'chmod 755 "%s"' % a_target_script )
-        ssh_command( a_ssh_client, 'sudo "%s" %s' % ( a_target_script, a_script_args ) )
+        ssh.command( a_ssh_client, 'chmod 755 "%s"' % a_target_script )
+        ssh.command( a_ssh_client, 'sudo "%s" %s' % ( a_target_script, a_script_args ) )
 
-        ssh_command( a_ssh_client, """python -c 'import shutil; shutil.rmtree( "%s" )'""" % a_working_dir )
+        ssh.command( a_ssh_client, """python -c 'import shutil; shutil.rmtree( "%s" )'""" % a_working_dir )
         pass
     pass
 
@@ -160,7 +147,7 @@ if a_sequence_file != None :
     for a_line in a_file.readlines() :
         if a_line[ 0 ] == "#" or a_line[ 0 ] == "\n" :
             continue
-        ssh_command( a_ssh_client, 'sudo %s' % a_line[ : -1 ] )
+        ssh.command( a_ssh_client, 'sudo %s' % a_line[ : -1 ] )
         pass
     a_file.close()
     pass
@@ -169,7 +156,8 @@ a_ssh_client.close()
 
 
 print_d( "\n------------------ Printing succussive pipeline arguments -----------------\n" )
-common_ssh.print_options( an_options )
+print_d( a_call + '\n' )
+ssh.print_options( an_options )
 
 
 print_d( "\n-------------------------------------- OK ---------------------------------\n" )
