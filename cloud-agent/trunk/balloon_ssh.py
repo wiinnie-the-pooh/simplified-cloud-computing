@@ -116,8 +116,8 @@ if a_sequence_file != None :
 
 
 print_d( "\n--------------------------- Canonical substitution ------------------------\n" )
-ssh.print_call( an_options )
 print_d( a_call + '\n' )
+ssh.print_call( an_options )
 
 
 print_d( "\n----------------------- Running actual functionality ----------------------\n" )

@@ -74,7 +74,15 @@ an_image_id = an_options.image_id
 a_size_id = an_options.size_id
 
 
-print_d( "\n----------------------- Instanciating node in cloud -----------------------\n" )
+print_d( "\n--------------------------- Canonical substitution ------------------------\n" )
+import sys
+an_engine = sys.argv[ 0 ]
+
+a_call = "%s --image-id=%d --size-id=%d %s" % ( an_engine, an_image_id, a_size_id, rackspace.compose_call( an_options ) )
+print_d( a_call + '\n' )
+
+
+print_d( "\n----------------------- Running actual functionality ----------------------\n" )
 an_instance_reservation_time = Timer()
 
 from libcloud.types import Provider 
@@ -138,13 +146,16 @@ a_host_port = 22
 a_login_name = 'root'
 a_host_name = a_node.public_ip[ 0 ]
 
-print_d( 'sshpass -p %s ssh -p %d %s@%s\n' % ( a_password, a_host_port, a_login_name, a_host_name ) )
-
 print a_password
 print an_identity_file
 print a_host_port
 print a_login_name
 print a_host_name
+
+
+print_d( "\n--------------------------- Canonical substitution ------------------------\n" )
+print_d( a_call + '\n' )
+print_d( 'sshpass -p %s ssh -p %d %s@%s\n' % ( a_password, a_host_port, a_login_name, a_host_name ) )
 
 
 print_d( "\n-------------------------------------- OK ---------------------------------\n" )

@@ -46,6 +46,24 @@ def add_parser_options( the_option_parser ) :
 
 
 #--------------------------------------------------------------------------------------
+def unpuck( the_options ) :
+    RACKSPACE_USER = the_options.rackspace_user
+    RACKSPACE_KEY = the_options.rackspace_key
+
+    return RACKSPACE_USER, RACKSPACE_KEY
+
+
+#--------------------------------------------------------------------------------------
+def compose_call( the_options ) :
+    RACKSPACE_USER, RACKSPACE_KEY = unpuck( the_options )
+
+    a_call = "--rackspace-user='%s' --rackspace-key='%s'" % ( RACKSPACE_USER, RACKSPACE_KEY )
+    
+    return a_call
+
+
+
+#--------------------------------------------------------------------------------------
 def extract_options( the_options ) :
     RACKSPACE_USER = the_options.rackspace_user
     if RACKSPACE_USER == None :

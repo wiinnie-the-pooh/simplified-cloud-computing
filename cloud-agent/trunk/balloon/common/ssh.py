@@ -114,6 +114,7 @@ def extract_options( the_options ) :
         a_password = raw_input()
         an_identity_file = raw_input()
         pass
+    the_options.password = a_password
 
     if an_identity_file != "" :
         import os.path
@@ -189,7 +190,6 @@ def connect( the_options ) :
 
     a_ssh_connect = None
     if a_password != "" :
-        print a_password, an_identity_file, a_host_port, a_login_name, a_host_name, a_command
         a_ssh_connect = lambda : a_ssh_client.connect( hostname = a_host_name, port = a_host_port, username = a_login_name, password = a_password )
     else :
         a_rsa_key = paramiko.RSAKey( filename = an_identity_file )
