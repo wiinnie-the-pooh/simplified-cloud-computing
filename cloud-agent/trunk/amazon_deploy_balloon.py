@@ -24,7 +24,7 @@ This script is responsible for the deployng of the 'balloon' package into appoin
 
 #--------------------------------------------------------------------------------------
 import balloon.common as common
-from balloon.common import print_d, print_e, sh_command, ssh_command, Timer
+from balloon.common import print_d, print_e, sh_command, ssh_command, wait_ssh, Timer
 
 from balloon import amazon
 from balloon.amazon import ssh as amazon_ssh
@@ -72,7 +72,7 @@ a_ssh_client.set_missing_host_key_policy( paramiko.AutoAddPolicy() )
 a_rsa_key = paramiko.RSAKey( filename = an_identity_file )
 
 a_ssh_connect = lambda : a_ssh_client.connect( hostname = a_host_name, port = a_host_port, username = a_login_name, pkey = a_rsa_key )
-amazon_ssh.wait_ssh( a_ssh_connect, a_ssh_client, a_command ) # Wait for execution of the first 'dummy' command
+wait_ssh( a_ssh_connect, a_ssh_client, a_command ) # Wait for execution of the first 'dummy' command
 
 import os, tempfile
 a_working_dir = tempfile.mkdtemp()

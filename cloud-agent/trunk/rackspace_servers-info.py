@@ -34,7 +34,7 @@ import sys, os, os.path, uuid
 #--------------------------------------------------------------------------------------
 # Defining utility command-line interface
 
-an_usage_description = "%prog --image-id=49 --size-id=1"
+an_usage_description = "%prog"
 an_usage_description += common.add_usage_description()
 an_usage_description += rackspace.add_usage_description()
 
@@ -43,21 +43,6 @@ a_help_formatter = IndentedHelpFormatter( width = 127 )
 
 from optparse import OptionParser
 an_option_parser = OptionParser( usage = an_usage_description, version="%prog 0.1", formatter = a_help_formatter )
-
-an_option_parser.add_option( "--image-id",
-                             metavar = "< Rackspace Servers Image ID >",
-                             type = "int",
-                             action = "store",
-                             dest = "image_id",
-                             help = "(%default, by default)",
-                             default = "49" ) # Ubuntu 10.04 LTS (lucid)
-an_option_parser.add_option( "--size-id",
-                             metavar = "< Rackspace Servers Size ID >",
-                             type = "int",
-                             action = "store",
-                             dest = "size_id",
-                             help = "(%default, by default)",
-                             default = "1" ) # RAM 256Mb HDD 10Gb
 
 rackspace.add_parser_options( an_option_parser )
 common.add_parser_options( an_option_parser )
@@ -70,11 +55,9 @@ an_options, an_args = an_option_parser.parse_args()
 
 an_enable_debug = common.extract_options( an_options )
 RACKSPACE_USER, RACKSPACE_KEY = rackspace.extract_options( an_options )
-an_image_id = an_options.image_id
-a_size_id = an_options.size_id
 
 
-print_d( "\n----------------------- Instanciating node in cloud -----------------------\n" )
+print_d( "\n----------------------- Running actual functionality ----------------------\n" )
 an_instance_reservation_time = Timer()
 
 from libcloud.types import Provider 
@@ -84,62 +67,11 @@ Driver = get_driver( Provider.RACKSPACE )
 a_libcloud_conn = Driver( RACKSPACE_USER, RACKSPACE_KEY ) 
 print_d( "a_libcloud_conn = %r\n" % a_libcloud_conn )
 
-
-#--------------------------------------------------------------------------------------
 an_images = a_libcloud_conn.list_images() 
 print_list( "an_images :\n" , an_images )
 
-an_image = None
-for an_item in an_images :
-    if int( an_item.id ) == an_image_id :
-       an_image = an_item
-       break
-    pass
-
-if an_image == None :
-    an_option_parser.error( "--image-id='%d' does not exists" % an_image_id )
-    pass
-
-print_d( "an_image = %r\n" % an_image )
-
-
-#--------------------------------------------------------------------------------------
 a_sizes = a_libcloud_conn.list_sizes() 
 print_list( "a_sizes :\n" , a_sizes )
-
-a_size = None
-for an_item in a_sizes :
-    if int( an_item.id ) == a_size_id :
-       a_size = an_item
-       break
-    pass
-
-if a_size == None :
-    an_option_parser.error( "--size-id='%d' does not exists" % a_size_id )
-    pass
-
-print_d( "a_size = %r\n" % a_size )
-
-
-#--------------------------------------------------------------------------------------
-a_node_name = str( uuid.uuid4() )
-print_d( "a_node_name = '%s'\n" % a_node_name )
-
-a_node = a_libcloud_conn.create_node( name = a_node_name, image = an_image , size = a_size ) 
-print_d( "a_node = %r\n" % a_node )
-
-a_username = 'root'
-a_ssh_host_port = 22
-a_password = a_node.extra.get( 'password' )
-print_d( 'sshpass -p %s ssh -p %d %s@%s\n' % ( a_password, a_ssh_host_port, a_username, a_node.public_ip[ 0 ] ) )
-
-print_d( "an_instance_reservation_time = %s, sec\n" % an_instance_reservation_time )
-
-
-print_d( "\n------------------ Printing succussive pipeline arguments -----------------\n" )
-print a_password
-print a_node.public_ip[ 0 ]
-print a_ssh_host_port
 
 
 print_d( "\n-------------------------------------- OK ---------------------------------\n" )

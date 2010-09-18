@@ -32,6 +32,9 @@ import cloudfiles
 print "---------------- Delete CloudFiles ---------------"
 a_cloudfiles_conn = cloudfiles.get_connection( RACKSPACE_USER, RACKSPACE_KEY, timeout = 500 )
 for a_container_name in a_cloudfiles_conn.list_containers() :
+    if a_container_name == 'cloudservers' :
+        continue
+
     print a_container_name
     a_cloudfiles_container = a_cloudfiles_conn[ a_container_name ]
     an_objects = a_cloudfiles_container.get_objects()
@@ -39,6 +42,7 @@ for a_container_name in a_cloudfiles_conn.list_containers() :
         a_cloudfiles_container.delete_object( an_object )
         print "\t", an_object
         pass
+
     a_cloudfiles_conn.delete_container( a_cloudfiles_container ) 
     pass
 
