@@ -70,7 +70,10 @@ an_options, an_args = a_option_parser.parse_args()
 an_enable_debug = common.extract_options( an_options )
 a_password, an_identity_file, a_host_port, a_login_name, a_host_name, a_command = ssh.extract_options( an_options )
 
-a_call = ssh.compose_call( an_options )
+import sys
+an_engine = sys.argv[ 0 ]
+
+a_call = "%s %s" % ( an_engine, ssh.compose_call( an_options ) )
 
 import os.path
 

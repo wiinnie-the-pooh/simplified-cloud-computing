@@ -79,6 +79,7 @@ import sys
 an_engine = sys.argv[ 0 ]
 
 a_call = "%s --image-id=%d --size-id=%d %s" % ( an_engine, an_image_id, a_size_id, rackspace.compose_call( an_options ) )
+
 print_d( a_call + '\n' )
 
 

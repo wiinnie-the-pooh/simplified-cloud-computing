@@ -89,17 +89,14 @@ def print_call( the_options ) :
 
 #--------------------------------------------------------------------------------------
 def compose_call( the_options ) :
-    import sys
-    an_engine = sys.argv[ 0 ]
-
     a_password, an_identity_file, a_host_port, a_login_name, a_host_name, a_command = unpuck( the_options )
 
     if a_password != "" :
-        a_call = "%s --password='%s' --host-port=%d --login-name='%s' --host-name='%s' --command='%s'" % \
-            ( an_engine, a_password, a_host_port, a_login_name, a_host_name, a_command )
+        a_call = "--password='%s' --host-port=%d --login-name='%s' --host-name='%s' --command='%s'" % \
+            ( a_password, a_host_port, a_login_name, a_host_name, a_command )
     else :
-        a_call = "%s --identity-file='%s' --host-port=%d --login-name='%s' --host-name='%s' --command='%s'" % \
-            ( an_engine, an_identity_file, a_host_port, a_login_name, a_host_name, a_command )
+        a_call = "--identity-file='%s' --host-port=%d --login-name='%s' --host-name='%s' --command='%s'" % \
+            ( an_identity_file, a_host_port, a_login_name, a_host_name, a_command )
         pass
     
     return a_call

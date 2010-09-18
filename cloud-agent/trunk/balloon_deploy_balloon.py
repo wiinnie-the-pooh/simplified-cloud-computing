@@ -24,17 +24,15 @@ This script is responsible for the deployng of the 'balloon' package into appoin
 
 #--------------------------------------------------------------------------------------
 import balloon.common as common
-from balloon.common import print_d, print_e, sh_command, ssh_command, wait_ssh, Timer
-
-from balloon import amazon
-from balloon.amazon import ssh as amazon_ssh
+from balloon.common import print_d, print_e, sh_command, Timer
+from balloon.common import ssh
 
 
 #--------------------------------------------------------------------------------------
 # Defining utility command-line interface
 
 an_usage_description = "%prog"
-an_usage_description += amazon_ssh.add_usage_description()
+an_usage_description += ssh.add_usage_description()
 an_usage_description += common.add_usage_description()
 
 from optparse import IndentedHelpFormatter
@@ -43,7 +41,7 @@ a_help_formatter = IndentedHelpFormatter( width = 127 )
 from optparse import OptionParser
 a_option_parser = OptionParser( usage = an_usage_description, version="%prog 0.1", formatter = a_help_formatter )
 
-amazon_ssh.add_parser_options( a_option_parser )
+ssh.add_parser_options( a_option_parser )
 common.add_parser_options( a_option_parser )
   
  
@@ -53,33 +51,30 @@ common.add_parser_options( a_option_parser )
 an_options, an_args = a_option_parser.parse_args()
 
 an_enable_debug = common.extract_options( an_options )
-an_identity_file, a_host_port, a_login_name, a_host_name, a_command = amazon_ssh.extract_options( an_options )
+a_password, an_identity_file, a_host_port, a_login_name, a_host_name, a_command = ssh.extract_options( an_options )
 
-import sys, os, os.path
+print_d( "\n--------------------------- Canonical substitution ------------------------\n" )
+import sys
 an_engine = sys.argv[ 0 ]
-an_engine_dir = os.path.abspath( os.path.dirname( sys.argv[ 0 ] ) )
 
-print_d( "%s --identity-file='%s' --host-port=%d --login-name='%s' --host-name='%s'\n" % 
-         ( an_engine, an_identity_file, a_host_port, a_login_name, a_host_name ) )
+a_call = "%s %s" % ( an_engine, ssh.compose_call( an_options ) )
+
+print_d( a_call + '\n' )
+ssh.print_call( an_options )
 
 
-#--------------------------------------------------------------------------------------
-# Running actual functionality
-
-import paramiko
-a_ssh_client = paramiko.SSHClient()
-a_ssh_client.set_missing_host_key_policy( paramiko.AutoAddPolicy() )
-a_rsa_key = paramiko.RSAKey( filename = an_identity_file )
-
-a_ssh_connect = lambda : a_ssh_client.connect( hostname = a_host_name, port = a_host_port, username = a_login_name, pkey = a_rsa_key )
-wait_ssh( a_ssh_connect, a_ssh_client, a_command ) # Wait for execution of the first 'dummy' command
+print_d( "\n----------------------- Running actual functionality ----------------------\n" )
+a_ssh_client = ssh.connect( an_options )
 
 import os, tempfile
 a_working_dir = tempfile.mkdtemp()
 print_d( "a_working_dir = %s\n" % a_working_dir )
 
-import balloon
+import os.path
+an_engine_dir = os.path.abspath( os.path.dirname( an_engine ) )
 sh_command( "cd %s && ./setup.py sdist" % an_engine_dir )
+
+import balloon
 a_balloon_name = "%s-%s" % ( balloon.NAME, balloon.VERSION )
 a_balloon_archive_name = a_balloon_name + os.extsep + "tar.gz"
 a_balloon_source_archive = os.path.join( an_engine_dir, 'dist', a_balloon_archive_name )
@@ -88,24 +83,27 @@ a_balloon_target_archive = os.path.join( a_working_dir, a_balloon_archive_name )
 # Instantiating a sftp client
 a_sftp_client = a_ssh_client.open_sftp()
 
-ssh_command( a_ssh_client, 'mkdir %s' % a_working_dir )
+ssh.command( a_ssh_client, 'mkdir %s' % a_working_dir )
 
 # Uploading and installing into the cloud corresponding Python engine (itself)
 a_sftp_client.put( a_balloon_source_archive, a_balloon_target_archive )
-ssh_command( a_ssh_client, 'cd %s && tar -xzf %s' % ( a_working_dir, a_balloon_archive_name ) )
+ssh.command( a_ssh_client, 'cd %s && tar -xzf %s' % ( a_working_dir, a_balloon_archive_name ) )
 a_balloon_setup_dir = os.path.join( a_working_dir, a_balloon_name )
-ssh_command( a_ssh_client, 'cd %s && sudo python ./setup.py install' % ( a_balloon_setup_dir ) )
-
-
-print_d( "\n--------------------------- Closing SSH connection ------------------------\n" )
-a_ssh_client.close()
+ssh.command( a_ssh_client, 'cd %s && sudo python ./setup.py install' % ( a_balloon_setup_dir ) )
 
 import shutil
 shutil.rmtree( a_working_dir ) # Cleaning temporal working folder
 
-print an_identity_file
-print a_host_name
-print a_host_port
+a_ssh_client.close()
+
+
+print_d( "\n------------------ Printing succussive pipeline arguments -----------------\n" )
+ssh.print_options( an_options )
+
+
+print_d( "\n--------------------------- Canonical substitution ------------------------\n" )
+ssh.print_call( an_options )
+print_d( a_call + '\n' )
 
 
 print_d( "\n-------------------------------------- OK ---------------------------------\n" )
