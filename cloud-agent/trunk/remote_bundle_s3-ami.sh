@@ -22,8 +22,8 @@ set -x
 
 source /mnt/.aws_credentialsrc
 
-sudo apt-get install ec2-ami-tools
-sudo apt-get install ec2-api-tools
+sudo apt-get -y install ec2-ami-tools
+sudo apt-get -y install ec2-api-tools
 
 codename=lucid
 release=10.04
