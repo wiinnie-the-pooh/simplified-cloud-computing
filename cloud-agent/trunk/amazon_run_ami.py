@@ -92,7 +92,7 @@ print a_host_name
 
 print_d( "\n--------------------------- Canonical substitution ------------------------\n" )
 print_d( a_call + '\n' )
-print_d( 'ssh -i %s %s@%s\n' % ( an_identity_file, a_login_name, a_host_name ) )
+print_d( 'ssh -o "StrictHostKeyChecking no" -i %s %s@%s\n' % ( an_identity_file, a_login_name, a_host_name ) )
 
 
 print_d( "\n-------------------------------------- OK ---------------------------------\n" )

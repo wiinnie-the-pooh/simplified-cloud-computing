@@ -156,7 +156,7 @@ print a_host_name
 
 print_d( "\n--------------------------- Canonical substitution ------------------------\n" )
 print_d( a_call + '\n' )
-print_d( 'sshpass -p %s ssh -p %d %s@%s\n' % ( a_password, a_host_port, a_login_name, a_host_name ) )
+print_d( 'sshpass -p %s ssh -o "StrictHostKeyChecking no" -p %d %s@%s\n' % ( a_password, a_host_port, a_login_name, a_host_name ) )
 
 
 print_d( "\n-------------------------------------- OK ---------------------------------\n" )

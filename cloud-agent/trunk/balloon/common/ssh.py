@@ -79,9 +79,11 @@ def print_call( the_options ) :
     a_password, an_identity_file, a_host_port, a_login_name, a_host_name, a_command = unpuck( the_options )
 
     if a_password != "" :
-        print_d( 'sshpass -p %s ssh -p %d %s@%s\n' % ( a_password, a_host_port, a_login_name, a_host_name ) )
+        print_d( 'sshpass -p %s ssh -o "StrictHostKeyChecking no" -p %d %s@%s\n' % \
+                     ( a_password, a_host_port, a_login_name, a_host_name ) )
     else :
-        print_d( 'ssh -i %s -p %d %s@%s\n' % ( an_identity_file, a_host_port, a_login_name, a_host_name ) )
+        print_d( 'ssh -o "StrictHostKeyChecking no" -i %s -p %d %s@%s\n' % \
+                     ( an_identity_file, a_host_port, a_login_name, a_host_name ) )
         pass
 
     pass

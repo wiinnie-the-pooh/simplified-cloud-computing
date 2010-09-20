@@ -24,8 +24,19 @@ sudo apt-get -y install python-software-properties
 sudo add-apt-repository ppa:cae-team/ppa
 sudo apt-get update
 
-wget http://garr.dl.sourceforge.net/project/foam/foam/1.7.1/openfoam171_0-1_amd64.deb
-sudo dpkg --install ./openfoam171_0-1_amd64.deb
+if [ $(uname -m) = 'x86_64' ]; then
+  arch=amd64
+else
+  arch=i386
+fi
+
+a_source=http://garr.dl.sourceforge.net/project/foam/foam/1.7.1/openfoam171_0-1_${arch}.deb
+wget ${a_source}
+
+a_file_path=`echo ${a_source} | sed -e 's%^http:/%%g'`
+a_file_path=./`basename ${a_file_path}`
+
+sudo dpkg --install ${a_file_path}
 sudo apt-get -y -f install
 
 
