@@ -140,7 +140,7 @@ if a_scripts != None :
         ssh.command( a_ssh_client, 'chmod 755 "%s"' % a_target_script )
         ssh.command( a_ssh_client, 'sudo "%s" %s' % ( a_target_script, a_script_args ) )
 
-        ssh.command( a_ssh_client, """python -c 'import shutil; shutil.rmtree( "%s" )'""" % a_working_dir )
+        # ssh.command( a_ssh_client, """python -c 'import shutil; shutil.rmtree( "%s" )'""" % a_working_dir )
         pass
     pass
 

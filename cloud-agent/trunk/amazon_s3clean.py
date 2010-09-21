@@ -31,7 +31,7 @@ AWS_SECRET_ACCESS_KEY = os.getenv( "AWS_SECRET_ACCESS_KEY" )
 import boto
 
 import balloon.common as common
-from balloon.common import print_d, print_i, print_e, sh_command, ssh_command, Timer, WorkerPool
+from balloon.common import print_d, print_i, print_e, sh_command, Timer, WorkerPool
 
 
 #--------------------------------------------------------------------------------------

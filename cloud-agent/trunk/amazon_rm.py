@@ -23,7 +23,7 @@ Removes whole appointed cloud study or just given files from this study
 
 #------------------------------------------------------------------------------------------
 import balloon.common as common
-from balloon.common import print_d, print_i, print_e, sh_command, ssh_command
+from balloon.common import print_d, print_i, print_e, sh_command
 from balloon.common import Timer, WorkerPool, compute_md5
 
 import balloon.amazon as amazon
