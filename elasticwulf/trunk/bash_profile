@@ -1,0 +1,79 @@
+# .bash_profile
+
+# Get the aliases and functions
+if [ -f ~/.bashrc ]; then
+        . ~/.bashrc
+fi
+
+# User specific environment and startup programs
+
+LAMRSH="ssh -x"
+export LAMRSH
+
+#LD_LIBRARY_PATH="/usr/local/lam/lib/"
+#export LD_LIBRARY_PATH
+
+MPICH_PORT_RANGE="2000:8000"
+export MPICH_PORT_RANGE
+
+MPICH_HOME=/usr/local/mpich2
+export MPICH_HOME
+
+MPICH2_HOME=/usr/local/mpich2
+export MPICH2_HOME
+
+
+# for BPS suite
+FLAVOR="Fedora Core 6"
+export FLAVOR
+
+
+LAM_HOME=/usr/local/lam
+export LAM_HOME
+
+MPI_DIR=/usr/local/mpich2
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$MPI_DIR/lib
+
+PATH=$PATH:$HOME/bin
+PATH=/usr/local/mpich2/bin:$PATH
+MANPATH=/usr/local/mpich2/man:$MANPATH
+
+
+#PATH=/usr/local/lam/bin:$PATH
+#MANPATH=/usr/local/lam/man:$MANPATH
+
+export PATH
+export MANPATH
+
+# Change your environment variables to select a different installed MPI:
+# from mpi4py README:
+#
+#      In case of getting runtime linking error when running MPI programs,
+#      the following lines can be added to the user login shell script
+#      (``.profile``, ``.bashrc``, etc.).
+#       
+#      - *MPICH 2* ::
+# 
+#        $ MPI_DIR=/usr/local/mpich2
+#        $ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$MPI_DIR/lib
+# 
+#      - *Open MPI* ::
+# 
+#        $ MPI_DIR=/usr/local/openmpi
+#        $ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$MPI_DIR/lib
+# 
+#      - *LAM* ::
+# 
+#         $ MPI_DIR=/usr/local/lam
+#         $ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$MPI_DIR/lib
+# 
+#      - *MPICH 1* ::
+# 
+#         $ MPI_DIR=/usr/local/mpich
+#         $ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$MPI_DIR/lib/shared
+# 	$ export MPICH_USE_SHLIB=yes
+# 
+#   .. warning:: MPICH 1 support for dynamic libraries is not completely
+#      transparent. Users should set environmental variable
+#      ``MPICH_USE_SHLIB`` to ``yes`` in order to avoid link problems
+#      when using ``mpicc``.
