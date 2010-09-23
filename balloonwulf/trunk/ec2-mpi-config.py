@@ -9,7 +9,6 @@ Copyright (c) 2007 DataWrangling. All rights reserved.
 
 import sys
 import getopt
-import EC2
 import os
 import commands
 import socket
@@ -102,25 +101,24 @@ def remote(host, cmd='scp',
 
 
 def configure():
-    import shutil
-    conn = EC2.AWSAuthConnection(AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY)
-    instance_response=conn.describe_instances()
-    parsed_response=instance_response.parse()  
+    import boto
+    conn = boto.connect_ec2()
+
     mpi_instances=[]
     mpi_amis=[]
     mpi_hostnames=[]
     mpi_externalnames=[]
     machine_state=[]
 
-    for chunk in parsed_response:
-        if chunk[0]=='INSTANCE':
-            if chunk[-1]=='running' or chunk[-1]=='pending':
-                if (chunk[2] == IMAGE_ID) or (chunk[2] == MASTER_IMAGE_ID) :
-                    mpi_instances.append(chunk[1])
-                    mpi_amis.append(chunk[2])
-                    mpi_externalnames.append(chunk[3])  
-                    mpi_hostnames.append(chunk[4])                          
-                    machine_state.append(chunk[-1])
+    for a_reservation in conn.get_all_instances() :
+        for an_instance in a_reservation.instances :
+            mpi_instances.append( an_instance )
+            mpi_amis.append( an_instance.image_id )
+            mpi_externalnames.append( an_instance.public_dns_name )  
+            mpi_hostnames.append( an_instance.private_dns_name )                          
+            machine_state.append( an_instance.state )
+            pass
+        pass
 
     # list the nodes
     if len(mpi_instances) > 0:
@@ -145,6 +143,10 @@ def configure():
     output.close()
     
     homedir = os.path.expanduser( '~' )
+
+    a_key_pair_dir = os.path.expanduser( "~/.ssh")
+    a_key_pair_name = mpi_instances[ 0 ].key_name
+    KEY_LOCATION = os.path.join( a_key_pair_dir, a_key_pair_name ) + os.path.extsep + "pem"
     try:
         # check if key already in id_rsa...
         rsakeys = open(homedir + "/.ssh/id_rsa", 'r').read()
@@ -152,7 +154,7 @@ def configure():
         keyval = keyfile.split('-----')[2]
         key_index = rsakeys.split('-----').index(keyval)
         print "Key already in id_rsa..."
-    except ValueError:
+    except:
         # if not, add it...
         print "Appending key to id_rsa..."
         os.system("cat %s >> %s/.ssh/id_rsa" % (KEY_LOCATION, homedir) )
