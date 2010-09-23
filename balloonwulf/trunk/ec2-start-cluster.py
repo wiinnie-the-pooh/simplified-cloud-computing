@@ -13,10 +13,8 @@ Copyright (c) 2007 DataWrangling. All rights reserved.
 
 '''
 
-import sys
-import EC2
+import sys, os, getopt
 from EC2config import *
-import getopt
 
 
 help_message = '''
@@ -75,7 +73,37 @@ def main(argv=None):
 
 
 def startcluster():
-    conn = EC2.AWSAuthConnection(AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY)
+    from balloon.amazon.ec2 import wait4activation
+    from balloon.common import print_d
+
+    import boto
+    conn = boto.connect_ec2()
+
+    # Generating an unique name to be used for corresponding
+    # ssh "key pair" & EC2 "security group"
+    import tempfile
+    an_unique_file = tempfile.mkstemp()[ 1 ]
+    an_unique_name = os.path.basename( an_unique_file )
+    os.remove( an_unique_file )
+    print_d( 'an_unique_name = %s\n' % an_unique_name )
+    
+    # Asking EC2 to generate a new ssh "key pair"
+    a_key_pair_name = an_unique_name
+    a_key_pair = conn.create_key_pair( a_key_pair_name )
+    
+    # Saving the generated ssh "key pair" locally
+    a_key_pair_dir = os.path.expanduser( "~/.ssh")
+    a_key_pair.save( a_key_pair_dir )
+    a_key_pair_file = os.path.join( a_key_pair_dir, a_key_pair.name ) + os.path.extsep + "pem"
+    print_d( 'a_key_pair_file = %s\n' % a_key_pair_file )
+    
+    import stat
+    os.chmod( a_key_pair_file, stat.S_IRUSR )
+
+    # Asking EC2 to generate a new "sequirity group" & apply corresponding firewall permissions
+    a_security_group = conn.create_security_group( an_unique_name, 'temporaly generated' )
+    a_security_group.authorize( 'tcp', 80, 80, '0.0.0.0/0' )
+    a_security_group.authorize( 'tcp', 22, 22, '0.0.0.0/0' )
 
     if IMAGE_ID:
         print "image",IMAGE_ID
@@ -85,23 +113,40 @@ def startcluster():
         print "master image",MASTER_IMAGE_ID
 
         print "----- starting master -----"
-        master_response = conn.run_instances(imageId=MASTER_IMAGE_ID, minCount=1, maxCount=1, keyName= KEYNAME, instanceType=INSTANCE_TYPE )
-        print master_response
+        an_image = conn.get_all_images( image_ids = MASTER_IMAGE_ID )[ 0 ]
+        a_reservation = an_image.run( instance_type = INSTANCE_TYPE, 
+                                      min_count = 1, max_count = 1, 
+                                      key_name = a_key_pair_name, security_groups = [ a_security_group.name ] )
+        an_instance = a_reservation.instances[ 0 ]
+        wait4activation( an_instance )
+        print an_instance
 
         print "----- starting workers -----"
-        instances_response = conn.run_instances(imageId=IMAGE_ID, minCount=max((DEFAULT_CLUSTER_SIZE-1)/2, 1), maxCount=DEFAULT_CLUSTER_SIZE-1, keyName= KEYNAME, instanceType=INSTANCE_TYPE )
-        print instances_response
-        # TODO: if the workers failed, what should we do about the master?
+        an_image = conn.get_all_images( image_ids = IMAGE_ID )[ 0 ]
+        a_reservation = an_image.run( instance_type = INSTANCE_TYPE, 
+                                      min_count = max((DEFAULT_CLUSTER_SIZE-1)/2, 1), max_count = DEFAULT_CLUSTER_SIZE-1, 
+                                      key_name = a_key_pair_name, security_groups = [ a_security_group.name ] )
+        for an_instance in a_reservation.instances :
+            wait4activation( an_instance )
+            print an_instance
+            pass
 
+        print a_reservation
+
+        # TODO: if the workers failed, what should we do about the master?
 
     else:
         print "----- starting cluster -----"
-        cluster_size=DEFAULT_CLUSTER_SIZE 
-        instances_response = conn.run_instances(imageId=IMAGE_ID, minCount=max(cluster_size/2,1), maxCount=max(cluster_size,1), keyName= KEYNAME, instanceType=INSTANCE_TYPE )
-        # instances_response is a list: [["RESERVATION", reservationId, ownerId, ",".join(groups)],["INSTANCE", instanceId, imageId, dnsName, instanceState], [ "INSTANCE"etc])
-        # same as "describe instance"
+        an_image = conn.get_all_images( image_ids = IMAGE_ID )[ 0 ]
+        a_reservation = an_image.run( instance_type = 'm1.small', 
+                                      min_count = max(DEFAULT_CLUSTER_SIZE/2,1), max_count = max(DEFAULT_CLUSTER_SIZE,1), 
+                                      key_name = a_key_pair_name, security_groups = [ a_security_group.name ] )
+        for an_instance in a_reservation.instances :
+            wait4activation( an_instance )
+            print an_instance
+            pass
 
-        print instances_response
+        print a_reservation
 
 
 if __name__ == "__main__":

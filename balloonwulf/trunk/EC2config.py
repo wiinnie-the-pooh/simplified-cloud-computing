@@ -7,19 +7,6 @@ Created by Peter Skomoroch on 2007-04-09.
 Copyright (c) 2007 DataWrangling. All rights reserved.
 """
 
-import sys
-import os
-
-#replace these with your AWS keys
-AWS_ACCESS_KEY_ID = 'YOUR_KEY_ID_HERE'
-AWS_SECRET_ACCESS_KEY = 'YOUR_SECRET_KEY_HERE'
-#change this to your keypair name & location (see the EC2 getting started guide tutorial on using ec2-add-keypair)
-KEYNAME = "mpi-keypair"
-KEY_LOCATION = "/Users/myname/id_rsa-mpi-keypair"
-# remove these next two lines when you've updated your credentials.
-print "update %s with your AWS credentials" % sys.argv[0]
-sys.exit()
-
 # ElasticWulf 64 bit Pycon Images
 INSTANCE_TYPE = 'm1.large'  #either 'm1.large', 'm1.xlarge', or 'm1.small' ensure this matches the ami type
 MASTER_IMAGE_ID = "ami-e813f681"
