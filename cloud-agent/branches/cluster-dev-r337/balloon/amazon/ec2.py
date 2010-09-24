@@ -200,8 +200,8 @@ def run_instance( the_image_id, the_image_location, the_instance_type,
 
     # Asking EC2 to generate a new "sequirity group" & apply corresponding firewall permissions
     a_security_group = an_ec2_conn.create_security_group( an_unique_name, 'temporaly generated' )
-    a_security_group.authorize( 'tcp', 80, 80, '0.0.0.0/0' )
-    a_security_group.authorize( 'tcp', the_host_port, the_host_port, '0.0.0.0/0' )
+    a_security_group.authorize( 'tcp', 0, 65535, '0.0.0.0/0' ) # mpi cluster ports
+    a_security_group.authorize( 'tcp', the_host_port, the_host_port, '0.0.0.0/0' ) # ssh port
     
     
     print_d( "\n-------------------------------- Running image ----------------------------\n" )
@@ -210,18 +210,18 @@ def run_instance( the_image_id, the_image_location, the_instance_type,
                                   key_name = a_key_pair_name, security_groups = [ a_security_group.name ] )
     print_d( 'a_reservation.instances = %s\n' % a_reservation.instances )
 
-    # Making sure that corresponding instances are ready to use
+    a_password = "" # No password
+    an_identity_file = an_identity_file
+    a_host_port = the_host_port
+    a_login_name = 'ubuntu'
+
     for an_instance in a_reservation.instances :
-        wait4activation( an_instance )
+        wait4activation( an_instance ) # Making sure that corresponding instances are ready to use
 
-        a_password = "" # No password
-        an_identity_file = an_identity_file
-        a_host_port = the_host_port
-        a_login_name = 'ubuntu'
         a_host_name = an_instance.public_dns_name
-
         print_d( 'ssh -o "StrictHostKeyChecking no" -i %s -p %d %s@%s\n' % ( an_identity_file, a_host_port, a_login_name, a_host_name ) )
         
+        # To provide automatic ssh connection
         from balloon.common import ssh
         a_ssh_client = ssh.connect( a_password, an_identity_file, a_host_port, a_login_name, a_host_name )
         a_sftp_client = a_ssh_client.open_sftp()
@@ -235,9 +235,19 @@ def run_instance( the_image_id, the_image_location, the_instance_type,
 
         pass
 
-    an_instance = a_reservation.instances[ 0 ]
+    # To list all available nodes in the cluster into special <machines> file
+    a_master_node = an_instance = a_reservation.instances[ 0 ]
+    a_host_name = an_instance.public_dns_name
 
-    return an_instance, an_identity_file
+    from balloon.common import ssh
+    a_ssh_client = ssh.connect( a_password, an_identity_file, a_host_port, a_login_name, a_host_name )
+    ssh.command( a_ssh_client, 'echo %s > .openmpi_machines' % ( an_instance.private_ip_address ) )
+
+    for an_instance in a_reservation.instances[ 1 : ] :
+        ssh.command( a_ssh_client, 'echo %s >> .openmpi_machines' % ( an_instance.private_ip_address ) )
+        pass
+
+    return a_master_node, an_identity_file
 
 
 #--------------------------------------------------------------------------------------
