@@ -112,11 +112,13 @@ def configure():
 
     for a_reservation in conn.get_all_instances() :
         for an_instance in a_reservation.instances :
-            mpi_instances.append( an_instance )
-            mpi_amis.append( an_instance.image_id )
-            mpi_externalnames.append( an_instance.public_dns_name )  
-            mpi_hostnames.append( an_instance.private_dns_name )                          
-            machine_state.append( an_instance.state )
+            if an_instance.update() == 'running' :
+                mpi_instances.append( an_instance )
+                mpi_amis.append( an_instance.image_id )
+                mpi_externalnames.append( an_instance.public_dns_name )  
+                mpi_hostnames.append( an_instance.private_dns_name )                          
+                machine_state.append( an_instance.state )
+                pass
             pass
         pass
 
