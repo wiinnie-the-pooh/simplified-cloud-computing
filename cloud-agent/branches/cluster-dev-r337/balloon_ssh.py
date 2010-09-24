@@ -124,7 +124,7 @@ ssh.print_call( an_options )
 
 
 print_d( "\n----------------------- Running actual functionality ----------------------\n" )
-a_ssh_client = ssh.connect( an_options )
+a_ssh_client = ssh.connect( ssh.unpuck( an_options ) )
 
 if a_scripts != None :
     for an_id in range( len( a_scripts ) ) :

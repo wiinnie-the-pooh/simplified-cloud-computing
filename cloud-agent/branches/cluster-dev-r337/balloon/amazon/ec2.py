@@ -91,7 +91,7 @@ def unpuck( the_options ) :
 def compose_call( the_options ) :
     an_image_id, an_image_location, an_instance_type, a_min_count, a_max_count, a_host_port = unpuck( the_options )
 
-    a_call = "--image-id='%s' --image-location='%s' --instance-type='%s' --min-count=%d --max-count=%d --host_port=%d" % \
+    a_call = "--image-id='%s' --image-location='%s' --instance-type='%s' --min-count=%d --max-count=%d --host-port=%d" % \
         ( an_image_id, an_image_location, an_instance_type, a_min_count, a_max_count, a_host_port )
     
     return a_call
@@ -214,12 +214,25 @@ def run_instance( the_image_id, the_image_location, the_instance_type,
     for an_instance in a_reservation.instances :
         wait4activation( an_instance )
 
+        a_password = "" # No password
         an_identity_file = an_identity_file
         a_host_port = the_host_port
         a_login_name = 'ubuntu'
         a_host_name = an_instance.public_dns_name
 
         print_d( 'ssh -o "StrictHostKeyChecking no" -i %s -p %d %s@%s\n' % ( an_identity_file, a_host_port, a_login_name, a_host_name ) )
+        
+        from balloon.common import ssh
+        a_ssh_client = ssh.connect( a_password, an_identity_file, a_host_port, a_login_name, a_host_name )
+        a_sftp_client = a_ssh_client.open_sftp()
+
+        an_upload_name = os.path.basename( an_identity_file )
+        a_sftp_client.put( an_identity_file, an_upload_name )
+
+        a_target_name = '${HOME}/.ssh/id_rsa'
+        ssh.command( a_ssh_client, 'mv -f %s %s' % ( an_upload_name, a_target_name ) )
+        ssh.command( a_ssh_client, 'chmod 600 %s' % ( a_target_name ) )
+
         pass
 
     an_instance = a_reservation.instances[ 0 ]

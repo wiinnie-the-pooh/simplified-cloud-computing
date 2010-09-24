@@ -180,22 +180,20 @@ def wait( the_ssh_connect, the_ssh_client, the_command ) :
 
 
 #--------------------------------------------------------------------------------------
-def connect( the_options ) :
-    a_password, an_identity_file, a_host_port, a_login_name, a_host_name, a_command = unpuck( the_options )
-
+def connect( the_password, the_identity_file, the_host_port, the_login_name, the_host_name, the_command = 'echo  > /dev/null' ) :
     import paramiko
     a_ssh_client = paramiko.SSHClient()
     a_ssh_client.set_missing_host_key_policy( paramiko.AutoAddPolicy() )
 
     a_ssh_connect = None
-    if a_password != "" :
-        a_ssh_connect = lambda : a_ssh_client.connect( hostname = a_host_name, port = a_host_port, username = a_login_name, password = a_password )
+    if the_password != "" :
+        a_ssh_connect = lambda : a_ssh_client.connect( hostname = the_host_name, port = the_host_port, username = the_login_name, password = the_password )
     else :
-        a_rsa_key = paramiko.RSAKey( filename = an_identity_file )
-        a_ssh_connect = lambda : a_ssh_client.connect( hostname = a_host_name, port = a_host_port, username = a_login_name, pkey = a_rsa_key )
+        a_rsa_key = paramiko.RSAKey( filename = the_identity_file )
+        a_ssh_connect = lambda : a_ssh_client.connect( hostname = the_host_name, port = the_host_port, username = the_login_name, pkey = a_rsa_key )
         pass
     
-    wait( a_ssh_connect, a_ssh_client, a_command ) 
+    wait( a_ssh_connect, a_ssh_client, the_command ) 
     
     return a_ssh_client
 
