@@ -81,7 +81,7 @@ a_password = "" # No password
 an_identity_file = an_identity_file
 a_host_port = a_host_port
 a_login_name = 'ubuntu'
-a_host_name = an_instance.dns_name
+a_host_name = an_instance.public_dns_name
 
 print a_password
 print an_identity_file
@@ -92,7 +92,6 @@ print a_host_name
 
 print_d( "\n--------------------------- Canonical substitution ------------------------\n" )
 print_d( a_call + '\n' )
-print_d( 'ssh -o "StrictHostKeyChecking no" -i %s -p %d %s@%s\n' % ( an_identity_file, a_host_port, a_login_name, a_host_name ) )
 
 
 print_d( "\n-------------------------------------- OK ---------------------------------\n" )

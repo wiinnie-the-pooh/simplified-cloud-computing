@@ -102,8 +102,16 @@ def extract_options( the_options ) :
     an_image_id = the_options.image_id
     an_image_location = the_options.image_location
     an_instance_type = the_options.instance_type
+
     a_min_count = the_options.min_count
     a_max_count = the_options.max_count
+    if a_min_count > a_max_count :
+        import math
+        print_d( '--min-count=%d > --max-count=%d : --max-count will be corrected to %d' 
+                 % ( a_min_count, a_max_count, a_min_count ) )
+        the_options.max_count = a_max_count = a_min_count
+        pass
+
     a_host_port = the_options.host_port
 
     return an_image_id, an_image_location, an_instance_type, a_min_count, a_max_count, a_host_port
@@ -200,11 +208,21 @@ def run_instance( the_image_id, the_image_location, the_instance_type,
     # Creating a EC2 "reservation" with all the parameters mentioned above
     a_reservation = an_image.run( instance_type = the_instance_type, min_count = the_min_count, max_count = the_max_count, 
                                   key_name = a_key_pair_name, security_groups = [ a_security_group.name ] )
-    an_instance = a_reservation.instances[ 0 ]
     print_d( 'a_reservation.instances = %s\n' % a_reservation.instances )
 
     # Making sure that corresponding instances are ready to use
-    wait4activation( an_instance )
+    for an_instance in a_reservation.instances :
+        wait4activation( an_instance )
+
+        an_identity_file = an_identity_file
+        a_host_port = the_host_port
+        a_login_name = 'ubuntu'
+        a_host_name = an_instance.public_dns_name
+
+        print_d( 'ssh -o "StrictHostKeyChecking no" -i %s -p %d %s@%s\n' % ( an_identity_file, a_host_port, a_login_name, a_host_name ) )
+        pass
+
+    an_instance = a_reservation.instances[ 0 ]
 
     return an_instance, an_identity_file
 
