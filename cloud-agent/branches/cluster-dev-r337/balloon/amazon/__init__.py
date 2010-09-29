@@ -19,9 +19,6 @@
 #--------------------------------------------------------------------------------------
 from balloon.common import print_e, print_d
 
-from ec2 import run_instance, wait4activation
-from s3 import TRootObject, TStudyObject, TFileObject, TSeedObject, generate_uploading_dir
-
 import os
 
 

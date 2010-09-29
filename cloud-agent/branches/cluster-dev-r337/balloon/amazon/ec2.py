@@ -152,16 +152,16 @@ def recreate( the_ec2_conn, the_reservation ) :
 
 
 #--------------------------------------------------------------------------------------
-def run_instance( the_image_id, the_image_location, the_instance_type, 
-                  the_min_count, the_max_count, the_host_port,
-                  the_aws_access_key_id, the_aws_secret_access_key ) :
+def run_reservation( the_image_id, the_image_location, the_instance_type, 
+                     the_min_count, the_max_count, the_host_port,
+                     the_aws_access_key_id, the_aws_secret_access_key ) :
     print_d( "\n-------------------------- Defining image location ------------------------\n" )
     an_instance_reservation_time = Timer()
 
     # Establish an connection with EC2
     import boto.ec2
     a_regions = boto.ec2.regions()
-    print_d( 'a_regions = %r\n' % a_regions )
+    print_d( 'a_regions = %s\n' % [ a_region.name for a_region in a_regions ] )
 
     an_image_region = None
     for a_region in a_regions :
@@ -259,7 +259,7 @@ def run_instance( the_image_id, the_image_location, the_instance_type,
         a_security_group.authorize( 'tcp', 1, 65535, '%s/0' % an_instance.private_ip_address ) # mpi cluster ports
         pass
 
-    return a_master_node, an_identity_file
+    return a_reservation
 
 
 #--------------------------------------------------------------------------------------
