@@ -143,12 +143,36 @@ def wait4activation( the_instance ) :
 
 
 #--------------------------------------------------------------------------------------
-def recreate( the_ec2_conn, the_reservation ) :
+def get_reservation( the_ec2_conn, the_reservation_id ) :
     for a_reservation in the_ec2_conn.get_all_instances() :
-        if a_reservation.id == the_reservation.id :
+        if a_reservation.id == the_reservation_id :
             return a_reservation
         pass
     pass
+
+
+#--------------------------------------------------------------------------------------
+def region_connect( the_image_location, the_aws_access_key_id, the_aws_secret_access_key ) :
+    import boto.ec2
+    a_regions = boto.ec2.regions()
+    print_d( 'a_regions = %s\n' % [ str( a_region.name ) for a_region in a_regions ] )
+
+    an_image_region = None
+    for a_region in a_regions :
+        if a_region.name == the_image_location :
+            an_image_region = a_region
+            pass
+        pass
+    if an_image_region == None :
+        print_e( "There no region with such location - '%s'\n" % an_image_region )
+        pass
+    print_d( 'an_image_region = < %r >\n' % an_image_region )
+    
+    an_ec2_conn = an_image_region.connect( aws_access_key_id = the_aws_access_key_id, 
+                                           aws_secret_access_key = the_aws_secret_access_key )
+    print_d( 'an_ec2_conn = < %r >\n' % an_ec2_conn )
+
+    return an_ec2_conn
 
 
 #--------------------------------------------------------------------------------------
@@ -158,27 +182,7 @@ def run_reservation( the_image_id, the_image_location, the_instance_type,
     print_d( "\n-------------------------- Defining image location ------------------------\n" )
     an_instance_reservation_time = Timer()
 
-    # Establish an connection with EC2
-    import boto.ec2
-    a_regions = boto.ec2.regions()
-    print_d( 'a_regions = %s\n' % [ a_region.name for a_region in a_regions ] )
-
-    an_image_region = None
-    for a_region in a_regions :
-        if a_region.name == the_image_location :
-            an_image_region = a_region
-            pass
-        pass
-
-    if an_image_region == None :
-        print_e( "There no region with such location - '%s'\n" % an_image_region )
-        pass
-
-    print_d( 'an_image_region = < %r >\n' % an_image_region )
-
-    an_ec2_conn = an_image_region.connect( aws_access_key_id = the_aws_access_key_id, 
-                                           aws_secret_access_key = the_aws_secret_access_key )
-    print_d( 'an_ec2_conn = < %r >\n' % an_ec2_conn )
+    an_ec2_conn = region_connect( the_image_location, the_aws_access_key_id, the_aws_secret_access_key )
 
     an_images = an_ec2_conn.get_all_images( image_ids = the_image_id )
     an_image = an_images[ 0 ]
@@ -245,7 +249,7 @@ def run_reservation( the_image_id, the_image_location, the_instance_type,
         pass
 
     # To list all available nodes in the cluster into special <machines> file
-    a_reservation = recreate( an_ec2_conn, a_reservation )
+    a_reservation = get_reservation( an_ec2_conn, a_reservation.id )
     a_master_node = an_instance = a_reservation.instances[ 0 ]
     a_host_name = an_instance.public_dns_name
 
@@ -259,7 +263,7 @@ def run_reservation( the_image_id, the_image_location, the_instance_type,
         a_security_group.authorize( 'tcp', 1, 65535, '%s/0' % an_instance.private_ip_address ) # mpi cluster ports
         pass
 
-    return a_reservation
+    return a_reservation, an_identity_file
 
 
 #--------------------------------------------------------------------------------------
