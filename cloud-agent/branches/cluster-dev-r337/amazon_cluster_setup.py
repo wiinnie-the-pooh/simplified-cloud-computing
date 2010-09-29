@@ -33,7 +33,8 @@ from balloon.amazon import ec2 as amazon_ec2
 #--------------------------------------------------------------------------------------
 # Defining utility command-line interface
 
-an_usage_description = "%prog --image-location='us-east-1' --reservation-id='r-8cc1dfe7' --identity-file='~/.ssh/tmpaSRNcY.pem'"
+an_usage_description = "%prog --image-location='us-east-1' --reservation-id='r-8cc1dfe7'" \
+    " --identity-file='~/.ssh/tmpaSRNcY.pem' --host-port=22 --login-name='ubuntu'"
 an_usage_description += amazon.add_usage_description()
 an_usage_description += common.add_usage_description()
 
@@ -60,6 +61,18 @@ an_option_parser.add_option( "--identity-file",
                              action = "store",
                              dest = "identity_file",
                              default = None )
+an_option_parser.add_option( "--host-port",
+                             metavar = "< port to be used >",
+                             type = "int",
+                             action = "store",
+                             dest = "host_port",
+                             default = None )
+an_option_parser.add_option( "--login-name",
+                             metavar = "< specifies the user to log in as on the remote machine >",
+                             action = "store",
+                             dest = "login_name",
+                             help = "(\"%default\", by default)",
+                             default = 'ubuntu' )
 amazon.add_parser_options( an_option_parser )
 common.add_parser_options( an_option_parser )
   
@@ -91,13 +104,20 @@ import os.path
 an_identity_file = os.path.expanduser( an_identity_file )
 an_identity_file = os.path.abspath( an_identity_file )
 
+a_host_port = an_options.host_port
+if a_host_port == None :
+    a_host_port = int( raw_input() )
+    pass
+
+a_login_name = an_options.login_name
+
 
 print_d( "\n--------------------------- Canonical substitution ------------------------\n" )
 import sys
 an_engine = sys.argv[ 0 ]
 
-a_call = "%s  --image-location='%s' --reservation-id='%s' --identity-file='%s' %s" % \
-    ( an_engine, an_image_location, a_reservation_id, an_identity_file, amazon.compose_call( an_options ) )
+a_call = "%s  --image-location='%s' --reservation-id='%s' --identity-file='%s' --host-port=%d  --login-name='%s' %s" % \
+    ( an_engine, an_image_location, a_reservation_id, an_identity_file, a_host_port, a_login_name, amazon.compose_call( an_options ) )
 print_d( a_call + '\n' )
 
 
@@ -109,10 +129,52 @@ an_ec2_conn = amazon_ec2.region_connect( an_image_location, AWS_ACCESS_KEY_ID, A
 a_reservation = amazon_ec2.get_reservation( an_ec2_conn, a_reservation_id )
 print_d( 'a_reservation.instances = %s\n' % a_reservation.instances )
 
+a_password = "" # No password
+an_identity_file = an_identity_file
+a_host_port = a_host_port
+a_login_name = a_login_name
+
+# Providing automatic ssh connection
+for an_instance in a_reservation.instances :
+    a_host_name = an_instance.public_dns_name
+    print_d( 'ssh -o "StrictHostKeyChecking no" -i %s -p %d %s@%s\n' % ( an_identity_file, a_host_port, a_login_name, a_host_name ) )
+        
+    from balloon.common import ssh
+    a_ssh_client = ssh.connect( a_password, an_identity_file, a_host_port, a_login_name, a_host_name )
+    a_sftp_client = a_ssh_client.open_sftp()
+
+    an_upload_name = os.path.basename( an_identity_file )
+    a_sftp_client.put( an_identity_file, an_upload_name )
+
+    a_target_name = '${HOME}/.ssh/id_rsa'
+    ssh.command( a_ssh_client, 'mv -f %s %s' % ( an_upload_name, a_target_name ) )
+    ssh.command( a_ssh_client, 'chmod 600 %s' % ( a_target_name ) )
+
+    pass
+
+# Look for corresponding "sequirity group"
+a_security_group = an_ec2_conn.get_all_security_groups( [ a_reservation.groups[ 0 ].id ] )[ 0 ]
+
+# Listing all cluster nodes into special <machines> file
+a_master_node = an_instance = a_reservation.instances[ 0 ]
+a_host_name = an_instance.public_dns_name
+
+from balloon.common import ssh
+a_ssh_client = ssh.connect( a_password, an_identity_file, a_host_port, a_login_name, a_host_name )
+ssh.command( a_ssh_client, 'echo %s > .openmpi_machines' % ( an_instance.private_ip_address ) )
+a_security_group.authorize( 'tcp', 1, 65535, '%s/0' % an_instance.private_ip_address ) # mpi cluster ports
+
+for an_instance in a_reservation.instances[ 1 : ] :
+    ssh.command( a_ssh_client, 'echo %s >> .openmpi_machines' % ( an_instance.private_ip_address ) )
+    a_security_group.authorize( 'tcp', 1, 65535, '%s/0' % an_instance.private_ip_address ) # mpi cluster ports
+    pass
+
 
 print_d( "\n------------------ Printing succussive pipeline arguments -----------------\n" )
 print a_reservation.region.name
 print a_reservation.id
+print an_identity_file
+print a_host_port
 
 
 print_d( "\n--------------------------- Canonical substitution ------------------------\n" )

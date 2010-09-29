@@ -79,6 +79,7 @@ print_d( "\n------------------ Printing succussive pipeline arguments ----------
 print a_reservation.region.name
 print a_reservation.id
 print an_identity_file
+print a_host_port
 
 
 print_d( "\n--------------------------- Canonical substitution ------------------------\n" )
