@@ -18,13 +18,14 @@
 
 #--------------------------------------------------------------------------------------
 """
-This script is responsible for cluster environment setup for the given Amazon EC2 reservation
+This script is responsible for the task packaging and sending it for execution in a cloud
 """
 
 
 #--------------------------------------------------------------------------------------
 import balloon.common as common
 from balloon.common import print_d, print_e, sh_command, Timer
+from balloon.common import ssh
 
 from balloon import amazon
 from balloon.amazon import ec2 as amazon_ec2
@@ -33,7 +34,7 @@ from balloon.amazon import ec2 as amazon_ec2
 #--------------------------------------------------------------------------------------
 # Defining utility command-line interface
 
-an_usage_description = "%prog --image-location='us-east-1' --reservation-id='r-8cc1dfe7'" \
+an_usage_description = "%prog --image-location='us-east-1' --reservation-id='r-8cc1dfe7' --instance-id=0" \
     " --identity-file='~/.ssh/tmpaSRNcY.pem' --host-port=22 --login-name='ubuntu'"
 an_usage_description += amazon.add_usage_description()
 an_usage_description += common.add_usage_description()
@@ -44,6 +45,13 @@ a_help_formatter = IndentedHelpFormatter( width = 127 )
 from optparse import OptionParser
 an_option_parser = OptionParser( usage = an_usage_description, version="%prog 0.1", formatter = a_help_formatter )
 
+an_option_parser.add_option( "--instance-id",
+                             metavar = "< order number of the instance in the given reservation >",
+                             type = "int",
+                             action = "store",
+                             dest = "instance_id",
+                             help = "(%default, by default)",
+                             default = 0 )
 an_option_parser.add_option( "--image-location",
                              metavar = "< location of the AMI >",
                              action = "store",
@@ -96,6 +104,8 @@ if a_reservation_id == None :
     a_reservation_id = raw_input()
     pass
 
+an_instance_id = an_options.instance_id
+
 an_identity_file = an_options.identity_file
 if an_identity_file == None :
     an_identity_file = raw_input()
@@ -116,8 +126,9 @@ print_d( "\n--------------------------- Canonical substitution -----------------
 import sys
 an_engine = sys.argv[ 0 ]
 
-a_call = "%s --image-location='%s' --reservation-id='%s' --identity-file='%s' --host-port=%d --login-name='%s' %s" % \
-    ( an_engine, an_image_location, a_reservation_id, an_identity_file, a_host_port, a_login_name, amazon.compose_call( an_options ) )
+a_call = "%s --instance-id=%d --image-location='%s' --reservation-id='%s' --identity-file='%s' --host-port=%d --login-name='%s' %s" % \
+    ( an_engine, an_instance_id, an_image_location, a_reservation_id,  
+      an_identity_file, a_host_port, a_login_name, amazon.compose_call( an_options ) )
 print_d( a_call + '\n' )
 
 
@@ -129,55 +140,25 @@ an_ec2_conn = amazon_ec2.region_connect( an_image_location, AWS_ACCESS_KEY_ID, A
 a_reservation = amazon_ec2.get_reservation( an_ec2_conn, a_reservation_id )
 print_d( 'a_reservation.instances = %s\n' % a_reservation.instances )
 
+an_instance = a_reservation.instances[ an_instance_id ]
+print_d( 'an_instance = %s\n' % an_instance )
+
+
+print_d( "\n------------------ Printing succussive pipeline arguments -----------------\n" )
 a_password = "" # No password
 an_identity_file = an_identity_file
 a_host_port = a_host_port
 a_login_name = a_login_name
-
-# Providing automatic ssh connection
-for an_instance in a_reservation.instances :
-    a_host_name = an_instance.public_dns_name
-    print_d( 'ssh -o "StrictHostKeyChecking no" -i %s -p %d %s@%s\n' % ( an_identity_file, a_host_port, a_login_name, a_host_name ) )
-        
-    from balloon.common import ssh
-    a_ssh_client = ssh.connect( a_password, an_identity_file, a_host_port, a_login_name, a_host_name )
-    a_sftp_client = a_ssh_client.open_sftp()
-
-    an_upload_name = os.path.basename( an_identity_file )
-    a_sftp_client.put( an_identity_file, an_upload_name )
-
-    a_target_name = '${HOME}/.ssh/id_rsa'
-    ssh.command( a_ssh_client, 'mv -f %s %s' % ( an_upload_name, a_target_name ) )
-    ssh.command( a_ssh_client, 'chmod 600 %s' % ( a_target_name ) )
-
-    pass
-
-# Look for corresponding "sequirity group"
-a_security_group = an_ec2_conn.get_all_security_groups( [ a_reservation.groups[ 0 ].id ] )[ 0 ]
-
-# Listing all cluster nodes into special <machines> file
-a_master_node = an_instance = a_reservation.instances[ 0 ]
 a_host_name = an_instance.public_dns_name
 
-from balloon.common import ssh
-a_ssh_client = ssh.connect( a_password, an_identity_file, a_host_port, a_login_name, a_host_name )
-ssh.command( a_ssh_client, 'echo %s > .openmpi_machines' % ( an_instance.private_ip_address ) )
-a_security_group.authorize( 'tcp', 1, 65535, '%s/0' % an_instance.private_ip_address ) # mpi cluster ports
-
-for an_instance in a_reservation.instances[ 1 : ] :
-    ssh.command( a_ssh_client, 'echo %s >> .openmpi_machines' % ( an_instance.private_ip_address ) )
-    a_security_group.authorize( 'tcp', 1, 65535, '%s/0' % an_instance.private_ip_address ) # mpi cluster ports
-    pass
-
-
-print_d( "\n------------------ Printing succussive pipeline arguments -----------------\n" )
-print a_reservation.region.name
-print a_reservation.id
+print a_password
 print an_identity_file
 print a_host_port
-
+print a_login_name
+print a_host_name
 
 print_d( "\n--------------------------- Canonical substitution ------------------------\n" )
+ssh.print_call( a_password, an_identity_file, a_host_port, a_login_name, a_host_name )
 print_d( a_call + '\n' )
 
 
