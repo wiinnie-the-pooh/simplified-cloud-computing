@@ -138,6 +138,16 @@ def wait4activation( the_instance ) :
         pass
     
     print_d( ' %s\n' % the_instance.update() )
+
+    pass
+
+
+#--------------------------------------------------------------------------------------
+def recreate( the_ec2_conn, the_reservation ) :
+    for a_reservation in the_ec2_conn.get_all_instances() :
+        if a_reservation.id == the_reservation.id :
+            return a_reservation
+        pass
     pass
 
 
@@ -200,7 +210,6 @@ def run_instance( the_image_id, the_image_location, the_instance_type,
 
     # Asking EC2 to generate a new "sequirity group" & apply corresponding firewall permissions
     a_security_group = an_ec2_conn.create_security_group( an_unique_name, 'temporaly generated' )
-    a_security_group.authorize( 'tcp', 0, 65535, '0.0.0.0/0' ) # mpi cluster ports
     a_security_group.authorize( 'tcp', the_host_port, the_host_port, '0.0.0.0/0' ) # ssh port
     
     
@@ -236,15 +245,18 @@ def run_instance( the_image_id, the_image_location, the_instance_type,
         pass
 
     # To list all available nodes in the cluster into special <machines> file
+    a_reservation = recreate( an_ec2_conn, a_reservation )
     a_master_node = an_instance = a_reservation.instances[ 0 ]
     a_host_name = an_instance.public_dns_name
 
     from balloon.common import ssh
     a_ssh_client = ssh.connect( a_password, an_identity_file, a_host_port, a_login_name, a_host_name )
     ssh.command( a_ssh_client, 'echo %s > .openmpi_machines' % ( an_instance.private_ip_address ) )
+    a_security_group.authorize( 'tcp', 1, 65535, '%s/0' % an_instance.private_ip_address ) # mpi cluster ports
 
     for an_instance in a_reservation.instances[ 1 : ] :
         ssh.command( a_ssh_client, 'echo %s >> .openmpi_machines' % ( an_instance.private_ip_address ) )
+        a_security_group.authorize( 'tcp', 1, 65535, '%s/0' % an_instance.private_ip_address ) # mpi cluster ports
         pass
 
     return a_master_node, an_identity_file
