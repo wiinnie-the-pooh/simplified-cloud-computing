@@ -152,30 +152,6 @@ def get_reservation( the_ec2_conn, the_reservation_id ) :
 
 
 #--------------------------------------------------------------------------------------
-def region_connect( the_image_location, the_aws_access_key_id, the_aws_secret_access_key ) :
-    import boto.ec2
-    a_regions = boto.ec2.regions()
-    print_d( 'a_regions = %s\n' % [ str( a_region.name ) for a_region in a_regions ] )
-
-    an_image_region = None
-    for a_region in a_regions :
-        if a_region.name == the_image_location :
-            an_image_region = a_region
-            pass
-        pass
-    if an_image_region == None :
-        print_e( "There no region with such location - '%s'\n" % an_image_region )
-        pass
-    print_d( 'an_image_region = < %r >\n' % an_image_region )
-    
-    an_ec2_conn = an_image_region.connect( aws_access_key_id = the_aws_access_key_id, 
-                                           aws_secret_access_key = the_aws_secret_access_key )
-    print_d( 'an_ec2_conn = < %r >\n' % an_ec2_conn )
-
-    return an_ec2_conn
-
-
-#--------------------------------------------------------------------------------------
 def run_reservation( the_image_id, the_image_location, the_instance_type, 
                      the_min_count, the_max_count, the_host_port,
                      the_aws_access_key_id, the_aws_secret_access_key ) :
