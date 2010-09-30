@@ -17,7 +17,7 @@ FoamFile
 
 numberOfSubdomains 4;
 
-method          simple;
+method          scotch;
 
 simpleCoeffs
 {
@@ -32,7 +32,7 @@ hierarchicalCoeffs
     order           xyz;
 }
 
-metisCoeffs
+scotchCoeffs
 {
     processorWeights ( 1 1 1 1 );
 }
