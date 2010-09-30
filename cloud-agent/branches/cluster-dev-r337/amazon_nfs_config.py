@@ -129,6 +129,10 @@ an_ec2_conn = amazon_ec2.region_connect( an_image_location, AWS_ACCESS_KEY_ID, A
 a_reservation = amazon_ec2.get_reservation( an_ec2_conn, a_reservation_id )
 print_d( '< %r > : %s\n' % ( a_reservation, a_reservation.instances ) )
 
+# Look for corresponding "sequirity group"
+a_security_group = an_ec2_conn.get_all_security_groups( [ a_reservation.groups[ 0 ].id ] )[ 0 ]
+print_d( "a_security_group = < %r >\n" % an_idena_security_group )
+
 a_password = "" # No password
 an_identity_file = an_identity_file
 a_host_port = a_host_port
@@ -140,40 +144,17 @@ an_instance_2_ssh_client = {}
 for an_instance in a_reservation.instances :
     a_host_name = an_instance.public_dns_name
     print_d( 'ssh -o "StrictHostKeyChecking no" -i %s -p %d %s@%s\n' % ( an_identity_file, a_host_port, a_login_name, a_host_name ) )
-        
+
     a_ssh_client = ssh.connect( a_password, an_identity_file, a_host_port, a_login_name, a_host_name )
     a_sftp_client = a_ssh_client.open_sftp()
 
-    an_upload_name = os.path.basename( an_identity_file )
-    a_sftp_client.put( an_identity_file, an_upload_name )
+    a_security_group.authorize( 'tcp', 111, 111, '%s/0' % an_instance.private_ip_address ) # for rpcbind
+    a_security_group.authorize( 'tcp', 2049, 2049, '%s/0' % an_instance.private_ip_address ) # for nfs over tcp
+    a_security_group.authorize( 'udp', 35563, 35563, '%s/0' % an_instance.private_ip_address ) # for nfs over udp
 
-    a_target_name = '${HOME}/.ssh/id_rsa'
-    ssh.command( a_ssh_client, 'mv -f %s %s' % ( an_upload_name, a_target_name ) )
-    ssh.command( a_ssh_client, 'chmod 600 %s' % ( a_target_name ) )
+    ssh.command( a_ssh_client, 'sudo apt-get install -y nfs-common portmap nfs-kernel-server' ) # install server and client packages
 
     an_instance_2_ssh_client[ an_instance ] = a_ssh_client, a_sftp_client
-    pass
-
-# Look for corresponding "sequirity group"
-a_security_group = an_ec2_conn.get_all_security_groups( [ a_reservation.groups[ 0 ].id ] )[ 0 ]
-
-print_d( "\n--- Listing all the cluster nodes into special '.openmpi_hostfile' file ---\n" )
-# The suggested cluster conffiguration is symmetric,
-# which means that it does not matter who will be the master node.
-# (if user need to do something special, he can do it from his own machine)
-for a_master_node in a_reservation.instances :
-    a_host_name = a_master_node.public_dns_name
-
-    a_ssh_client, a_sftp_client = an_instance_2_ssh_client[ a_master_node ]
-    ssh.command( a_ssh_client, 'echo %s > .openmpi_hostfile' % ( a_master_node.private_ip_address ) )
-    a_security_group.authorize( 'tcp', 1, 65535, '%s/0' % a_master_node.private_ip_address ) # mpi cluster ports
-
-    for an_instance in a_reservation.instances :
-        if an_instance == a_master_node :
-            continue
-        ssh.command( a_ssh_client, 'echo %s >> .openmpi_hostfile' % ( an_instance.private_ip_address ) )
-        pass
-
     pass
 
 [ a_ssh_client.close() for a_ssh_client, a_sftp_client in an_instance_2_ssh_client.values() ]
