@@ -68,9 +68,13 @@ print_d( a_call + '\n' )
 
 
 print_d( "\n----------------------- Running actual functionality ----------------------\n" )
+a_spent_time = Timer()
+
 a_reservation, an_identity_file = ec2.run.run_reservation( an_image_id, an_image_location, an_instance_type, 
                                                            a_min_count, a_max_count, a_host_port,
                                                            AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY )
+
+print_d( "a_spent_time = %s, sec\n" % a_spent_time )
 
 
 print_d( "\n------------------ Printing succussive pipeline arguments -----------------\n" )
