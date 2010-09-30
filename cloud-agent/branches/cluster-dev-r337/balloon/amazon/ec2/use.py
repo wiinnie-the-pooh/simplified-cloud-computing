@@ -24,97 +24,92 @@ import os, os.path
 
 #--------------------------------------------------------------------------------------
 def add_usage_description() :
-    return " --image-id='ami-2d4aa444' --image-location='us-east-1' --instance-type='m1.small' --min-count=1 --max-count=1 --user-name='ubuntu'"
+    return " --image-location='us-east-1' --reservation-id='r-8cc1dfe7' --identity-file='~/.ssh/tmpaSRNcY.pem' --host-port=22 --login-name='ubuntu'"
 
 
 #--------------------------------------------------------------------------------------
 def add_parser_options( the_option_parser ) :
-    the_option_parser.add_option( "--image-id",
-                                  metavar = "< Amazon EC2 AMI ID >",
-                                  action = "store",
-                                  dest = "image_id",
-                                  help = "(\"%default\", by default)",
-                                  default = "ami-2231c44b" ) # ami-fd4aa494 (ami-2d4aa444)
-    
     the_option_parser.add_option( "--image-location",
                                   metavar = "< location of the AMI >",
                                   action = "store",
                                   dest = "image_location",
                                   help = "(\"%default\", by default)",
-                                  default = "us-east-1" )
-
-    the_option_parser.add_option( "--instance-type",
-                                  metavar = "< type of the instance in terms of EC2 >",
+                                  default = None )
+    the_option_parser.add_option( "--reservation-id",
+                                  metavar = "< Amazon EC2 Reservation ID >",
                                   action = "store",
-                                  dest = "instance_type",
+                                  dest = "reservation_id",
                                   help = "(\"%default\", by default)",
-                                  default = "m1.small" ) # m1.large
-    
-    the_option_parser.add_option( "--min-count",
-                                  metavar = "< minimum number of instances to start >",
-                                  type = "int",
+                                  default = None )
+    the_option_parser.add_option( "--identity-file",
+                                  metavar = "< selects a file from which the identity (private key) for RSA or DSA authentication is read >",
                                   action = "store",
-                                  dest = "min_count",
-                                  help = "(%default, by default)",
-                                  default = 1 )
-    
-    the_option_parser.add_option( "--max-count",
-                                  metavar = "< minimum number of instances to start >",
-                                  type = "int",
-                                  action = "store",
-                                  dest = "max_count",
-                                  help = "(%default, by default)",
-                                  default = 1 )
-
+                                  dest = "identity_file",
+                                  default = None )
     the_option_parser.add_option( "--host-port",
-                                  metavar = "< port to be used for ssh >",
+                                  metavar = "< port to be used >",
                                   type = "int",
                                   action = "store",
                                   dest = "host_port",
-                                  default = 22 )
+                                  default = None )
+    the_option_parser.add_option( "--login-name",
+                                  metavar = "< specifies the user to log in as on the remote machine >",
+                                  action = "store",
+                                  dest = "login_name",
+                                  help = "(\"%default\", by default)",
+                                  default = 'ubuntu' )
     pass
 
 
 #--------------------------------------------------------------------------------------
 def unpuck( the_options ) :
-    an_image_id = the_options.image_id
     an_image_location = the_options.image_location
-    an_instance_type = the_options.instance_type
-    a_min_count = the_options.min_count
-    a_max_count = the_options.max_count
+    a_reservation_id = the_options.reservation_id
+    an_identity_file = the_options.identity_file
     a_host_port = the_options.host_port
+    a_login_name = the_options.login_name
 
-    return an_image_id, an_image_location, an_instance_type, a_min_count, a_max_count, a_host_port
+    return an_image_location, a_reservation_id, an_identity_file, a_host_port, a_login_name
 
 
 #--------------------------------------------------------------------------------------
 def compose_call( the_options ) :
-    an_image_id, an_image_location, an_instance_type, a_min_count, a_max_count, a_host_port = unpuck( the_options )
+    an_image_location, a_reservation_id, an_identity_file, a_host_port, a_login_name = unpuck( the_options )
 
-    a_call = "--image-id='%s' --image-location='%s' --instance-type='%s' --min-count=%d --max-count=%d --host-port=%d" % \
-        ( an_image_id, an_image_location, an_instance_type, a_min_count, a_max_count, a_host_port )
+    a_call = "--image-location='%s' --reservation-id='%s' --identity-file='%s' --host-port=%d --login-name='%s'" % \
+        ( an_image_location, a_reservation_id, an_identity_file, a_host_port, a_login_name )
     
     return a_call
 
 
 #--------------------------------------------------------------------------------------
 def extract_options( the_options ) :
-    an_image_id = the_options.image_id
     an_image_location = the_options.image_location
-    an_instance_type = the_options.instance_type
-
-    a_min_count = the_options.min_count
-    a_max_count = the_options.max_count
-    if a_min_count > a_max_count :
-        import math
-        print_d( '--min-count=%d > --max-count=%d : --max-count will be corrected to %d' 
-                 % ( a_min_count, a_max_count, a_min_count ) )
-        the_options.max_count = a_max_count = a_min_count
+    if an_image_location == None :
+        an_image_location = raw_input()
         pass
 
+    a_reservation_id = the_options.reservation_id
+    if a_reservation_id == None :
+        a_reservation_id = raw_input()
+        pass
+    
+    an_identity_file = the_options.identity_file
+    if an_identity_file == None :
+        an_identity_file = raw_input()
+        pass
+    import os.path
+    an_identity_file = os.path.expanduser( an_identity_file )
+    an_identity_file = os.path.abspath( an_identity_file )
+    
     a_host_port = the_options.host_port
-
-    return an_image_id, an_image_location, an_instance_type, a_min_count, a_max_count, a_host_port
+    if a_host_port == None :
+        a_host_port = int( raw_input() )
+        pass
+    
+    a_login_name = the_options.login_name
+    
+    return an_image_location, a_reservation_id, an_identity_file, a_host_port, a_login_name
 
 
 #--------------------------------------------------------------------------------------
