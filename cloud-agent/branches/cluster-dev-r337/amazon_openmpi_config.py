@@ -138,7 +138,7 @@ an_identity_file = an_identity_file
 a_host_port = a_host_port
 a_login_name = a_login_name
 
-print_d( "\n-------------------- Providing automatic ssh connection -------------------\n" )
+print_d( "\n-------------------- Providing seamless ssh connection --------------------\n" )
 from balloon.common import ssh
 an_instance_2_ssh_client = {}
 for an_instance in a_reservation.instances :

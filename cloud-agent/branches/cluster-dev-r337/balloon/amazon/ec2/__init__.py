@@ -16,6 +16,12 @@
 
 
 #--------------------------------------------------------------------------------------
+from balloon.common import print_e, print_d, Timer
+
+import use
+
+
+#--------------------------------------------------------------------------------------
 def region_connect( the_image_location, the_aws_access_key_id, the_aws_secret_access_key ) :
     import boto.ec2
     a_regions = boto.ec2.regions()

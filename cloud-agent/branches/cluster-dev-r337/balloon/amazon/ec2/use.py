@@ -88,11 +88,13 @@ def extract_options( the_options ) :
     if an_image_location == None :
         an_image_location = raw_input()
         pass
+    the_options.image_location = an_image_location
 
     a_reservation_id = the_options.reservation_id
     if a_reservation_id == None :
         a_reservation_id = raw_input()
         pass
+    the_options.reservation_id = a_reservation_id
     
     an_identity_file = the_options.identity_file
     if an_identity_file == None :
@@ -101,12 +103,14 @@ def extract_options( the_options ) :
     import os.path
     an_identity_file = os.path.expanduser( an_identity_file )
     an_identity_file = os.path.abspath( an_identity_file )
+    the_options.identity_file = an_identity_file
     
     a_host_port = the_options.host_port
     if a_host_port == None :
         a_host_port = int( raw_input() )
         pass
-    
+    the_options.host_port = a_host_port
+
     a_login_name = the_options.login_name
     
     return an_image_location, a_reservation_id, an_identity_file, a_host_port, a_login_name
@@ -129,9 +133,19 @@ def print_options( the_options ) :
 def get_reservation( the_ec2_conn, the_reservation_id ) :
     for a_reservation in the_ec2_conn.get_all_instances() :
         if a_reservation.id == the_reservation_id :
+            print_d( '< %r > : %s\n' % ( a_reservation, a_reservation.instances ) )
+
             return a_reservation
         pass
     pass
+
+
+#--------------------------------------------------------------------------------------
+def get_security_group( the_ec2_conn, the_reservation ) :
+    a_security_group = the_ec2_conn.get_all_security_groups( [ the_reservation.groups[ 0 ].id ] )[ 0 ]
+    print_d( "a_security_group = < %r >\n" % a_security_group )
+
+    return a_security_group
 
 
 #--------------------------------------------------------------------------------------

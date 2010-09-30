@@ -72,21 +72,15 @@ print_d( a_call + '\n' )
 print_d( "\n----------------------- Running actual functionality ----------------------\n" )
 a_spent_time = Timer()
 
-an_ec2_conn = amazon_ec2.region_connect( an_image_location, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY )
-
-a_reservation = amazon_ec2.get_reservation( an_ec2_conn, a_reservation_id )
-print_d( '< %r > : %s\n' % ( a_reservation, a_reservation.instances ) )
-
-# Look for corresponding "sequirity group"
-a_security_group = an_ec2_conn.get_all_security_groups( [ a_reservation.groups[ 0 ].id ] )[ 0 ]
-print_d( "a_security_group = < %r >\n" % a_security_group )
+an_ec2_conn = ec2.region_connect( an_image_location, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY )
+a_reservation = ec2.use.get_reservation( an_ec2_conn, a_reservation_id )
+a_security_group = ec2.use.get_security_group( an_ec2_conn, a_reservation )
 
 a_password = "" # No password
 an_identity_file = an_identity_file
 a_host_port = a_host_port
 a_login_name = a_login_name
 
-print_d( "\n-------------------- Providing automatic ssh connection -------------------\n" )
 from balloon.common import ssh
 an_instance_2_ssh_client = {}
 for an_instance in a_reservation.instances :
