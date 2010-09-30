@@ -131,7 +131,7 @@ print_d( '< %r > : %s\n' % ( a_reservation, a_reservation.instances ) )
 
 # Look for corresponding "sequirity group"
 a_security_group = an_ec2_conn.get_all_security_groups( [ a_reservation.groups[ 0 ].id ] )[ 0 ]
-print_d( "a_security_group = < %r >\n" % an_idena_security_group )
+print_d( "a_security_group = < %r >\n" % a_security_group )
 
 a_password = "" # No password
 an_identity_file = an_identity_file
@@ -148,9 +148,12 @@ for an_instance in a_reservation.instances :
     a_ssh_client = ssh.connect( a_password, an_identity_file, a_host_port, a_login_name, a_host_name )
     a_sftp_client = a_ssh_client.open_sftp()
 
-    a_security_group.authorize( 'tcp', 111, 111, '%s/0' % an_instance.private_ip_address ) # for rpcbind
-    a_security_group.authorize( 'tcp', 2049, 2049, '%s/0' % an_instance.private_ip_address ) # for nfs over tcp
-    a_security_group.authorize( 'udp', 35563, 35563, '%s/0' % an_instance.private_ip_address ) # for nfs over udp
+    try :
+        a_security_group.authorize( 'tcp', 111, 111, '%s/0' % an_instance.private_ip_address ) # for rpcbind
+        a_security_group.authorize( 'tcp', 2049, 2049, '%s/0' % an_instance.private_ip_address ) # for nfs over tcp
+        a_security_group.authorize( 'udp', 35563, 35563, '%s/0' % an_instance.private_ip_address ) # for nfs over udp
+    except :
+        pass
 
     ssh.command( a_ssh_client, 'sudo apt-get install -y nfs-common portmap nfs-kernel-server' ) # install server and client packages
 

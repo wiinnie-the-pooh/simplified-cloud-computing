@@ -129,6 +129,10 @@ an_ec2_conn = amazon_ec2.region_connect( an_image_location, AWS_ACCESS_KEY_ID, A
 a_reservation = amazon_ec2.get_reservation( an_ec2_conn, a_reservation_id )
 print_d( '< %r > : %s\n' % ( a_reservation, a_reservation.instances ) )
 
+# Look for corresponding "sequirity group"
+a_security_group = an_ec2_conn.get_all_security_groups( [ a_reservation.groups[ 0 ].id ] )[ 0 ]
+print_d( "a_security_group = < %r >\n" % a_security_group )
+
 a_password = "" # No password
 an_identity_file = an_identity_file
 a_host_port = a_host_port
@@ -151,11 +155,13 @@ for an_instance in a_reservation.instances :
     ssh.command( a_ssh_client, 'mv -f %s %s' % ( an_upload_name, a_target_name ) )
     ssh.command( a_ssh_client, 'chmod 600 %s' % ( a_target_name ) )
 
+    try :
+        a_security_group.authorize( 'tcp', 1, 65535, '%s/0' % an_instance.private_ip_address ) # mpi cluster ports
+    except :
+        pass
+
     an_instance_2_ssh_client[ an_instance ] = a_ssh_client, a_sftp_client
     pass
-
-# Look for corresponding "sequirity group"
-a_security_group = an_ec2_conn.get_all_security_groups( [ a_reservation.groups[ 0 ].id ] )[ 0 ]
 
 print_d( "\n--- Listing all the cluster nodes into special '.openmpi_hostfile' file ---\n" )
 # The suggested cluster conffiguration is symmetric,
@@ -166,7 +172,6 @@ for a_master_node in a_reservation.instances :
 
     a_ssh_client, a_sftp_client = an_instance_2_ssh_client[ a_master_node ]
     ssh.command( a_ssh_client, 'echo %s > .openmpi_hostfile' % ( a_master_node.private_ip_address ) )
-    a_security_group.authorize( 'tcp', 1, 65535, '%s/0' % a_master_node.private_ip_address ) # mpi cluster ports
 
     for an_instance in a_reservation.instances :
         if an_instance == a_master_node :
