@@ -75,7 +75,7 @@ def unpack( the_options ) :
 
 
 #--------------------------------------------------------------------------------------
-def print_call( the_password, the_identity_file, the_host_port, the_login_name, the_host_name ) :
+def print_call( the_password, the_identity_file, the_host_port, the_login_name, the_host_name, the_command = None ) :
     if the_password != "" :
         print_d( 'sshpass -p %s ssh -o "StrictHostKeyChecking no" -p %d %s@%s\n' % \
                      ( the_password, the_host_port, the_login_name, the_host_name ) )

@@ -34,7 +34,7 @@ def add_parser_options( the_option_parser ) :
                                   action = "store",
                                   dest = "image_id",
                                   help = "(\"%default\", by default)",
-                                  default = "ami-2231c44b" ) # ami-fd4aa494 (ami-2d4aa444)
+                                  default = "ami-9c5aaff5" ) # ami-fd4aa494 ( ami-2d4aa444, ami-2231c44b )
     
     the_option_parser.add_option( "--image-location",
                                   metavar = "< location of the AMI >",

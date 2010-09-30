@@ -108,11 +108,11 @@ an_engine = sys.argv[ 0 ]
 a_call = "%s --remote-location='%s' %s" % ( an_engine, a_remote_location, ssh.compose_call( an_options ) )
 
 print_d( a_call + '\n' )
-ssh.print_call( an_options )
+ssh.print_call( *ssh.unpack( an_options ) )
 
 
 print_d( "\n----------------------- Running actual functionality ----------------------\n" )
-a_ssh_client = ssh.connect( an_options )
+a_ssh_client = ssh.connect( a_password, an_identity_file, a_host_port, a_login_name, a_host_name )
 
 a_sftp_client = a_ssh_client.open_sftp()
 ssh.command( a_ssh_client, 'sudo mkdir --parents %s' % a_remote_location )
@@ -141,11 +141,11 @@ a_ssh_client.close()
 
 
 print_d( "\n------------------ Printing succussive pipeline arguments -----------------\n" )
-ssh.print_options( ssh.unpack( an_options ) )
+ssh.print_options( *ssh.unpack( an_options ) )
 
 
 print_d( "\n--------------------------- Canonical substitution ------------------------\n" )
-ssh.print_call( an_options )
+ssh.print_call( *ssh.unpack( an_options ) )
 print_d( a_call + '\n' )
 
 

@@ -106,7 +106,7 @@ print_d( "a_spent_time = %s, sec\n" % a_spent_time )
 
 
 print_d( "\n------------------ Printing succussive pipeline arguments -----------------\n" )
-ec2.use.print_options( ec2.use.unpack( an_options ) )
+ec2.use.print_options( *ec2.use.unpack( an_options ) )
 
 
 print_d( "\n--------------------------- Canonical substitution ------------------------\n" )

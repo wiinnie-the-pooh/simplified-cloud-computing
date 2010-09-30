@@ -1,10 +1,24 @@
 #!/bin/sh
-# Source tutorial run functions
-. $WM_PROJECT_DIR/bin/tools/RunFunctions
 
+#--------------------------------------------------------------------------------------
+cd ${0%/*} || exit 1    # run from this directory
+. $WM_PROJECT_DIR/bin/tools/RunFunctions # source tutorial run functions
+
+
+#--------------------------------------------------------------------------------------
 # Get application name
-application=`getApplication`
+application="interFoam"
 
+
+#--------------------------------------------------------------------------------------
 runApplication blockMesh
 runApplication setFields
-runApplication $application
+runApplication decomposePar
+
+mpirun --hostfile ~/.openmpi_hostfile -x LD_LIBRARY_PATH -x PATH -x WM_PROJECT_DIR -x MPI_BUFFER_SIZE \
+    -np 4 ${application} -case . -parallel < /dev/null > log.${application} 2>&1
+
+runApplication reconstructPar
+
+
+#--------------------------------------------------------------------------------------
