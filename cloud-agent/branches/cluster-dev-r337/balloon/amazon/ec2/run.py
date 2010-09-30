@@ -158,6 +158,7 @@ def run_reservation( the_image_id, the_image_location, the_instance_type,
     print_d( "\n-------------------------- Defining image location ------------------------\n" )
     an_instance_reservation_time = Timer()
 
+    from common import region_connect
     an_ec2_conn = region_connect( the_image_location, the_aws_access_key_id, the_aws_secret_access_key )
 
     an_images = an_ec2_conn.get_all_images( image_ids = the_image_id )
@@ -197,7 +198,7 @@ def run_reservation( the_image_id, the_image_location, the_instance_type,
     # Creating a EC2 "reservation" with all the parameters mentioned above
     a_reservation = an_image.run( instance_type = the_instance_type, min_count = the_min_count, max_count = the_max_count, 
                                   key_name = a_key_pair_name, security_groups = [ a_security_group.name ] )
-    print_d( 'a_reservation.instances = %s\n' % a_reservation.instances )
+    print_d( '< %r > : %s\n' % ( a_reservation, a_reservation.instances ) )
 
     for an_instance in a_reservation.instances :
         wait4activation( an_instance ) # Making sure that corresponding instances are ready to use
