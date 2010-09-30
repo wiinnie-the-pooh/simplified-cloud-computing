@@ -143,6 +143,19 @@ def extract_options( the_options ) :
     return a_password, an_identity_file, a_host_port, a_login_name, a_host_name, a_command
 
 
+#--------------------------------------------------------------------------------------
+def print_options( the_options ) :
+    a_password, an_identity_file, a_host_port, a_login_name, a_host_name, a_command = unpuck( the_options )
+
+    print a_password
+    print an_identity_file
+    print a_host_port
+    print a_login_name
+    print a_host_name
+
+    pass
+
+
 #---------------------------------------------------------------------------
 def command( the_ssh_client, the_command ) :
     "Execution of secure shell command"
@@ -194,19 +207,6 @@ def connect( the_password, the_identity_file, the_host_port, the_login_name, the
     wait( a_ssh_connect, a_ssh_client, the_command ) 
     
     return a_ssh_client
-
-
-#--------------------------------------------------------------------------------------
-def print_options( the_options ) :
-    a_password, an_identity_file, a_host_port, a_login_name, a_host_name, a_command = unpuck( the_options )
-
-    print a_password
-    print an_identity_file
-    print a_host_port
-    print a_login_name
-    print a_host_name
-
-    pass
 
 
 #--------------------------------------------------------------------------------------

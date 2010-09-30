@@ -113,6 +113,19 @@ def extract_options( the_options ) :
 
 
 #--------------------------------------------------------------------------------------
+def print_options( the_options ) :
+    an_image_location, a_reservation_id, an_identity_file, a_host_port, a_login_name = unpuck( the_options )
+
+    print an_image_location
+    print a_reservation_id
+    print an_identity_file
+    print a_host_port
+    print a_login_name
+
+    pass
+
+
+#--------------------------------------------------------------------------------------
 def get_reservation( the_ec2_conn, the_reservation_id ) :
     for a_reservation in the_ec2_conn.get_all_instances() :
         if a_reservation.id == the_reservation_id :
