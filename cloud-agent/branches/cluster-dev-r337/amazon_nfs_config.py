@@ -55,9 +55,7 @@ common.add_parser_options( an_option_parser )
 an_options, an_args = an_option_parser.parse_args()
 
 an_enable_debug = common.extract_options( an_options )
-
 AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY = amazon.extract_options( an_options )
-
 an_image_location, a_reservation_id, an_identity_file, a_host_port, a_login_name = ec2.use.extract_options( an_options )
 
 

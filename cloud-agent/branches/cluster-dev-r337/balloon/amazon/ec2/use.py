@@ -143,7 +143,7 @@ def get_reservation( the_ec2_conn, the_reservation_id ) :
 #--------------------------------------------------------------------------------------
 def get_security_group( the_ec2_conn, the_reservation ) :
     a_security_group = the_ec2_conn.get_all_security_groups( [ the_reservation.groups[ 0 ].id ] )[ 0 ]
-    print_d( "a_security_group = < %r >\n" % a_security_group )
+    print_d( "< %r > : %s\n" % ( a_security_group, a_security_group.rules ) )
 
     return a_security_group
 
