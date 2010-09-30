@@ -117,7 +117,7 @@ def extract_options( the_options ) :
 
 
 #--------------------------------------------------------------------------------------
-def print_options( the_image_location, the_reservation_id, an_identity_file, the_host_port, the_login_name ) :
+def print_options( the_image_location, the_reservation_id, the_identity_file, the_host_port, the_login_name = 'ubuntu' ) :
 
     print the_image_location
     print the_reservation_id
