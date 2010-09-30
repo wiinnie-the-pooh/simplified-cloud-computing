@@ -117,14 +117,13 @@ def extract_options( the_options ) :
 
 
 #--------------------------------------------------------------------------------------
-def print_options( the_options ) :
-    an_image_location, a_reservation_id, an_identity_file, a_host_port, a_login_name = unpuck( the_options )
+def print_options( the_image_location, the_reservation_id, an_identity_file, the_host_port, the_login_name ) :
 
-    print an_image_location
-    print a_reservation_id
-    print an_identity_file
-    print a_host_port
-    print a_login_name
+    print the_image_location
+    print the_reservation_id
+    print the_identity_file
+    print the_host_port
+    print the_login_name
 
     pass
 

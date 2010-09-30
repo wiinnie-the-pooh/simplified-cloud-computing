@@ -144,14 +144,12 @@ def extract_options( the_options ) :
 
 
 #--------------------------------------------------------------------------------------
-def print_options( the_options ) :
-    a_password, an_identity_file, a_host_port, a_login_name, a_host_name, a_command = unpuck( the_options )
-
-    print a_password
-    print an_identity_file
-    print a_host_port
-    print a_login_name
-    print a_host_name
+def print_options( the_password, the_identity_file, the_host_port, the_login_name, the_host_name, the_command = None ) :
+    print the_password
+    print the_identity_file
+    print the_host_port
+    print the_login_name
+    print the_host_name
 
     pass
 

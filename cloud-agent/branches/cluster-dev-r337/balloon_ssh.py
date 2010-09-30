@@ -159,7 +159,7 @@ a_ssh_client.close()
 
 
 print_d( "\n------------------ Printing succussive pipeline arguments -----------------\n" )
-ssh.print_options( an_options )
+ssh.print_options( ssh.unpack( an_options ) )
 
 
 print_d( "\n--------------------------- Canonical substitution ------------------------\n" )

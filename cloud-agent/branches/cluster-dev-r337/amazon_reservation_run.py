@@ -27,14 +27,14 @@ import balloon.common as common
 from balloon.common import print_d, print_e, sh_command, Timer
 
 from balloon import amazon
-from balloon.amazon import ec2 as amazon_ec2
+from balloon.amazon import ec2
 
 
 #--------------------------------------------------------------------------------------
 # Defining utility command-line interface
 
 an_usage_description = "%prog"
-an_usage_description += amazon_ec2.add_usage_description()
+an_usage_description += ec2.run.add_usage_description()
 an_usage_description += amazon.add_usage_description()
 an_usage_description += common.add_usage_description()
 
@@ -44,7 +44,7 @@ a_help_formatter = IndentedHelpFormatter( width = 127 )
 from optparse import OptionParser
 an_option_parser = OptionParser( usage = an_usage_description, version="%prog 0.1", formatter = a_help_formatter )
 
-amazon_ec2.add_parser_options( an_option_parser )
+ec2.run.add_parser_options( an_option_parser )
 amazon.add_parser_options( an_option_parser )
 common.add_parser_options( an_option_parser )
   
@@ -55,31 +55,26 @@ common.add_parser_options( an_option_parser )
 an_options, an_args = an_option_parser.parse_args()
 
 an_enable_debug = common.extract_options( an_options )
-
 AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY = amazon.extract_options( an_options )
-
-an_image_id, an_image_location, an_instance_type, a_min_count, a_max_count, a_host_port = amazon_ec2.extract_options( an_options )
+an_image_id, an_image_location, an_instance_type, a_min_count, a_max_count, a_host_port = ec2.run.extract_options( an_options )
 
 
 print_d( "\n--------------------------- Canonical substitution ------------------------\n" )
 import sys
 an_engine = sys.argv[ 0 ]
 
-a_call = "%s %s %s" % ( an_engine, amazon_ec2.compose_call( an_options ), amazon.compose_call( an_options ) )
+a_call = "%s %s %s" % ( an_engine, ec2.run.compose_call( an_options ), amazon.compose_call( an_options ) )
 print_d( a_call + '\n' )
 
 
 print_d( "\n----------------------- Running actual functionality ----------------------\n" )
-a_reservation, an_identity_file = amazon_ec2.run_reservation( an_image_id, an_image_location, an_instance_type, 
-                                                              a_min_count, a_max_count, a_host_port,
-                                                              AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY )
+a_reservation, an_identity_file = ec2.run.run_reservation( an_image_id, an_image_location, an_instance_type, 
+                                                           a_min_count, a_max_count, a_host_port,
+                                                           AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY )
 
 
 print_d( "\n------------------ Printing succussive pipeline arguments -----------------\n" )
-print a_reservation.region.name
-print a_reservation.id
-print an_identity_file
-print a_host_port
+ec2.use.print_options( a_reservation.region.name, a_reservation.id, an_identity_file, a_host_port )
 
 
 print_d( "\n--------------------------- Canonical substitution ------------------------\n" )
