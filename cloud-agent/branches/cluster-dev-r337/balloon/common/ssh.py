@@ -63,7 +63,7 @@ def add_parser_options( the_option_parser ) :
 
 
 #--------------------------------------------------------------------------------------
-def unpuck( the_options ) :
+def unpack( the_options ) :
     a_password = the_options.password
     an_identity_file = the_options.identity_file
     a_host_port = the_options.host_port
@@ -89,7 +89,7 @@ def print_call( the_password, the_identity_file, the_host_port, the_login_name, 
 
 #--------------------------------------------------------------------------------------
 def compose_call( the_options ) :
-    a_password, an_identity_file, a_host_port, a_login_name, a_host_name, a_command = unpuck( the_options )
+    a_password, an_identity_file, a_host_port, a_login_name, a_host_name, a_command = unpack( the_options )
 
     if a_password != "" :
         a_call = "--password='%s' --host-port=%d --login-name='%s' --host-name='%s' --command='%s'" % \

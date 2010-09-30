@@ -76,7 +76,7 @@ def add_parser_options( the_option_parser ) :
 
 
 #--------------------------------------------------------------------------------------
-def unpuck( the_options ) :
+def unpack( the_options ) :
     an_image_id = the_options.image_id
     an_image_location = the_options.image_location
     an_instance_type = the_options.instance_type
@@ -89,7 +89,7 @@ def unpuck( the_options ) :
 
 #--------------------------------------------------------------------------------------
 def compose_call( the_options ) :
-    an_image_id, an_image_location, an_instance_type, a_min_count, a_max_count, a_host_port = unpuck( the_options )
+    an_image_id, an_image_location, an_instance_type, a_min_count, a_max_count, a_host_port = unpack( the_options )
 
     a_call = "--image-id='%s' --image-location='%s' --instance-type='%s' --min-count=%d --max-count=%d --host-port=%d" % \
         ( an_image_id, an_image_location, an_instance_type, a_min_count, a_max_count, a_host_port )

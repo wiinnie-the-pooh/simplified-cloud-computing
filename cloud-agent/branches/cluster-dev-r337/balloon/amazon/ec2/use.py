@@ -62,7 +62,7 @@ def add_parser_options( the_option_parser ) :
 
 
 #--------------------------------------------------------------------------------------
-def unpuck( the_options ) :
+def unpack( the_options ) :
     an_image_location = the_options.image_location
     a_reservation_id = the_options.reservation_id
     an_identity_file = the_options.identity_file
@@ -74,7 +74,7 @@ def unpuck( the_options ) :
 
 #--------------------------------------------------------------------------------------
 def compose_call( the_options ) :
-    an_image_location, a_reservation_id, an_identity_file, a_host_port, a_login_name = unpuck( the_options )
+    an_image_location, a_reservation_id, an_identity_file, a_host_port, a_login_name = unpack( the_options )
 
     a_call = "--image-location='%s' --reservation-id='%s' --identity-file='%s' --host-port=%d --login-name='%s'" % \
         ( an_image_location, a_reservation_id, an_identity_file, a_host_port, a_login_name )
