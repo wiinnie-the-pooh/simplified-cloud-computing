@@ -63,9 +63,10 @@ AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY = amazon.extract_options( an_options )
 an_image_location, a_reservation_id, an_identity_file, a_host_port, a_login_name = ec2.use.extract_options( an_options )
 
 import os
+a_case_dir = os.path.abspath( an_options.case_dir )
 a_case_dir = an_options.case_dir
 if not os.path.isdir( a_case_dir ) :
-    an_option_parser.error( "--case-dir='%s' should be a dir\n" % a_case_dir )
+    an_option_parser.error( "--case-dir='%s' should be a folder\n" % a_case_dir )
     pass
 
 
@@ -96,41 +97,41 @@ a_master_node = an_instance = a_reservation.instances[ 0 ]
 a_host_name = an_instance.public_dns_name
 
 print_d( 'ssh -o "StrictHostKeyChecking no" -i %s -p %d %s@%s\n' % ( an_identity_file, a_host_port, a_login_name, a_host_name ) )
-a_ssh_client = ssh.connect( a_password, an_identity_file, a_host_port, a_login_name, a_host_name )
-a_sftp_client = a_ssh_client.open_sftp()
+a_ssh_client = ssh.connect( a_password, an_identity_file, a_host_port, a_login_name, a_host_name, 'env' )
+an_instance_2_ssh_client[ an_instance ] = a_ssh_client
 
-a_tagret_name = os.path.basename( a_case_dir )
-a_sftp_client.put( a_case_dir, a_tagret_name )
+a_remote_home = ssh.command( a_ssh_client, 'echo ${HOME}')[ 0 ][ : -1 ]
+a_tagret_dir = os.path.join( a_remote_home, os.path.basename( a_case_dir ) )
+sh_command( 'scp -o "StrictHostKeyChecking no" -i %s -P %d -rp %s %s@%s:%s' % 
+            ( an_identity_file, a_host_port, a_case_dir, a_login_name, a_host_name, a_tagret_dir ) )
 
 
 print_d( "\n--- Sharing the solver case folder for all the cluster nodes through NFS --\n" )
-ssh.command( a_ssh_client, "sudo sh -c 'echo  ${HOME}/%s *\(rw,no_root_squash,sync\) >> /etc/exports'" % ( a_tagret_name ) )
-ssh.command( a_ssh_client, "sudo exportfs -a" ) # make changes effective on a running NFS server
-
-an_instance_2_ssh_client[ an_instance ] = a_ssh_client, a_sftp_client
+ssh.command( a_ssh_client, "sudo sh -c 'echo %s *\(rw,no_root_squash,sync,subtree_check\) >> /etc/exports'" % ( a_tagret_dir ) )
+ssh.command( a_ssh_client, "sudo exportfs -a" ) # make changes effective on the running NFS server
 
 for an_instance in a_reservation.instances[ 1 : ] :
     a_host_name = an_instance.public_dns_name
     print_d( 'ssh -o "StrictHostKeyChecking no" -i %s -p %d %s@%s\n' % ( an_identity_file, a_host_port, a_login_name, a_host_name ) )
 
     a_ssh_client = ssh.connect( a_password, an_identity_file, a_host_port, a_login_name, a_host_name )
-    ssh.command( a_ssh_client, "mkdir ${HOME}/%s" % ( a_tagret_name ) )
-    ssh.command( a_ssh_client, "sudo mount %s:${HOME}/%s ${HOME}/%s" % ( a_master_node.private_ip_address, a_tagret_name, a_tagret_name ) )
+    ssh.command( a_ssh_client, "mkdir -p %s" % ( a_tagret_dir ) )
+    ssh.command( a_ssh_client, "sudo mount %s:%s %s" % ( a_master_node.private_ip_address, a_tagret_dir, a_tagret_dir ) )
 
-    an_instance_2_ssh_client[ an_instance ] = a_ssh_client, a_sftp_client
+    an_instance_2_ssh_client[ an_instance ] = a_ssh_client
     pass
 
 
 print_d( "\n------------------------- Running of the solver case ----------------------\n" )
-a_ssh_client, a_sftp_client = an_instance_2_ssh_client[ a_master_node ]
-ssh.command( a_ssh_client, "${HOME}/%s/Allrun" % ( a_tagret_name ) ) # running the solver case
+a_ssh_client = an_instance_2_ssh_client[ a_master_node ]
+ssh.command( a_ssh_client, "source ~/.profile && %s/Allrun" % ( a_tagret_dir ) ) # running the solver case
 
 print_d( "\n------------------- Transfering the resulting data back -------------------\n" )
-sh_command( 'scp -o "StrictHostKeyChecking no" -i %s -P %d %s@%s:${HOME}/%s %s\n' % 
-            ( an_identity_file, a_host_port, a_login_name, a_host_name, a_tagret_name, a_case_dir ) )
+sh_command( 'scp -o "StrictHostKeyChecking no" -i %s -P %d -rp %s@%s:%s %s' % 
+            ( an_identity_file, a_host_port, a_login_name, a_host_name, a_tagret_dir, a_case_dir ) )
 
 
-[ a_ssh_client.close() for a_ssh_client, a_sftp_client in an_instance_2_ssh_client.values() ]
+[ a_ssh_client.close() for a_ssh_client in an_instance_2_ssh_client.values() ]
 
 print_d( "a_spent_time = %s, sec\n" % a_spent_time )
 
