@@ -46,7 +46,7 @@ def add_parser_options( the_option_parser ) :
 
 
 #--------------------------------------------------------------------------------------
-def unpuck( the_options ) :
+def unpack( the_options ) :
     RACKSPACE_USER = the_options.rackspace_user
     RACKSPACE_KEY = the_options.rackspace_key
 
@@ -55,7 +55,7 @@ def unpuck( the_options ) :
 
 #--------------------------------------------------------------------------------------
 def compose_call( the_options ) :
-    RACKSPACE_USER, RACKSPACE_KEY = unpuck( the_options )
+    RACKSPACE_USER, RACKSPACE_KEY = unpack( the_options )
 
     a_call = "--rackspace-user=${RACKSPACE_USER} --rackspace-key=${RACKSPACE_KEY}"
     

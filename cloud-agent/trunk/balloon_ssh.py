@@ -120,11 +120,11 @@ if a_sequence_file != None :
 
 print_d( "\n--------------------------- Canonical substitution ------------------------\n" )
 print_d( a_call + '\n' )
-ssh.print_call( an_options )
+ssh.print_call( a_password, an_identity_file, a_host_port, a_login_name, a_host_name )
 
 
 print_d( "\n----------------------- Running actual functionality ----------------------\n" )
-a_ssh_client = ssh.connect( an_options )
+a_ssh_client = ssh.connect( a_password, an_identity_file, a_host_port, a_login_name, a_host_name )
 
 if a_scripts != None :
     for an_id in range( len( a_scripts ) ) :
@@ -159,11 +159,11 @@ a_ssh_client.close()
 
 
 print_d( "\n------------------ Printing succussive pipeline arguments -----------------\n" )
-ssh.print_options( an_options )
+ssh.print_options( *ssh.unpack( an_options ) )
 
 
 print_d( "\n--------------------------- Canonical substitution ------------------------\n" )
-ssh.print_call( an_options )
+ssh.print_call( a_password, an_identity_file, a_host_port, a_login_name, a_host_name )
 print_d( a_call + '\n' )
 
 

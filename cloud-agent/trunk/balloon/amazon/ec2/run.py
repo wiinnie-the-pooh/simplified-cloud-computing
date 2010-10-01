@@ -34,7 +34,7 @@ def add_parser_options( the_option_parser ) :
                                   action = "store",
                                   dest = "image_id",
                                   help = "(\"%default\", by default)",
-                                  default = "ami-2231c44b" ) # ami-fd4aa494 (ami-2d4aa444)
+                                  default = "ami-9c5aaff5" ) # ami-fd4aa494 ( ami-2d4aa444, ami-2231c44b )
     
     the_option_parser.add_option( "--image-location",
                                   metavar = "< location of the AMI >",
@@ -76,7 +76,7 @@ def add_parser_options( the_option_parser ) :
 
 
 #--------------------------------------------------------------------------------------
-def unpuck( the_options ) :
+def unpack( the_options ) :
     an_image_id = the_options.image_id
     an_image_location = the_options.image_location
     an_instance_type = the_options.instance_type
@@ -89,9 +89,9 @@ def unpuck( the_options ) :
 
 #--------------------------------------------------------------------------------------
 def compose_call( the_options ) :
-    an_image_id, an_image_location, an_instance_type, a_min_count, a_max_count, a_host_port = unpuck( the_options )
+    an_image_id, an_image_location, an_instance_type, a_min_count, a_max_count, a_host_port = unpack( the_options )
 
-    a_call = "--image-id='%s' --image-location='%s' --instance-type='%s' --min-count=%d --max-count=%d --host_port=%d" % \
+    a_call = "--image-id='%s' --image-location='%s' --instance-type='%s' --min-count=%d --max-count=%d --host-port=%d" % \
         ( an_image_id, an_image_location, an_instance_type, a_min_count, a_max_count, a_host_port )
     
     return a_call
@@ -138,37 +138,28 @@ def wait4activation( the_instance ) :
         pass
     
     print_d( ' %s\n' % the_instance.update() )
+
     pass
 
 
 #--------------------------------------------------------------------------------------
-def run_instance( the_image_id, the_image_location, the_instance_type, 
-                  the_min_count, the_max_count, the_host_port,
-                  the_aws_access_key_id, the_aws_secret_access_key ) :
+def get_reservation( the_ec2_conn, the_reservation_id ) :
+    for a_reservation in the_ec2_conn.get_all_instances() :
+        if a_reservation.id == the_reservation_id :
+            return a_reservation
+        pass
+    pass
+
+
+#--------------------------------------------------------------------------------------
+def run_reservation( the_image_id, the_image_location, the_instance_type, 
+                     the_min_count, the_max_count, the_host_port,
+                     the_aws_access_key_id, the_aws_secret_access_key ) :
     print_d( "\n-------------------------- Defining image location ------------------------\n" )
     an_instance_reservation_time = Timer()
 
-    # Establish an connection with EC2
-    import boto.ec2
-    a_regions = boto.ec2.regions()
-    print_d( 'a_regions = %r\n' % a_regions )
-
-    an_image_region = None
-    for a_region in a_regions :
-        if a_region.name == the_image_location :
-            an_image_region = a_region
-            pass
-        pass
-
-    if an_image_region == None :
-        print_e( "There no region with such location - '%s'\n" % an_image_region )
-        pass
-
-    print_d( 'an_image_region = < %r >\n' % an_image_region )
-
-    an_ec2_conn = an_image_region.connect( aws_access_key_id = the_aws_access_key_id, 
-                                           aws_secret_access_key = the_aws_secret_access_key )
-    print_d( 'an_ec2_conn = < %r >\n' % an_ec2_conn )
+    from common import region_connect
+    an_ec2_conn = region_connect( the_image_location, the_aws_access_key_id, the_aws_secret_access_key )
 
     an_images = an_ec2_conn.get_all_images( image_ids = the_image_id )
     an_image = an_images[ 0 ]
@@ -200,31 +191,20 @@ def run_instance( the_image_id, the_image_location, the_instance_type,
 
     # Asking EC2 to generate a new "sequirity group" & apply corresponding firewall permissions
     a_security_group = an_ec2_conn.create_security_group( an_unique_name, 'temporaly generated' )
-    a_security_group.authorize( 'tcp', 80, 80, '0.0.0.0/0' )
-    a_security_group.authorize( 'tcp', the_host_port, the_host_port, '0.0.0.0/0' )
+    a_security_group.authorize( 'tcp', the_host_port, the_host_port, '0.0.0.0/0' ) # ssh port
     
     
     print_d( "\n-------------------------------- Running image ----------------------------\n" )
     # Creating a EC2 "reservation" with all the parameters mentioned above
     a_reservation = an_image.run( instance_type = the_instance_type, min_count = the_min_count, max_count = the_max_count, 
                                   key_name = a_key_pair_name, security_groups = [ a_security_group.name ] )
-    print_d( 'a_reservation.instances = %s\n' % a_reservation.instances )
+    print_d( '< %r > : %s\n' % ( a_reservation, a_reservation.instances ) )
 
-    # Making sure that corresponding instances are ready to use
     for an_instance in a_reservation.instances :
-        wait4activation( an_instance )
-
-        an_identity_file = an_identity_file
-        a_host_port = the_host_port
-        a_login_name = 'ubuntu'
-        a_host_name = an_instance.public_dns_name
-
-        print_d( 'ssh -o "StrictHostKeyChecking no" -i %s -p %d %s@%s\n' % ( an_identity_file, a_host_port, a_login_name, a_host_name ) )
+        wait4activation( an_instance ) # Making sure that corresponding instances are ready to use
         pass
 
-    an_instance = a_reservation.instances[ 0 ]
-
-    return an_instance, an_identity_file
+    return a_reservation, an_identity_file
 
 
 #--------------------------------------------------------------------------------------

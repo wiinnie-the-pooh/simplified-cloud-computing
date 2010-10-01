@@ -19,9 +19,6 @@
 #--------------------------------------------------------------------------------------
 from balloon.common import print_e, print_d
 
-from ec2 import run_instance, wait4activation
-from s3 import TRootObject, TStudyObject, TFileObject, TSeedObject, generate_uploading_dir
-
 import os
 
 
@@ -49,7 +46,7 @@ def add_parser_options( the_option_parser ) :
 
 
 #--------------------------------------------------------------------------------------
-def unpuck( the_options ) :
+def unpack( the_options ) :
     AWS_ACCESS_KEY_ID = the_options.aws_access_key_id
     AWS_SECRET_ACCESS_KEY = the_options.aws_secret_access_key
 
@@ -58,7 +55,7 @@ def unpuck( the_options ) :
 
 #--------------------------------------------------------------------------------------
 def compose_call( the_options ) :
-    AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY = unpuck( the_options )
+    AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY = unpack( the_options )
 
     a_call = "--aws-access-key-id=${AWS_ACCESS_KEY_ID} --aws-secret-access-key=${AWS_SECRET_ACCESS_KEY}"
     
