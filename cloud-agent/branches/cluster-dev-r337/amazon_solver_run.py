@@ -127,8 +127,9 @@ a_ssh_client = an_instance_2_ssh_client[ a_master_node ]
 ssh.command( a_ssh_client, "source ~/.profile && %s/Allrun" % ( a_tagret_dir ) ) # running the solver case
 
 print_d( "\n------------------- Transfering the resulting data back -------------------\n" )
+a_source_dir = os.path.dirname( a_case_dir )
 sh_command( 'scp -o "StrictHostKeyChecking no" -i %s -P %d -rp %s@%s:%s %s' % 
-            ( an_identity_file, a_host_port, a_login_name, a_host_name, a_tagret_dir, a_case_dir ) )
+            ( an_identity_file, a_host_port, a_login_name, a_host_name, a_tagret_dir, a_source_dir ) )
 
 
 [ a_ssh_client.close() for a_ssh_client in an_instance_2_ssh_client.values() ]
