@@ -103,7 +103,7 @@ an_instance_2_ssh_client[ an_instance ] = a_ssh_client
 a_remote_home = ssh.command( a_ssh_client, 'echo ${HOME}')[ 0 ][ : -1 ]
 a_tagret_dir = os.path.join( a_remote_home, os.path.basename( a_case_dir ) )
 sh_command( 'scp -o "StrictHostKeyChecking no" -i %s -P %d -rp %s %s@%s:%s' % 
-            ( an_identity_file, a_host_port, a_case_dir, a_login_name, a_host_name, a_tagret_dir ) )
+            ( an_identity_file, a_host_port, a_case_dir, a_login_name, a_host_name, a_remote_home ) )
 
 
 print_d( "\n--- Sharing the solver case folder for all the cluster nodes through NFS --\n" )

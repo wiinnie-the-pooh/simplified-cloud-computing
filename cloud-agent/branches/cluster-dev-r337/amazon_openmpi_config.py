@@ -97,6 +97,7 @@ for an_instance in a_reservation.instances :
     a_target_name = '${HOME}/.ssh/id_rsa'
     ssh.command( a_ssh_client, 'mv -f %s %s' % ( an_upload_name, a_target_name ) )
     ssh.command( a_ssh_client, 'chmod 600 %s' % ( a_target_name ) )
+    ssh.command( a_ssh_client, """sudo sh -c 'echo "    StrictHostKeyChecking no" >> /etc/ssh/ssh_config'""" )
 
     try :
         a_security_group.authorize( 'tcp', 1, 65535, '%s/0' % an_instance.private_ip_address ) # mpi cluster ports
