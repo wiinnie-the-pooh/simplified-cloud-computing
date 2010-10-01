@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/sh -x
 
 #--------------------------------------------------------------------------------------
 cd ${0%/*} || exit 1    # run from this directory
@@ -18,7 +18,8 @@ runApplication decomposePar
 mpirun --hostfile ~/.openmpi_hostfile -x LD_LIBRARY_PATH -x PATH -x WM_PROJECT_DIR -x MPI_BUFFER_SIZE \
     -np 4 ${application} -case . -parallel < /dev/null > log.${application} 2>&1
 
-runApplication reconstructPar
+# This step can be perfomed afterwards, when the resulting data will be trasfered back
+# runApplication reconstructPar 
 
 
 #--------------------------------------------------------------------------------------
