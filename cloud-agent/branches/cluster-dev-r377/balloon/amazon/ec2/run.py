@@ -34,7 +34,7 @@ def add_parser_options( the_option_parser ) :
                                   action = "store",
                                   dest = "image_id",
                                   help = "(\"%default\", by default)",
-                                  default = "ami-9c5aaff5" ) # ami-fd4aa494 ( ami-2d4aa444, ami-2231c44b )
+                                  default = "ami-9c5aaff5" ) # ami-6006f309 ( ami-2d4aa444, ami-2231c44b )
     
     the_option_parser.add_option( "--image-location",
                                   metavar = "< location of the AMI >",
@@ -48,7 +48,7 @@ def add_parser_options( the_option_parser ) :
                                   action = "store",
                                   dest = "instance_type",
                                   help = "(\"%default\", by default)",
-                                  default = "m1.small" ) # m1.large
+                                  default = "m1.small" ) # m1.large, c1.xlarge
     
     the_option_parser.add_option( "--min-count",
                                   metavar = "< minimum number of instances to start >",

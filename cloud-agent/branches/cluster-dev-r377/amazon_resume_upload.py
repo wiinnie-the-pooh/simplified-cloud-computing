@@ -28,8 +28,8 @@ from balloon.common import print_d, print_i, print_e, sh_command
 from balloon.common import Timer, WorkerPool, compute_md5
 
 import balloon.amazon as amazon
-from balloon.amazon import generate_uploading_dir
-from balloon.amazon import TRootObject, TStudyObject, TFileObject, TSeedObject
+from balloon.amazon.s3 import generate_uploading_dir
+from balloon.amazon.s3 import TRootObject, TStudyObject, TFileObject, TSeedObject
 
 import sys, os, os.path, uuid, hashlib
 
