@@ -60,11 +60,11 @@ an_engine = sys.argv[ 0 ]
 a_call = "%s %s" % ( an_engine, ssh.compose_call( an_options ) )
 
 print_d( a_call + '\n' )
-ssh.print_call( an_options )
+ssh.print_call( a_password, an_identity_file, a_host_port, a_login_name, a_host_name )
 
 
 print_d( "\n----------------------- Running actual functionality ----------------------\n" )
-a_ssh_client = ssh.connect( an_options )
+a_ssh_client = ssh.connect( a_password, an_identity_file, a_host_port, a_login_name, a_host_name )
 
 import os, tempfile
 a_working_dir = tempfile.mkdtemp()
@@ -98,11 +98,11 @@ a_ssh_client.close()
 
 
 print_d( "\n------------------ Printing succussive pipeline arguments -----------------\n" )
-ssh.print_options( an_options )
+ssh.print_options( a_password, an_identity_file, a_host_port, a_login_name, a_host_name )
 
 
 print_d( "\n--------------------------- Canonical substitution ------------------------\n" )
-ssh.print_call( an_options )
+ssh.print_call( a_password, an_identity_file, a_host_port, a_login_name, a_host_name )
 print_d( a_call + '\n' )
 
 
