@@ -27,7 +27,7 @@ from balloon.common import print_d, print_i, print_e, sh_command
 from balloon.common import Timer, WorkerPool, compute_md5
 
 import balloon.amazon as amazon
-from balloon.amazon import TRootObject, TStudyObject, TFileObject, TSeedObject
+from balloon.amazon.s3 import TRootObject, TStudyObject, TFileObject, TSeedObject
 
 import sys, os, os.path, uuid, hashlib
 
@@ -82,7 +82,7 @@ a_study_object = TStudyObject.get( a_root_object, a_study_name )
 print_d( "a_study_object = %s\n" % a_study_object )
 
 
-if len( an_args ) == 1 :
+if len( an_args ) <= 1 :
     print_i( "------------------------------- Removing study ----------------------------------\n" )
     a_study_object.delete()
 
