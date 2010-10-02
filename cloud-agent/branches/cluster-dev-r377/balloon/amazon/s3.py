@@ -189,7 +189,6 @@ class TStudyObject :
 
         for a_file_key in self._bucket.list() :
             yield TFileObject.get( self, get_key_name( a_file_key ) )
-            
             pass
         
         pass
@@ -202,7 +201,6 @@ class TStudyObject :
     def delete( self ) :
         for a_file_object in self :
             a_file_object.delete()
-        
             pass
 
         if self._bucket != None :
@@ -210,7 +208,6 @@ class TStudyObject :
             pass
 
         self._key.delete()
-
         pass
 
     pass
