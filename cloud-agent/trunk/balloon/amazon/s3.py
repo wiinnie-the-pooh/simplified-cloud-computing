@@ -60,7 +60,11 @@ class TRootObject :
     
     def _next( self ) :
         for a_study_key in self._bucket.list() :
-            yield TStudyObject.get( self, get_key_name( a_study_key ) )
+            try :
+                yield TStudyObject.get( self, get_key_name( a_study_key ) )
+            except :
+                print_d( "study '%s' has no corresponding bucket\n" % get_key_name( a_study_key ) )
+                pass
             
             pass
         
@@ -170,14 +174,21 @@ class TStudyObject :
 
         an_id, a_bucket_name = generate_id( the_root_object._id, the_study_name, an_api_version )
     
-        a_bucket = the_root_object._connection.get_bucket( a_bucket_name )
+        a_bucket = None
+        try :
+            a_bucket = the_root_object._connection.get_bucket( a_bucket_name )
+        except :
+            print_d( "study '%s' has no corresponding bucket\n" % the_study_name )
+            pass
     
         return TStudyObject( the_root_object, a_key, a_bucket, an_id, an_api_version )
 
     def _next( self ) :
+        if self._bucket == None :
+            return 
+
         for a_file_key in self._bucket.list() :
             yield TFileObject.get( self, get_key_name( a_file_key ) )
-            
             pass
         
         pass
@@ -190,12 +201,13 @@ class TStudyObject :
     def delete( self ) :
         for a_file_object in self :
             a_file_object.delete()
-        
             pass
 
-        self._bucket.delete()
-        self._key.delete()
+        if self._bucket != None :
+            self._bucket.delete()
+            pass
 
+        self._key.delete()
         pass
 
     pass
