@@ -22,40 +22,9 @@ This script is responsible for the task packaging and sending it for execution i
 """
 
 #--------------------------------------------------------------------------------------
-def sh_command( the_command ) :
-    import os
-    if os.system( the_command ) != 0 :
-        from distutils.errors import DistutilsExecError
-        raise DistutilsExecError, "cannot execute '%s' need by dependcies" % the_command
-    
-    pass
-
-
-#--------------------------------------------------------------------------------------
-from distutils.command.install import install
-
-class InstallCmd( install ) :
-    def run( self ) :
-        sh_command( "apt-get -y install python-software-properties" )
-        sh_command( "apt-get -y install python-virtualenv" )
-
-        sh_command( "easy_install workerpool" )
-
-        sh_command( "apt-get -y install python-boto" )
-        sh_command( "apt-get -y install python-paramiko" )
-        # sh_command( "apt-get -y install python-libcloud" )
-        # sh_command( "add-apt-repository ppa:chmouel/rackspace-cloud-files" )
-        # sh_command( "apt-get -y install python-rackspace-cloudfiles" )
-
-        install.run( self )
-        pass
-
-    pass
-
-
-#--------------------------------------------------------------------------------------
 import sys, os, os.path
 
+# To avoid using previoulsy cached contents for the distributed package
 an_engine = sys.argv[ 0 ]
 an_engine_dir = os.path.abspath( os.path.dirname( sys.argv[ 0 ] ) )
 a_manifest_file = os.path.join( an_engine_dir, 'MANIFEST' )
@@ -63,9 +32,10 @@ if os.path.isfile( a_manifest_file ) :
     os.remove( a_manifest_file )
     pass
 
+# To generate list of distributed scripts automatically
 a_scripts = []
 an_engine = os.path.basename( an_engine )
-for a_file in os.listdir( os.curdir ) :
+for a_file in os.listdir( an_engine_dir ) :
     if a_file == an_engine :
         continue
     if os.path.isfile( a_file ) and os.access( a_file, os.X_OK ) :
@@ -73,12 +43,12 @@ for a_file in os.listdir( os.curdir ) :
         pass
     pass
 
-print a_scripts
-
 
 #--------------------------------------------------------------------------------------
-from distutils.core import setup, Extension
+from setuptools import setup, find_packages
 import balloon
+
+os.chdir( an_engine_dir ) # Run from the proper folder
 
 setup( name = balloon.NAME,
        description = 'Set of cloud computing automation utilities',
@@ -94,6 +64,7 @@ setup( name = balloon.NAME,
        author_email = 'alexey.petrov.nnov@gmail.com', 
        license = 'Apache License, Version 2.0',
        url = 'http://www.simplified-cloud-computing.org',
+       install_requires = [ 'setuptools', 'boto', 'workerpool', 'paramiko' ],
        platforms = [ 'linux' ],
        version = balloon.VERSION,
        classifiers = [ 'Development Status :: 3 - Alpha',
@@ -104,8 +75,7 @@ setup( name = balloon.NAME,
                        'Programming Language :: Python',
                        'Topic :: Scientific/Engineering',
                        'Topic :: Utilities' ],
-       cmdclass = { 'install': InstallCmd },
-       packages = [ 'balloon', 'balloon/common', 'balloon/amazon', 'balloon/rackspace' ],
+       packages = find_packages(),
        scripts = a_scripts )
 
 
