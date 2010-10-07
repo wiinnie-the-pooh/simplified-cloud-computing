@@ -32,19 +32,26 @@ if os.path.isfile( a_manifest_file ) :
     os.remove( a_manifest_file )
     pass
 
-# To generate list of distributed scripts automatically
-a_scripts = []
 an_engine = os.path.basename( an_engine )
+
+# To generate list of automatically distributed scripts
+a_scripts = []
 for a_file in os.listdir( an_engine_dir ) :
     if a_file == an_engine :
         continue
-    if os.path.isfile( a_file ) and os.access( a_file, os.X_OK ) :
-        a_scripts.append( a_file )
+
+    if os.path.isfile( a_file ) : 
+        if os.access( a_file, os.X_OK ) or os.path.splitext( a_file )[ 1 ] == '.sh' :
+            a_scripts.append( a_file )
+            pass
         pass
     pass
 
 
-#--------------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------------
+import ez_setup
+ez_setup.use_setuptools()
+
 from setuptools import setup, find_packages
 import balloon
 
@@ -63,8 +70,8 @@ setup( name = balloon.NAME,
        author = 'Alexey Petrov',
        author_email = 'alexey.petrov.nnov@gmail.com', 
        license = 'Apache License, Version 2.0',
-       url = 'http://www.simplified-cloud-computing.org',
-       install_requires = [ 'setuptools >= 0.6', 'boto >= 1.9', 'workerpool >= 0.9.2', 'paramiko >= 1.7.6' ],
+       url = 'http://sourceforge.net/p/cloud-foam',
+       install_requires = [ 'boto >= 1.9', 'workerpool >= 0.9.2', 'paramiko >= 1.7.6' ],
        platforms = [ 'linux' ],
        version = balloon.VERSION,
        classifiers = [ 'Development Status :: 3 - Alpha',
@@ -76,7 +83,8 @@ setup( name = balloon.NAME,
                        'Topic :: Scientific/Engineering',
                        'Topic :: Utilities' ],
        packages = find_packages(),
-       scripts = a_scripts )
+       scripts = a_scripts,
+       zip_safe = True )
 
 
 #--------------------------------------------------------------------------------------
