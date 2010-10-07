@@ -105,6 +105,7 @@ an_usage_description += common.add_usage_description()
 an_usage_description += amazon.add_usage_description()
 an_usage_description += amazon.add_timeout_usage_description()
 an_usage_description += " <file 1> <file 2> ..."
+an_usage_description += " --location= '<location_file1>, <location_file2>' ... "
 
 from optparse import IndentedHelpFormatter
 a_help_formatter = IndentedHelpFormatter( width = 127 )
@@ -129,6 +130,14 @@ a_option_parser.add_option( "--upload-item-size",
 common.add_parser_options( a_option_parser )
 amazon.add_parser_options( a_option_parser )
 amazon.add_timeout_options( a_option_parser )
+
+a_option_parser.add_option( "--location",
+                            metavar = "< location of files  >",
+                            action = "store",
+                            dest = "location",
+                            help = "(\"%default\", by default)",
+                            default = None )
+
     
 an_engine_dir = os.path.abspath( os.path.dirname( sys.argv[ 0 ] ) )
 
@@ -139,6 +148,10 @@ an_engine_dir = os.path.abspath( os.path.dirname( sys.argv[ 0 ] ) )
 an_options, an_args = a_option_parser.parse_args()
 
 common.extract_options( an_options )
+
+a_location =an_options.location
+
+a_locations = common.extract_locations( a_location )
 
 a_files = list()
 for an_arg in an_args :
@@ -152,7 +165,27 @@ if len( a_files ) == 0 :
     a_option_parser.error( "You should define one valid 'file' at least\n" )
     pass
 
+if len( a_files ) != len( a_locations) and len( a_locations ) > 1:
+   a_option_parser.error( "The amount of locations must be equal 1( including 'None' ) or amount of files\n" )
+   pass
+
 print_d( "a_files = %r\n" % a_files )
+
+file_locations = {}
+
+an_index =0
+for a_file in a_files:
+    if len( a_locations ) == 1:
+       file_locations[ a_file ] = a_locations[ 0 ]
+       pass
+    else:
+       file_locations[ a_file ] = a_locations[ an_index ]
+       an_index += 1
+       pass
+    pass   
+
+#for a_file in file_locations:  
+#    print_d( "the location of the '%s' ---> '%s' \n" % (a_file, file_locations[ a_file ] ) )
 
 a_study_name = an_options.study_name
 print_d( "a_study_name = '%s'\n" % a_study_name )
@@ -173,7 +206,7 @@ print_d( "a_study_object = %s\n" % a_study_object )
 print_i( "---------------------------- Uploading study files ------------------------------\n" )
 a_data_loading_time = Timer()
 
-upload_files( a_files, a_study_object, an_options.upload_seed_size, 0 )
+upload_files( file_locations, a_study_object, an_options.upload_seed_size, 0 )
 
 print_d( "a_data_loading_time = %s, sec\n" % a_data_loading_time )
 
