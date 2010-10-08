@@ -214,6 +214,31 @@ class TStudyObject :
 
 
 #--------------------------------------------------------------------------------------
+def _file_key_separator( the_api_version ) :
+    if the_api_version == 'dummy' :
+        return '$'
+
+    return ' :: '
+
+
+#--------------------------------------------------------------------------------------
+def extract_file_props( the_key, the_api_version ):
+    a_contents = the_key.get_contents_as_string()
+    list_file_props = a_contents.split( _file_key_separator( the_api_version ) )
+    return list_file_props
+
+
+#--------------------------------------------------------------------------------------
+def get_md5_from_filekey( the_key, the_api_version ):
+    return extract_file_props( the_key, the_api_version )[ 0 ]
+
+
+#--------------------------------------------------------------------------------------
+def get_path_from_filekey( the_key, the_api_version ):
+    return extract_file_props( the_key, the_api_version )[ 1 ]
+
+
+#--------------------------------------------------------------------------------------
 def generate_uploading_dir( the_file_path ) :
     a_file_dirname = os.path.dirname( the_file_path )
     a_file_basename = os.path.basename( the_file_path )
@@ -241,13 +266,19 @@ class TFileObject :
         pass
     
     def file_path( self ) :
-
-        return get_key_name( self._key )
+        #api ver0.2
+        #return get_key_name( self._key )
+        return get_path_from_filekey( self._key, self.api_version() )
 
     def hex_md5( self ) :
+        #api ver0.2     
+        #return self._hex_md5
+        return get_md5_from_filekey( self._key, self.api_version() )
 
-        return self._hex_md5
-
+    def file_location( self ): 
+        
+        return get_key_name( self._key )
+        
     def connection( self ) :
 
         return self._study_object._connection
@@ -261,14 +292,21 @@ class TFileObject :
         return "'%s' - '%s' - %s" % ( self._id, self._hex_md5, self._bucket )
 
     @staticmethod
-    def create( the_study_object, the_file_path, the_hex_md5 ) :
-        a_key = get_key( the_study_object._bucket, the_file_path )
+    def create( the_study_object, the_file_path, the_file_locations, the_hex_md5 ) :
+        a_file_name = os.path.basename( the_file_path )
+        
+        a_new_file_path = os.path.join( the_file_locations, a_file_name )
 
-        a_key.set_contents_from_string( the_hex_md5 )
-
+        a_key = get_key( the_study_object._bucket, a_new_file_path )
+        #a_key = get_key( the_study_object._bucket, the_file_path )
+        
+        the_separator = _file_key_separator( the_study_object._api_version )
+        
+        a_key.set_contents_from_string( the_hex_md5 + the_separator + the_file_path )
+        
         an_api_version = the_study_object._api_version
 
-        an_id, a_bucket_name = generate_id( the_study_object._id, the_file_path, an_api_version )
+        an_id, a_bucket_name = generate_id( the_study_object._id, a_new_file_path, an_api_version )
     
         a_bucket = the_study_object.connection().create_bucket( a_bucket_name )
 
@@ -278,8 +316,8 @@ class TFileObject :
     def get( the_study_object, the_file_path ) :
         a_key = get_key( the_study_object._bucket, the_file_path )
 
-        a_hex_md5 = a_key.get_contents_as_string()
-
+        a_hex_md5 = get_md5_from_filekey( a_key, the_study_object._api_version )
+        
         an_api_version = the_study_object._api_version
 
         an_id, a_bucket_name = generate_id( the_study_object._id, the_file_path, an_api_version )

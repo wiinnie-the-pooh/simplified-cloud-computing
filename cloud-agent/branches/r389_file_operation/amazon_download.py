@@ -98,7 +98,7 @@ def download_file( the_file_object, the_output_dir, the_number_threads, the_enab
     print_d( "the_file_object = %s\n" % the_file_object, the_printing_depth )
 
     a_hex_md5 = the_file_object.hex_md5()
-    a_source_file_path = the_file_object.file_path()
+    a_source_file_path = the_file_object.file_location()
 
     a_file_dirname = os.path.dirname( a_source_file_path )
     a_file_basename = os.path.basename( a_source_file_path )

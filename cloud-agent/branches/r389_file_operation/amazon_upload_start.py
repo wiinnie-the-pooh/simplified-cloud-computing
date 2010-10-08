@@ -35,7 +35,7 @@ import sys, os, os.path, uuid, hashlib
 
 
 #------------------------------------------------------------------------------------------
-def upload_file( the_worker_pool, the_file_path, the_study_object, the_upload_seed_size, the_printing_depth ) :
+def upload_file( the_worker_pool, the_file_path, the_file_location, the_study_object, the_upload_seed_size, the_printing_depth ) :
     a_working_dir = generate_uploading_dir( the_file_path )
 
     import shutil
@@ -75,18 +75,18 @@ def upload_file( the_worker_pool, the_file_path, the_study_object, the_upload_se
     a_file_pointer.close()
     os.remove( a_tmp_file )
 
-    a_file_object = TFileObject.create( the_study_object, the_file_path, a_hex_md5 )
+    a_file_object = TFileObject.create( the_study_object, the_file_path, the_file_location, a_hex_md5 )
     print_d( "a_file_object = %s\n" % a_file_object, the_printing_depth )
 
     pass
 
 
 #------------------------------------------------------------------------------------------
-def upload_files( the_files, the_study_object, the_upload_seed_size, the_printing_depth ) :
-    a_worker_pool = WorkerPool( len( the_files ) )
+def upload_files( file_locations, the_study_object, the_upload_seed_size, the_printing_depth ) :
+    a_worker_pool = WorkerPool( len( file_locations ) )
 
-    for a_file_path in the_files :
-        a_worker_pool.charge( upload_file, ( a_worker_pool, a_file_path, the_study_object, 
+    for a_file in file_locations :
+        a_worker_pool.charge( upload_file, ( a_worker_pool, a_file, file_locations[ a_file ], the_study_object, 
                                              the_upload_seed_size, the_printing_depth ) )
 
         pass

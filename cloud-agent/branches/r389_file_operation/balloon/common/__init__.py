@@ -284,12 +284,23 @@ def location_separator():
 
 #--------------------------------------------------------------------------------------
 def extract_locations( the_location ):
-    if the_location == None:
-       list_location = ['']
+    list_location = []
+    
+    if the_location != None:
+       temp = the_location.split( location_separator() )
+    
+       for a_location in temp:
+           a_location = a_location.strip()
+    
+           if a_location.startswith( '/' ) :
+              list_location.append( a_location )
+              pass
+           else:
+              list_location.append( '/' + a_location )
+              pass
        pass
-    else:    
-       list_location = the_location.split( location_separator() )
-       list_location = [ a_location.strip() for a_location in list_location ]
+    else:
+       list_location = ['/']
        pass
 
     return list_location
