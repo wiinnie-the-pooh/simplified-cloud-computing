@@ -50,7 +50,7 @@ for a_file in os.listdir( an_engine_dir ) :
 
 #-------------------------------------------------------------------------------------
 import ez_setup
-ez_setup.use_setuptools()
+ez_setup.use_setuptools( '0.6c9' )
 
 from setuptools import setup, find_packages
 import balloon
@@ -71,7 +71,7 @@ setup( name = balloon.NAME,
        author_email = 'alexey.petrov.nnov@gmail.com', 
        license = 'Apache License, Version 2.0',
        url = 'http://sourceforge.net/p/cloud-foam',
-       install_requires = [ 'boto >= 1.9', 'workerpool >= 0.9.2', 'paramiko >= 1.7.6' ],
+       install_requires = [ 'boto == 1.9b', 'workerpool >= 0.9.2', 'paramiko >= 1.7.6' ],
        platforms = [ 'linux' ],
        version = balloon.VERSION,
        classifiers = [ 'Development Status :: 3 - Alpha',
