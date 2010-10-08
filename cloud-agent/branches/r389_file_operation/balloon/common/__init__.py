@@ -278,29 +278,3 @@ def compute_md5( the_file_pointer ) :
 
 
 #--------------------------------------------------------------------------------------
-def location_separator():
-     return ","
-
-
-#--------------------------------------------------------------------------------------
-def extract_locations( the_location ):
-    list_location = []
-    
-    if the_location != None:
-       temp = the_location.split( location_separator() )
-    
-       for a_location in temp:
-           a_location = a_location.strip()
-    
-           if a_location.startswith( '/' ) :
-              list_location.append( a_location )
-              pass
-           else:
-              list_location.append( '/' + a_location )
-              pass
-       pass
-    else:
-       list_location = ['/']
-       pass
-
-    return list_location

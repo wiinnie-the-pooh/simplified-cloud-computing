@@ -215,8 +215,8 @@ class TStudyObject :
 
 #--------------------------------------------------------------------------------------
 def _file_key_separator( the_api_version ) :
-    if the_api_version == 'dummy' :
-        return '$'
+    if the_api_version < '0.2' : #must be '0.3' in my case
+        raise NotImplementedError
 
     return ' :: '
 
@@ -230,11 +230,13 @@ def extract_file_props( the_key, the_api_version ):
 
 #--------------------------------------------------------------------------------------
 def get_md5_from_filekey( the_key, the_api_version ):
+    
     return extract_file_props( the_key, the_api_version )[ 0 ]
 
 
 #--------------------------------------------------------------------------------------
 def get_path_from_filekey( the_key, the_api_version ):
+    
     return extract_file_props( the_key, the_api_version )[ 1 ]
 
 
@@ -300,9 +302,9 @@ class TFileObject :
         a_key = get_key( the_study_object._bucket, a_new_file_path )
         #a_key = get_key( the_study_object._bucket, the_file_path )
         
-        the_separator = _file_key_separator( the_study_object._api_version )
+        a_separator = _file_key_separator( the_study_object._api_version )
         
-        a_key.set_contents_from_string( the_hex_md5 + the_separator + the_file_path )
+        a_key.set_contents_from_string( the_hex_md5 + a_separator + the_file_path )
         
         an_api_version = the_study_object._api_version
 

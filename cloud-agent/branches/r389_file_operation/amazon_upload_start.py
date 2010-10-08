@@ -82,11 +82,11 @@ def upload_file( the_worker_pool, the_file_path, the_file_location, the_study_ob
 
 
 #------------------------------------------------------------------------------------------
-def upload_files( file_locations, the_study_object, the_upload_seed_size, the_printing_depth ) :
-    a_worker_pool = WorkerPool( len( file_locations ) )
+def upload_files( the_file_locations_dict, the_study_object, the_upload_seed_size, the_printing_depth ) :
+    a_worker_pool = WorkerPool( len( the_file_locations_dict ) )
 
-    for a_file in file_locations :
-        a_worker_pool.charge( upload_file, ( a_worker_pool, a_file, file_locations[ a_file ], the_study_object, 
+    for a_file in the_file_locations_dict.keys() :
+        a_worker_pool.charge( upload_file, ( a_worker_pool, a_file, the_file_locations_dict[ a_file ], the_study_object, 
                                              the_upload_seed_size, the_printing_depth ) )
 
         pass
@@ -96,6 +96,34 @@ def upload_files( file_locations, the_study_object, the_upload_seed_size, the_pr
     
     pass
 
+
+#------------------------------------------------------------------------------------------
+def location_separator():
+     return ","
+
+
+#--------------------------------------------------------------------------------------
+def extract_locations( the_location ):
+    list_location = []
+    
+    if the_location != None:
+       temp = the_location.split( location_separator() )
+    
+       for a_location in temp:
+           a_location = a_location.strip()
+    
+           if a_location.startswith( '/' ) :
+              list_location.append( a_location )
+              pass
+           else:
+              list_location.append( '/' + a_location )
+              pass
+       pass
+    else:
+       list_location = ['/']
+       pass
+
+    return list_location
 
 #------------------------------------------------------------------------------------------
 # Defining utility command-line interface
@@ -131,10 +159,10 @@ common.add_parser_options( a_option_parser )
 amazon.add_parser_options( a_option_parser )
 amazon.add_timeout_options( a_option_parser )
 
-a_option_parser.add_option( "--location",
+a_option_parser.add_option( "--file-locations",
                             metavar = "< location of files  >",
                             action = "store",
-                            dest = "location",
+                            dest = "file_locations",
                             help = "(\"%default\", by default)",
                             default = None )
 
@@ -149,9 +177,9 @@ an_options, an_args = a_option_parser.parse_args()
 
 common.extract_options( an_options )
 
-a_location =an_options.location
+a_location =an_options.file_locations
 
-a_locations = common.extract_locations( a_location )
+a_list_locations = extract_locations( a_location )
 
 a_files = list()
 for an_arg in an_args :
@@ -165,21 +193,21 @@ if len( a_files ) == 0 :
     a_option_parser.error( "You should define one valid 'file' at least\n" )
     pass
 
-if len( a_files ) != len( a_locations) and len( a_locations ) > 1:
+if len( a_files ) != len( a_list_locations) and len( a_list_locations ) > 1:
    a_option_parser.error( "The amount of locations must be equal 1( including 'None' ) or amount of files\n" )
    pass
 
 print_d( "a_files = %r\n" % a_files )
 
-file_locations = {}
+a_file_locations_dict = {}
 
 an_index =0
 for a_file in a_files:
-    if len( a_locations ) == 1:
-       file_locations[ a_file ] = a_locations[ 0 ]
+    if len( a_list_locations ) == 1:
+       a_file_locations_dict[ a_file ] = a_list_locations[ 0 ]
        pass
     else:
-       file_locations[ a_file ] = a_locations[ an_index ]
+       a_file_locations_dict[ a_file ] = a_list_locations[ an_index ]
        an_index += 1
        pass
     pass   
@@ -206,7 +234,7 @@ print_d( "a_study_object = %s\n" % a_study_object )
 print_i( "---------------------------- Uploading study files ------------------------------\n" )
 a_data_loading_time = Timer()
 
-upload_files( file_locations, a_study_object, an_options.upload_seed_size, 0 )
+upload_files( a_file_locations_dict, a_study_object, an_options.upload_seed_size, 0 )
 
 print_d( "a_data_loading_time = %s, sec\n" % a_data_loading_time )
 
