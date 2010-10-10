@@ -81,7 +81,7 @@ class TRootObject :
 #--------------------------------------------------------------------------------------
 def api_version() :
 
-    return '0.2'
+    return '0.3'
 
 
 #--------------------------------------------------------------------------------------
@@ -215,8 +215,8 @@ class TStudyObject :
 
 #--------------------------------------------------------------------------------------
 def _file_key_separator( the_api_version ) :
-    if the_api_version < '0.2' : #must be '0.3' in my case
-        raise NotImplementedError
+    if the_api_version < '0.3' : 
+        raise NotImplementedError( "The function _file_key_separator is not implemented in api vesion low 0.3" )
 
     return ' :: '
 
@@ -268,14 +268,22 @@ class TFileObject :
         pass
     
     def file_path( self ) :
-        #api ver0.2
-        #return get_key_name( self._key )
-        return get_path_from_filekey( self._key, self.api_version() )
+        if self.api_version() >= "0.3":
+           a_name = get_path_from_filekey( self._key, self.api_version() )
+           pass
+        else:
+           a_name = get_key_name( self._key )
+           pass
+        return a_name
 
-    def hex_md5( self ) :
-        #api ver0.2     
-        #return self._hex_md5
-        return get_md5_from_filekey( self._key, self.api_version() )
+    def hex_md5( self ):
+        if self.api_version() >= "0.3":
+           a_hex_md5 = get_md5_from_filekey( self._key, self.api_version() )
+           pass
+        else:
+           a_hex_md5 = self._hex_md5
+           pass 
+        return a_hex_md5
 
     def file_location( self ): 
         
@@ -300,7 +308,6 @@ class TFileObject :
         a_new_file_path = os.path.join( the_file_locations, a_file_name )
 
         a_key = get_key( the_study_object._bucket, a_new_file_path )
-        #a_key = get_key( the_study_object._bucket, the_file_path )
         
         a_separator = _file_key_separator( the_study_object._api_version )
         
