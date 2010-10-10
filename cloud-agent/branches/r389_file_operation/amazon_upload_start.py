@@ -82,11 +82,11 @@ def upload_file( the_worker_pool, the_file_path, the_file_location, the_study_ob
 
 
 #------------------------------------------------------------------------------------------
-def upload_files( the_file_locations_dict, the_study_object, the_upload_seed_size, the_printing_depth ) :
-    a_worker_pool = WorkerPool( len( the_file_locations_dict ) )
+def upload_files( the_file2locations, the_study_object, the_upload_seed_size, the_printing_depth ) :
+    a_worker_pool = WorkerPool( len( the_file2locations ) )
 
-    for a_file in the_file_locations_dict.keys() :
-        a_worker_pool.charge( upload_file, ( a_worker_pool, a_file, the_file_locations_dict[ a_file ], the_study_object, 
+    for a_file, a_location_file in the_file2locations.iteritems() :
+        a_worker_pool.charge( upload_file, ( a_worker_pool, a_file, a_location_file, the_study_object, 
                                              the_upload_seed_size, the_printing_depth ) )
 
         pass
@@ -103,27 +103,27 @@ def location_separator():
 
 
 #--------------------------------------------------------------------------------------
-def extract_locations( the_location ):
-    list_location = []
+def extract_locations( the_locations ):
+    a_locations = []
     
-    if the_location != None:
-       temp = the_location.split( location_separator() )
+    if the_locations != None:
+       temp = the_locations.split( location_separator() )
     
        for a_location in temp:
            a_location = a_location.strip()
     
            if a_location.startswith( '/' ) :
-              list_location.append( a_location )
+              a_locations.append( a_location )
               pass
            else:
-              list_location.append( '/' + a_location )
+              a_locations.append( '/' + a_location )
               pass
        pass
     else:
-       list_location = ['/']
+       a_locations = ['/']
        pass
 
-    return list_location
+    return a_locations
 
 #------------------------------------------------------------------------------------------
 # Defining utility command-line interface
@@ -199,15 +199,15 @@ if len( a_files ) != len( a_list_locations) and len( a_list_locations ) > 1:
 
 print_d( "a_files = %r\n" % a_files )
 
-a_file_locations_dict = {}
+a_file2locations = {}
 
 an_index =0
 for a_file in a_files:
     if len( a_list_locations ) == 1:
-       a_file_locations_dict[ a_file ] = a_list_locations[ 0 ]
+       a_file2locations[ a_file ] = a_list_locations[ 0 ]
        pass
     else:
-       a_file_locations_dict[ a_file ] = a_list_locations[ an_index ]
+       a_file2locations[ a_file ] = a_list_locations[ an_index ]
        an_index += 1
        pass
     pass   
@@ -234,7 +234,7 @@ print_d( "a_study_object = %s\n" % a_study_object )
 print_i( "---------------------------- Uploading study files ------------------------------\n" )
 a_data_loading_time = Timer()
 
-upload_files( a_file_locations_dict, a_study_object, an_options.upload_seed_size, 0 )
+upload_files( a_file2locations, a_study_object, an_options.upload_seed_size, 0 )
 
 print_d( "a_data_loading_time = %s, sec\n" % a_data_loading_time )
 
