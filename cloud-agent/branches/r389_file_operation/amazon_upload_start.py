@@ -98,34 +98,6 @@ def upload_files( the_file2locations, the_study_object, the_upload_seed_size, th
 
 
 #------------------------------------------------------------------------------------------
-def location_separator():
-     return ","
-
-
-#--------------------------------------------------------------------------------------
-def extract_locations( the_locations ):
-    a_locations = []
-    
-    if the_locations != None:
-       temp = the_locations.split( location_separator() )
-    
-       for a_location in temp:
-           a_location = a_location.strip()
-    
-           if a_location.startswith( '/' ) :
-              a_locations.append( a_location )
-              pass
-           else:
-              a_locations.append( '/' + a_location )
-              pass
-       pass
-    else:
-       a_locations = ['/']
-       pass
-
-    return a_locations
-
-#------------------------------------------------------------------------------------------
 # Defining utility command-line interface
 
 an_usage_description = "%prog --study-name='my favorite study' --upload-item-size=5160 --socket-timeout=3"
@@ -133,7 +105,7 @@ an_usage_description += common.add_usage_description()
 an_usage_description += amazon.add_usage_description()
 an_usage_description += amazon.add_timeout_usage_description()
 an_usage_description += " <file 1> <file 2> ..."
-an_usage_description += " --location= '<location_file1>, <location_file2>' ... "
+an_usage_description += " --file-locations= '<location_file1>, <location_file2>' ... "
 
 from optparse import IndentedHelpFormatter
 a_help_formatter = IndentedHelpFormatter( width = 127 )
@@ -179,6 +151,7 @@ common.extract_options( an_options )
 
 a_location =an_options.file_locations
 
+from balloon.amazon import extract_locations
 a_list_locations = extract_locations( a_location )
 
 a_files = list()

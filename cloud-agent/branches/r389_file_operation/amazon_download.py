@@ -106,18 +106,19 @@ def download_file( the_file_object, the_output_dir, the_number_threads, the_enab
     an_output_dir = os.path.join( the_output_dir, a_file_dirname[ 1 : ] )
     print_d( "an_output_dir = '%s'\n" % an_output_dir, the_printing_depth + 1 )
     
+    
+    a_file_path = os.path.join( an_output_dir, a_file_basename )
     if the_enable_fresh :
-        import shutil
-        shutil.rmtree( an_output_dir, True )
-
+        if os.path.exists( a_file_path ):
+           os.remove( a_file_path )
+           pass
         pass
 
     if not os.path.exists( an_output_dir ) :
         os.makedirs( an_output_dir )
-
         pass
 
-    a_file_path = os.path.join( an_output_dir, a_file_basename )
+    
     print_d( "a_file_path = '%s'\n" % a_file_path, the_printing_depth + 2 )
     if os.path.exists( a_file_path ) :
         print_d( "nothing to be done, already downloaded\n", the_printing_depth + 3 )
@@ -169,11 +170,12 @@ def download_files( the_study_object, the_output_dir, the_number_threads, the_en
 #------------------------------------------------------------------------------------------
 # Defining utility command-line interface
 
-an_usage_description = "%prog --study-name='my uploaded study' --file-name='/home/alexey' --output-dir='./tmp'"
+an_usage_description = "%prog --study-name='my uploaded study' --file-names='/home/alexey' --output-dir='./tmp'"
 an_usage_description += common.add_usage_description()
 an_usage_description += amazon.add_usage_description()
 an_usage_description += amazon.add_timeout_usage_description()
 an_usage_description += amazon.add_threading_usage_description()
+an_usage_description += " --file-locations= '<location_file1>, <location_file2>' ... "
 
 from optparse import IndentedHelpFormatter
 a_help_formatter = IndentedHelpFormatter( width = 127 )
@@ -187,11 +189,19 @@ a_option_parser.add_option( "--study-name",
                             action = "store",
                             dest = "study_name",
                             help = "(intialized from input, otherwise)" )
-a_option_parser.add_option( "--file-name",
-                            metavar = "< a of a file into uploaded study >",
+a_option_parser.add_option( "--file-names",
+                            metavar = "<  a files into uploaded study >",
                             action = "store",
-                            dest = "file_name",
+                            dest = "file_names",
                             help = "(if missed, all the study files will be downloaded)" )
+
+a_option_parser.add_option( "--file-locations",
+                            metavar = "< the file locations in the study  >",
+                            action = "store",
+                            dest = "file_locations",
+                            help = " (\"%default\", by default) ",
+                            default = None )
+
 a_option_parser.add_option( "--output-dir",
                             metavar = "< location of the task defintion >",
                             action = "store",
@@ -254,15 +264,41 @@ print_d( "a_study_object = %s\n" % a_study_object )
 print_i( "--------------------------- Reading the study files -----------------------------\n" )
 a_data_loading_time = Timer()
 
-a_file_name = an_options.file_name
-if a_file_name == None :
+a_file_names = an_options.file_names
+
+if a_file_names == None :
     download_files( a_study_object, an_output_dir, a_number_threads, an_enable_fresh, 0 )
 
 else :
-    a_file_object = TFileObject.get( a_study_object, a_file_name )
+    from balloon.amazon import separator_in_options
+    a_list_file_names = a_file_names.split( separator_in_options() )
 
-    download_file( a_file_object, an_output_dir, a_number_threads, an_enable_fresh, 0 )
-
+    a_file_locations = an_options.file_locations
+    
+    from balloon.amazon import extract_locations
+    a_list_file_locations = extract_locations( a_file_locations )
+    
+    if len( a_list_file_names ) != len( a_list_file_locations ) and len( a_list_file_locations ) > 1:
+       a_option_parser.error( "The amount of locations must be equal 1( including 'None' ) or amount of files\n" )
+       pass
+    
+    a_worker_pool = WorkerPool( a_number_threads )
+    
+    index = 0
+    for a_file_name in a_list_file_names:
+        if len( a_list_file_locations ) == 1:
+           a_file = os.path.join( a_list_file_locations[ 0 ], a_file_name )
+           pass
+        else:
+           a_file = os.path.join( a_list_file_locations[ index ], a_file_name )
+           pass
+        a_file_object = TFileObject.get( a_study_object, a_file )
+        a_worker_pool.charge( download_file, ( a_file_object, an_output_dir, a_number_threads, an_enable_fresh, 0 ) )                    
+        index += 1
+        pass
+    
+    a_worker_pool.shutdown()
+    a_worker_pool.join()
     pass
 
 print_d( "a_data_loading_time = %s, sec\n" % a_data_loading_time )
