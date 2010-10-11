@@ -41,31 +41,31 @@ from optparse import IndentedHelpFormatter
 a_help_formatter = IndentedHelpFormatter( width = 127 )
 
 from optparse import OptionParser
-a_option_parser = OptionParser( usage = an_usage_description, version="%prog 0.1", formatter = a_help_formatter )
+an_option_parser = OptionParser( usage = an_usage_description, version="%prog 0.1", formatter = a_help_formatter )
 
-a_option_parser.add_option( "--script-file",
-                            metavar = "< script (or list of scripts separated by '|') to be executed on the remote host >",
-                            action = "store",
-                            dest = "script_file",
-                            default = None )
-a_option_parser.add_option( "--script-args",
-                            metavar = "< arguments (or list of arguments separated by '|') for the remote script execution >",
-                            action = "store",
-                            dest = "script_args",
-                            default = "" )
-a_option_parser.add_option( "--sequence-file",
-                            metavar = "< file with sequence of commands to be executed >",
-                            action = "store",
-                            dest = "sequence_file",
-                            default = None )
-ssh.add_parser_options( a_option_parser )
-common.add_parser_options( a_option_parser )
+an_option_parser.add_option( "--script-file",
+                             metavar = "< script (or list of scripts separated by '|') to be executed on the remote host >",
+                             action = "store",
+                             dest = "script_file",
+                             default = None )
+an_option_parser.add_option( "--script-args",
+                             metavar = "< arguments (or list of arguments separated by '|') for the remote script execution >",
+                             action = "store",
+                             dest = "script_args",
+                             default = "" )
+an_option_parser.add_option( "--sequence-file",
+                             metavar = "< file with sequence of commands to be executed >",
+                             action = "store",
+                             dest = "sequence_file",
+                             default = None )
+ssh.add_parser_options( an_option_parser )
+common.add_parser_options( an_option_parser )
   
  
 #--------------------------------------------------------------------------------------
 # Extracting and verifying command-line arguments
 
-an_options, an_args = a_option_parser.parse_args()
+an_options, an_args = an_option_parser.parse_args()
 
 an_enable_debug = common.extract_options( an_options )
 a_password, an_identity_file, a_host_port, a_login_name, a_host_name, a_command = ssh.extract_options( an_options )
@@ -85,7 +85,7 @@ if a_script_file != None :
     a_scripts = a_script_file.split( '|' )
     for a_script in a_scripts :
         if not os.path.isfile( a_script ) :
-            a_option_parser.error( "--script-file='%s' must be a file" % a_script )
+            an_option_parser.error( "--script-file='%s' must be a file" % a_script )
             pass
         pass
 
@@ -94,7 +94,7 @@ if a_script_file != None :
     if a_script_args != "" :
         an_args = a_script_args.split( '|' )
         if len( an_args ) != len( a_scripts ) :
-            a_option_parser.error( "number of items in --script-file='%s'"
+            an_option_parser.error( "number of items in --script-file='%s'"
                                    " must the same or zero as for --script-args='%s' " 
                                    % ( a_script_files, a_script_args ) )
             pass
@@ -112,7 +112,7 @@ a_sequence_file = an_options.sequence_file
 if a_sequence_file != None :
     a_sequence_file = os.path.abspath( a_sequence_file )
     if not os.path.isfile( a_sequence_file ) :
-        a_option_parser.error( "--sequence-file='%s' must be a file" % a_sequence_file )
+        an_option_parser.error( "--sequence-file='%s' must be a file" % a_sequence_file )
         pass
     a_call += " --sequence-file='%s'" % a_sequence_file
     pass
