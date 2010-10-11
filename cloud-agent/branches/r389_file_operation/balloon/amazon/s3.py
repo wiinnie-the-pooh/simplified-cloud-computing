@@ -224,20 +224,8 @@ def _file_key_separator( the_api_version ) :
 #--------------------------------------------------------------------------------------
 def extract_file_props( the_key, the_api_version ):
     a_contents = the_key.get_contents_as_string()
-    list_file_props = a_contents.split( _file_key_separator( the_api_version ) )
-    return list_file_props
-
-
-#--------------------------------------------------------------------------------------
-def get_md5_from_filekey( the_key, the_api_version ):
-    
-    return extract_file_props( the_key, the_api_version )[ 0 ]
-
-
-#--------------------------------------------------------------------------------------
-def get_path_from_filekey( the_key, the_api_version ):
-    
-    return extract_file_props( the_key, the_api_version )[ 1 ]
+    a_list_file_props = a_contents.split( _file_key_separator( the_api_version ) )
+    return a_list_file_props
 
 
 #--------------------------------------------------------------------------------------
@@ -255,7 +243,7 @@ def generate_uploading_dir( the_file_path ) :
 class TFileObject :
     "Represents S3 dedicated implementation of file object"
 
-    def __init__( self, the_study_object, the_key, the_bucket, the_id, the_hex_md5 ) :
+    def __init__( self, the_study_object, the_key, the_bucket, the_id, the_hex_md5, the_file_path ) :
         "Use static corresponding functions to an instance of this class"
         self._study_object = the_study_object
 
@@ -264,26 +252,17 @@ class TFileObject :
         self._id = the_id
 
         self._hex_md5 = the_hex_md5
+        self._file_path = the_file_path
 
         pass
     
     def file_path( self ) :
-        if self.api_version() >= "0.3":
-           a_name = get_path_from_filekey( self._key, self.api_version() )
-           pass
-        else:
-           a_name = get_key_name( self._key )
-           pass
-        return a_name
+        
+        return self._file_path
 
     def hex_md5( self ):
-        if self.api_version() >= "0.3":
-           a_hex_md5 = get_md5_from_filekey( self._key, self.api_version() )
-           pass
-        else:
-           a_hex_md5 = self._hex_md5
-           pass 
-        return a_hex_md5
+        
+        return self._hex_md5
 
     def file_location( self ): 
         
@@ -319,13 +298,21 @@ class TFileObject :
     
         a_bucket = the_study_object.connection().create_bucket( a_bucket_name )
 
-        return TFileObject( the_study_object, a_key, a_bucket, an_id, the_hex_md5 )
+        return TFileObject( the_study_object, a_key, a_bucket, an_id, the_hex_md5, the_file_path )
 
     @staticmethod
     def get( the_study_object, the_file_path ) :
         a_key = get_key( the_study_object._bucket, the_file_path )
 
-        a_hex_md5 = get_md5_from_filekey( a_key, the_study_object._api_version )
+        if the_study_object._api_version >= "0.3":
+           a_file_props = extract_file_props( a_key, the_study_object._api_version )
+           a_hex_md5 = a_file_props[ 0 ]
+           a_file_path = a_file_props[ 1 ]
+           pass
+        else:
+           a_file_path = get_key_name( self._key )
+           a_hex_md5 = a_key.get_contents_as_string()
+           pass
         
         an_api_version = the_study_object._api_version
 
@@ -333,7 +320,7 @@ class TFileObject :
 
         a_bucket = the_study_object.connection().get_bucket( a_bucket_name )
 
-        return TFileObject( the_study_object, a_key, a_bucket, an_id, a_hex_md5 )
+        return TFileObject( the_study_object, a_key, a_bucket, an_id, a_hex_md5, a_file_path )
 
     def _next( self ) :
         for a_seed_key in self._bucket.list() :
