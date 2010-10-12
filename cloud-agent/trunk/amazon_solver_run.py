@@ -25,16 +25,16 @@ This script is responsible for cluster environment setup for the given Amazon EC
 #--------------------------------------------------------------------------------------
 import balloon.common as common
 from balloon.common import print_d, print_e, sh_command, Timer
-from balloon.common import ssh
 
 from balloon import amazon
+from balloon.amazon import ec2
 
 
 #--------------------------------------------------------------------------------------
 # Defining utility command-line interface
 
 an_usage_description = "%prog --case-dir='./damBreak'"
-an_usage_description += ssh.add_usage_description()
+an_usage_description += ec2.use.add_usage_description()
 an_usage_description += amazon.add_usage_description()
 an_usage_description += common.add_usage_description()
 
@@ -48,7 +48,7 @@ an_option_parser.add_option( "--case-dir",
                              metavar = "< location of the source OpenFOAM case dir >",
                              action = "store",
                              dest = "case_dir" )
-ssh.add_parser_options( an_option_parser )
+ec2.use.add_parser_options( an_option_parser )
 amazon.add_parser_options( an_option_parser )
 common.add_parser_options( an_option_parser )
   
@@ -60,7 +60,7 @@ an_options, an_args = an_option_parser.parse_args()
 
 an_enable_debug = common.extract_options( an_options )
 AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY = amazon.extract_options( an_options )
-a_password, an_identity_file, a_host_port, a_login_name, a_host_name, a_command = ssh.extract_options( an_options )
+an_image_location, a_reservation_id, an_identity_file, a_host_port, a_login_name = ec2.use.extract_options( an_options )
 
 import os
 a_case_dir = os.path.abspath( an_options.case_dir )
@@ -74,16 +74,31 @@ print_d( "\n--------------------------- Canonical substitution -----------------
 import sys
 an_engine = sys.argv[ 0 ]
 
-a_call = "%s --case-dir='%s' %s %s" % ( an_engine, a_case_dir, ssh.compose_call( an_options ), amazon.compose_call( an_options ) )
+a_call = "%s --case-dir='%s' %s %s" % ( an_engine, a_case_dir, ec2.use.compose_call( an_options ), amazon.compose_call( an_options ) )
 print_d( a_call + '\n' )
 
 
 print_d( "\n----------------------- Running actual functionality ----------------------\n" )
 a_spent_time = Timer()
 
+an_ec2_conn = ec2.region_connect( an_image_location, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY )
+a_reservation = ec2.use.get_reservation( an_ec2_conn, a_reservation_id )
+
+a_password = "" # No password
+an_identity_file = an_identity_file
+a_host_port = a_host_port
+a_login_name = a_login_name
+
+from balloon.common import ssh
+an_instance_2_ssh_client = {}
+
 print_d( "\n----------------- Transfering case data to the master node ----------------\n" )
+a_master_node = an_instance = a_reservation.instances[ 0 ]
+a_host_name = an_instance.public_dns_name
+
 print_d( 'ssh -o "StrictHostKeyChecking no" -i %s -p %d %s@%s\n' % ( an_identity_file, a_host_port, a_login_name, a_host_name ) )
 a_ssh_client = ssh.connect( a_password, an_identity_file, a_host_port, a_login_name, a_host_name, 'env' )
+an_instance_2_ssh_client[ an_instance ] = a_ssh_client
 
 a_remote_home = ssh.command( a_ssh_client, 'echo ${HOME}')[ 0 ][ : -1 ]
 a_tagret_dir = os.path.join( a_remote_home, os.path.basename( a_case_dir ) )
@@ -102,6 +117,8 @@ for an_instance in a_reservation.instances[ 1 : ] :
     a_ssh_client = ssh.connect( a_password, an_identity_file, a_host_port, a_login_name, a_host_name )
     ssh.command( a_ssh_client, "mkdir -p %s" % ( a_tagret_dir ) )
     ssh.command( a_ssh_client, "sudo mount %s:%s %s" % ( a_master_node.private_ip_address, a_tagret_dir, a_tagret_dir ) )
+
+    an_instance_2_ssh_client[ an_instance ] = a_ssh_client
     pass
 
 
