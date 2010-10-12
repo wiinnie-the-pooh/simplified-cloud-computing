@@ -132,7 +132,7 @@ an_option_parser.add_option( "--file-locations",
                              action = "store",
                              dest = "file_locations",
                              help = "(\"%default\", by default)",
-                             default = '.' )
+                             default = '' )
 an_option_parser.add_option( "--upload-item-size",
                              metavar = "< size of file pieces to be uploaded, in bytes >",
                              type = "int",
