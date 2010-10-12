@@ -100,7 +100,7 @@ def upload_files( the_file2locations, the_study_object, the_upload_seed_size, th
 #------------------------------------------------------------------------------------------
 def extract_locations( the_file_locations ):
 
-    return the_file_locations.split( amazon.separator_in_options() )
+    return the_file_locations.split( common.arg_list_separator() )
 
 
 #--------------------------------------------------------------------------------------

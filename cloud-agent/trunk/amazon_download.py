@@ -264,8 +264,7 @@ if a_located_files == None :
     download_files( a_study_object, an_output_dir, a_number_threads, an_enable_fresh, 0 )
     pass
 else :
-    from balloon.amazon import separator_in_options
-    a_located_files = a_located_files.split( separator_in_options() )
+    a_located_files = a_located_files.split( common.arg_list_separator() )
       
     a_worker_pool = WorkerPool( a_number_threads )
       

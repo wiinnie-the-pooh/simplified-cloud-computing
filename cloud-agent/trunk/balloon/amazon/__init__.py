@@ -128,9 +128,4 @@ def extract_timeout_options( the_options, the_option_parser ) :
     return the_options.socket_timeout
 
 
-#--------------------------------------------------------------------------------------
-def separator_in_options():
-     return ","
-
-
 #------------------------------------------------------------------------------------------
