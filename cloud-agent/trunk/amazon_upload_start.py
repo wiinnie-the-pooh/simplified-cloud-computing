@@ -154,12 +154,19 @@ an_options, an_args = an_option_parser.parse_args()
 
 common.extract_options( an_options )
 
+a_source_files = None
+if len( an_args ) == 0 :
+    a_source_files = [ raw_input() ]
+else :
+    a_source_files = an_args
+    pass
+
 a_files = list()
-for an_arg in an_args :
-    if not os.path.exists( an_arg ) :
+for a_file in a_source_files :
+    if not os.path.exists( a_file ) :
         an_option_parser.error( "The given file should exists\n" )
         pass
-    a_files.append( os.path.abspath( an_arg ) )
+    a_files.append( os.path.abspath( a_file ) )
     pass
 
 if len( a_files ) == 0 :
