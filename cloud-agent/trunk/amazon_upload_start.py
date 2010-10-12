@@ -98,39 +98,21 @@ def upload_files( the_file2locations, the_study_object, the_upload_seed_size, th
 
 
 #------------------------------------------------------------------------------------------
-def extract_locations( the_locations ):
-    a_locations = []
-    
-    if the_locations != None:
-       from balloon.amazon import separator_in_options
-       temp = the_locations.split( separator_in_options() )
-    
-       for a_location in temp:
-           a_location = a_location.strip()
-    
-           if a_location.startswith( '/' ) :
-              a_locations.append( a_location )
-              pass
-           else:
-              a_locations.append( '/' + a_location )
-              pass
-       pass
-    else:
-       a_locations = ['/']
-       pass
+def extract_locations( the_file_locations ):
 
-    return a_locations
+    return the_file_locations.split( amazon.separator_in_options() )
 
 
 #--------------------------------------------------------------------------------------
 # Defining utility command-line interface
 
-an_usage_description = "%prog --study-name='my favorite study' --upload-item-size=5160 --socket-timeout=3"
+an_usage_description = "%prog"
+an_usage_description += " --study-name='my favorite study' --upload-item-size=5160 --socket-timeout=3"
+an_usage_description += " --file-locations= '<file1 location>,<file2 location>,...'"
 an_usage_description += common.add_usage_description()
 an_usage_description += amazon.add_usage_description()
 an_usage_description += amazon.add_timeout_usage_description()
 an_usage_description += " <file 1> <file 2> ..."
-an_usage_description += " --file-locations= '<location_file1>, <location_file2>' ... "
 
 from optparse import IndentedHelpFormatter
 a_help_formatter = IndentedHelpFormatter( width = 127 )
@@ -145,6 +127,12 @@ a_option_parser.add_option( "--study-name",
                             dest = "study_name",
                             help = "(generated, by default)",
                             default = 'tmp-' + str( uuid.uuid4() ) )
+a_option_parser.add_option( "--file-locations",
+                            metavar = "< location of files inside of the study >",
+                            action = "store",
+                            dest = "file_locations",
+                            help = "(\"%default\", by default)",
+                            default = '.' )
 a_option_parser.add_option( "--upload-item-size",
                             metavar = "< size of file pieces to be uploaded, in bytes >",
                             type = "int",
@@ -155,14 +143,6 @@ a_option_parser.add_option( "--upload-item-size",
 common.add_parser_options( a_option_parser )
 amazon.add_parser_options( a_option_parser )
 amazon.add_timeout_options( a_option_parser )
-
-a_option_parser.add_option( "--file-locations",
-                            metavar = "< location of files  >",
-                            action = "store",
-                            dest = "file_locations",
-                            help = "(\"%default\", by default)",
-                            default = None )
-
     
 an_engine_dir = os.path.abspath( os.path.dirname( sys.argv[ 0 ] ) )
 
@@ -173,10 +153,6 @@ an_engine_dir = os.path.abspath( os.path.dirname( sys.argv[ 0 ] ) )
 an_options, an_args = a_option_parser.parse_args()
 
 common.extract_options( an_options )
-
-a_location =an_options.file_locations
-
-a_list_locations = extract_locations( a_location )
 
 a_files = list()
 for an_arg in an_args :
@@ -190,27 +166,29 @@ if len( a_files ) == 0 :
     a_option_parser.error( "You should define one valid 'file' at least\n" )
     pass
 
-if len( a_files ) != len( a_list_locations) and len( a_list_locations ) > 1:
-   a_option_parser.error( "The amount of locations must be equal 1( including 'None' ) or amount of files\n" )
-   pass
-
 print_d( "a_files = %r\n" % a_files )
 
-a_file2locations = {}
+a_file_locations = extract_locations( an_options.file_locations )
 
-an_index =0
-for a_file in a_files:
-    if len( a_list_locations ) == 1:
-       a_file2locations[ a_file ] = a_list_locations[ 0 ]
-       pass
-    else:
-       a_file2locations[ a_file ] = a_list_locations[ an_index ]
-       an_index += 1
-       pass
+a_file2locations = {}
+if len( a_file_locations ) > 1 :
+    if len( a_files ) != len( a_file_locations ) :
+        a_option_parser.error( "The amount of file locations shoudl be equal to the number of given files\n" )
+    else :
+        for an_id in range( len( a_files ) ) :
+            a_file = a_files[ an_id ]
+            a_location = a_file_locations[ an_id ]
+            a_file2locations[ a_file ] = a_location
+            pass
+        pass
+else :
+    a_location = a_file_locations[ 0 ]
+    for a_file in a_files:
+        a_file2locations[ a_file ] = a_location
+        pass
     pass   
 
-#for a_file in file_locations:  
-#    print_d( "the location of the '%s' ---> '%s' \n" % (a_file, file_locations[ a_file ] ) )
+print_d( "a_file2locations = %r\n" % a_file2locations )
 
 a_study_name = an_options.study_name
 print_d( "a_study_name = '%s'\n" % a_study_name )

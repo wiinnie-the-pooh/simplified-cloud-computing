@@ -222,10 +222,12 @@ def _file_key_separator( the_api_version ) :
 
 
 #--------------------------------------------------------------------------------------
-def extract_file_props( the_key, the_api_version ):
+def _extract_file_props( the_key, the_api_version ):
     a_contents = the_key.get_contents_as_string()
-    a_list_file_props = a_contents.split( _file_key_separator( the_api_version ) )
-    return a_list_file_props
+    a_separator = _file_key_separator( the_api_version )
+    a_hex_md5, a_file_path = a_contents.split( a_separator )
+    
+    return a_hex_md5, a_file_path
 
 
 #--------------------------------------------------------------------------------------
@@ -264,7 +266,7 @@ class TFileObject :
         
         return self._hex_md5
 
-    def file_location( self ): 
+    def located_file( self ): 
         
         return get_key_name( self._key )
         
@@ -301,22 +303,19 @@ class TFileObject :
         return TFileObject( the_study_object, a_key, a_bucket, an_id, the_hex_md5, the_file_path )
 
     @staticmethod
-    def get( the_study_object, the_file_path ) :
-        a_key = get_key( the_study_object._bucket, the_file_path )
-
-        if the_study_object._api_version >= "0.3":
-           a_file_props = extract_file_props( a_key, the_study_object._api_version )
-           a_hex_md5 = a_file_props[ 0 ]
-           a_file_path = a_file_props[ 1 ]
-           pass
-        else:
-           a_file_path = get_key_name( self._key )
-           a_hex_md5 = a_key.get_contents_as_string()
-           pass
+    def get( the_study_object, the_located_file ) :
+        a_key = get_key( the_study_object._bucket, the_located_file )
         
         an_api_version = the_study_object._api_version
 
-        an_id, a_bucket_name = generate_id( the_study_object._id, the_file_path, an_api_version )
+        if the_study_object._api_version >= "0.3":
+            a_hex_md5, a_file_path = _extract_file_props( a_key, an_api_version )
+        else:
+            a_file_path = get_key_name( a_key )
+            a_hex_md5 = a_key.get_contents_as_string()
+            pass
+    
+        an_id, a_bucket_name = generate_id( the_study_object._id, the_located_file, an_api_version )
 
         a_bucket = the_study_object.connection().get_bucket( a_bucket_name )
 
