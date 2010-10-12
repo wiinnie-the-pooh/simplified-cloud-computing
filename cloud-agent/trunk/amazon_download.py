@@ -98,7 +98,7 @@ def download_file( the_file_object, the_output_dir, the_number_threads, the_enab
     print_d( "the_file_object = %s\n" % the_file_object, the_printing_depth )
 
     a_hex_md5 = the_file_object.hex_md5()
-    a_source_file_path = the_file_object.file_path()
+    a_source_file_path = the_file_object.file_location()
 
     a_file_dirname = os.path.dirname( a_source_file_path )
     a_file_basename = os.path.basename( a_source_file_path )
@@ -106,18 +106,19 @@ def download_file( the_file_object, the_output_dir, the_number_threads, the_enab
     an_output_dir = os.path.join( the_output_dir, a_file_dirname[ 1 : ] )
     print_d( "an_output_dir = '%s'\n" % an_output_dir, the_printing_depth + 1 )
     
+    
+    a_file_path = os.path.join( an_output_dir, a_file_basename )
     if the_enable_fresh :
-        import shutil
-        shutil.rmtree( an_output_dir, True )
-
+        if os.path.exists( a_file_path ):
+           os.remove( a_file_path )
+           pass
         pass
 
     if not os.path.exists( an_output_dir ) :
         os.makedirs( an_output_dir )
-
         pass
 
-    a_file_path = os.path.join( an_output_dir, a_file_basename )
+    
     print_d( "a_file_path = '%s'\n" % a_file_path, the_printing_depth + 2 )
     if os.path.exists( a_file_path ) :
         print_d( "nothing to be done, already downloaded\n", the_printing_depth + 3 )
@@ -169,11 +170,12 @@ def download_files( the_study_object, the_output_dir, the_number_threads, the_en
 #------------------------------------------------------------------------------------------
 # Defining utility command-line interface
 
-an_usage_description = "%prog --study-name='my uploaded study' --file-name='/home/alexey' --output-dir='./tmp'"
+an_usage_description = "%prog --study-name='my uploaded study' --output-dir='./tmp'"
 an_usage_description += common.add_usage_description()
 an_usage_description += amazon.add_usage_description()
 an_usage_description += amazon.add_timeout_usage_description()
 an_usage_description += amazon.add_threading_usage_description()
+an_usage_description += " --located-files= '<study_path/file1>, <study_path/file2>' ... "
 
 from optparse import IndentedHelpFormatter
 a_help_formatter = IndentedHelpFormatter( width = 127 )
@@ -187,11 +189,14 @@ a_option_parser.add_option( "--study-name",
                             action = "store",
                             dest = "study_name",
                             help = "(intialized from input, otherwise)" )
-a_option_parser.add_option( "--file-name",
-                            metavar = "< a of a file into uploaded study >",
+
+a_option_parser.add_option( "--located-files",
+                            metavar = "< the file with path in the study  >",
                             action = "store",
-                            dest = "file_name",
-                            help = "(if missed, all the study files will be downloaded)" )
+                            dest = "located_files",
+                            help = " (\"%default\", by default) ",
+                            default = None )
+
 a_option_parser.add_option( "--output-dir",
                             metavar = "< location of the task defintion >",
                             action = "store",
@@ -254,17 +259,29 @@ print_d( "a_study_object = %s\n" % a_study_object )
 print_i( "--------------------------- Reading the study files -----------------------------\n" )
 a_data_loading_time = Timer()
 
-a_file_name = an_options.file_name
-if a_file_name == None :
+a_located_files = an_options.located_files
+
+if a_located_files == None :
     download_files( a_study_object, an_output_dir, a_number_threads, an_enable_fresh, 0 )
-
-else :
-    a_file_object = TFileObject.get( a_study_object, a_file_name )
-
-    download_file( a_file_object, an_output_dir, a_number_threads, an_enable_fresh, 0 )
-
     pass
-
+else :
+    from balloon.amazon import separator_in_options
+    a_list_located_files = a_located_files.split( separator_in_options() )
+      
+    a_worker_pool = WorkerPool( a_number_threads )
+      
+    for a_file in a_list_located_files:
+        if not a_file.startswith( "/" ):
+           a_file = '/' +a_file
+           pass
+        a_file_object = TFileObject.get( a_study_object, a_file )
+        a_worker_pool.charge( download_file, ( a_file_object, an_output_dir, a_number_threads, an_enable_fresh, 0 ) )                    
+        pass
+    
+    a_worker_pool.shutdown()
+    a_worker_pool.join()
+    pass
+    
 print_d( "a_data_loading_time = %s, sec\n" % a_data_loading_time )
 
 

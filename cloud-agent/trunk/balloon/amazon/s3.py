@@ -81,7 +81,7 @@ class TRootObject :
 #--------------------------------------------------------------------------------------
 def api_version() :
 
-    return '0.2'
+    return '0.3'
 
 
 #--------------------------------------------------------------------------------------
@@ -214,6 +214,21 @@ class TStudyObject :
 
 
 #--------------------------------------------------------------------------------------
+def _file_key_separator( the_api_version ) :
+    if the_api_version < '0.3' : 
+        raise NotImplementedError( "The function _file_key_separator is not implemented in api vesion low 0.3" )
+
+    return ' :: '
+
+
+#--------------------------------------------------------------------------------------
+def extract_file_props( the_key, the_api_version ):
+    a_contents = the_key.get_contents_as_string()
+    a_list_file_props = a_contents.split( _file_key_separator( the_api_version ) )
+    return a_list_file_props
+
+
+#--------------------------------------------------------------------------------------
 def generate_uploading_dir( the_file_path ) :
     a_file_dirname = os.path.dirname( the_file_path )
     a_file_basename = os.path.basename( the_file_path )
@@ -228,7 +243,7 @@ def generate_uploading_dir( the_file_path ) :
 class TFileObject :
     "Represents S3 dedicated implementation of file object"
 
-    def __init__( self, the_study_object, the_key, the_bucket, the_id, the_hex_md5 ) :
+    def __init__( self, the_study_object, the_key, the_bucket, the_id, the_hex_md5, the_file_path ) :
         "Use static corresponding functions to an instance of this class"
         self._study_object = the_study_object
 
@@ -237,17 +252,22 @@ class TFileObject :
         self._id = the_id
 
         self._hex_md5 = the_hex_md5
+        self._file_path = the_file_path
 
         pass
     
     def file_path( self ) :
+        
+        return self._file_path
 
-        return get_key_name( self._key )
-
-    def hex_md5( self ) :
-
+    def hex_md5( self ):
+        
         return self._hex_md5
 
+    def file_location( self ): 
+        
+        return get_key_name( self._key )
+        
     def connection( self ) :
 
         return self._study_object._connection
@@ -261,32 +281,46 @@ class TFileObject :
         return "'%s' - '%s' - %s" % ( self._id, self._hex_md5, self._bucket )
 
     @staticmethod
-    def create( the_study_object, the_file_path, the_hex_md5 ) :
-        a_key = get_key( the_study_object._bucket, the_file_path )
+    def create( the_study_object, the_file_path, the_file_locations, the_hex_md5 ) :
+        a_file_name = os.path.basename( the_file_path )
+        
+        a_new_file_path = os.path.join( the_file_locations, a_file_name )
 
-        a_key.set_contents_from_string( the_hex_md5 )
-
+        a_key = get_key( the_study_object._bucket, a_new_file_path )
+        
+        a_separator = _file_key_separator( the_study_object._api_version )
+        
+        a_key.set_contents_from_string( the_hex_md5 + a_separator + the_file_path )
+        
         an_api_version = the_study_object._api_version
 
-        an_id, a_bucket_name = generate_id( the_study_object._id, the_file_path, an_api_version )
+        an_id, a_bucket_name = generate_id( the_study_object._id, a_new_file_path, an_api_version )
     
         a_bucket = the_study_object.connection().create_bucket( a_bucket_name )
 
-        return TFileObject( the_study_object, a_key, a_bucket, an_id, the_hex_md5 )
+        return TFileObject( the_study_object, a_key, a_bucket, an_id, the_hex_md5, the_file_path )
 
     @staticmethod
     def get( the_study_object, the_file_path ) :
         a_key = get_key( the_study_object._bucket, the_file_path )
 
-        a_hex_md5 = a_key.get_contents_as_string()
-
+        if the_study_object._api_version >= "0.3":
+           a_file_props = extract_file_props( a_key, the_study_object._api_version )
+           a_hex_md5 = a_file_props[ 0 ]
+           a_file_path = a_file_props[ 1 ]
+           pass
+        else:
+           a_file_path = get_key_name( self._key )
+           a_hex_md5 = a_key.get_contents_as_string()
+           pass
+        
         an_api_version = the_study_object._api_version
 
         an_id, a_bucket_name = generate_id( the_study_object._id, the_file_path, an_api_version )
 
         a_bucket = the_study_object.connection().get_bucket( a_bucket_name )
 
-        return TFileObject( the_study_object, a_key, a_bucket, an_id, a_hex_md5 )
+        return TFileObject( the_study_object, a_key, a_bucket, an_id, a_hex_md5, a_file_path )
 
     def _next( self ) :
         for a_seed_key in self._bucket.list() :
