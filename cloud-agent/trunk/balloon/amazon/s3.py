@@ -281,20 +281,20 @@ class TFileObject :
         return "'%s' - '%s' - %s" % ( self._id, self._hex_md5, self._bucket )
 
     @staticmethod
-    def create( the_study_object, the_file_path, the_file_locations, the_hex_md5 ) :
+    def create( the_study_object, the_file_path, the_file_location, the_hex_md5 ) :
         a_file_name = os.path.basename( the_file_path )
         
-        a_new_file_path = os.path.join( the_file_locations, a_file_name )
+        a_located_file = os.path.join( the_file_location, a_file_name )
 
-        a_key = get_key( the_study_object._bucket, a_new_file_path )
-        
-        a_separator = _file_key_separator( the_study_object._api_version )
-        
-        a_key.set_contents_from_string( the_hex_md5 + a_separator + the_file_path )
+        a_key = get_key( the_study_object._bucket, a_located_file )
         
         an_api_version = the_study_object._api_version
 
-        an_id, a_bucket_name = generate_id( the_study_object._id, a_new_file_path, an_api_version )
+        a_separator = _file_key_separator( an_api_version )
+        
+        a_key.set_contents_from_string( the_hex_md5 + a_separator + the_file_path )
+        
+        an_id, a_bucket_name = generate_id( the_study_object._id, a_located_file, an_api_version )
     
         a_bucket = the_study_object.connection().create_bucket( a_bucket_name )
 
