@@ -170,12 +170,13 @@ def download_files( the_study_object, the_output_dir, the_number_threads, the_en
 #------------------------------------------------------------------------------------------
 # Defining utility command-line interface
 
-an_usage_description = "%prog --study-name='my uploaded study' --output-dir='./tmp'"
+an_usage_description = "%prog"
+an_usage_description += " --study-name='my uploaded study' --output-dir='./tmp'"
+an_usage_description += " --located-files= '<location-in-study-1/file-1>, <location-in-study-2/file-2>' ... "
 an_usage_description += common.add_usage_description()
 an_usage_description += amazon.add_usage_description()
 an_usage_description += amazon.add_timeout_usage_description()
 an_usage_description += amazon.add_threading_usage_description()
-an_usage_description += " --located-files= '<study_path/file1>, <study_path/file2>' ... "
 
 from optparse import IndentedHelpFormatter
 a_help_formatter = IndentedHelpFormatter( width = 127 )
@@ -189,19 +190,17 @@ a_option_parser.add_option( "--study-name",
                             action = "store",
                             dest = "study_name",
                             help = "(intialized from input, otherwise)" )
-
-a_option_parser.add_option( "--located-files",
-                            metavar = "< the file with path in the study  >",
-                            action = "store",
-                            dest = "located_files",
-                            help = " (\"%default\", by default) ",
-                            default = None )
-
 a_option_parser.add_option( "--output-dir",
                             metavar = "< location of the task defintion >",
                             action = "store",
                             dest = "output_dir",
-                            help = "(the same a 'study' name, by default)" )
+                            help = "(the same a 'study' name, by default)",
+                            default = None )
+a_option_parser.add_option( "--located-files",
+                            metavar = "< the list of file paths inside the study >",
+                            action = "store",
+                            dest = "located_files",
+                            default = None )
 a_option_parser.add_option( "--enable-fresh",
                             action = "store_true",
                             dest = "enable_fresh",
