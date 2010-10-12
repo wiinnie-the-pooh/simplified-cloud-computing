@@ -134,27 +134,3 @@ def separator_in_options():
 
 
 #------------------------------------------------------------------------------------------
-def extract_locations( the_locations ):
-    a_locations = []
-    
-    if the_locations != None:
-       from balloon.amazon import separator_in_options
-       temp = the_locations.split( separator_in_options() )
-    
-       for a_location in temp:
-           a_location = a_location.strip()
-    
-           if a_location.startswith( '/' ) :
-              a_locations.append( a_location )
-              pass
-           else:
-              a_locations.append( '/' + a_location )
-              pass
-       pass
-    else:
-       a_locations = ['/']
-       pass
-
-    return a_locations
-#--------------------------------------------------------------------------------------
-

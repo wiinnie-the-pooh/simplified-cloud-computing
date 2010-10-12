@@ -175,7 +175,7 @@ an_usage_description += common.add_usage_description()
 an_usage_description += amazon.add_usage_description()
 an_usage_description += amazon.add_timeout_usage_description()
 an_usage_description += amazon.add_threading_usage_description()
-an_usage_description += " --file-locations= '<location_file1>, <location_file2>' ... "
+an_usage_description += " --located-files= '<study_path/file1>, <study_path/file2>' ... "
 
 from optparse import IndentedHelpFormatter
 a_help_formatter = IndentedHelpFormatter( width = 127 )
@@ -195,10 +195,10 @@ a_option_parser.add_option( "--file-names",
                             dest = "file_names",
                             help = "(if missed, all the study files will be downloaded)" )
 
-a_option_parser.add_option( "--file-locations",
-                            metavar = "< the file locations in the study  >",
+a_option_parser.add_option( "--located-files",
+                            metavar = "< the file with path in the study  >",
                             action = "store",
-                            dest = "file_locations",
+                            dest = "located_files",
                             help = " (\"%default\", by default) ",
                             default = None )
 
@@ -265,40 +265,33 @@ print_i( "--------------------------- Reading the study files ------------------
 a_data_loading_time = Timer()
 
 a_file_names = an_options.file_names
+a_located_files = an_options.located_files
 
-if a_file_names == None :
+if a_file_names == None and a_located_files == None :
     download_files( a_study_object, an_output_dir, a_number_threads, an_enable_fresh, 0 )
-
+    pass
 else :
-    from balloon.amazon import separator_in_options
-    a_list_file_names = a_file_names.split( separator_in_options() )
-
-    a_file_locations = an_options.file_locations
-    
-    from balloon.amazon import extract_locations
-    a_list_file_locations = extract_locations( a_file_locations )
-    
-    if len( a_list_file_names ) != len( a_list_file_locations ) and len( a_list_file_locations ) > 1:
-       a_option_parser.error( "The amount of locations must be equal 1( including 'None' ) or amount of files\n" )
+    if a_located_files == None:
+       a_file_object = TFileObject.get( a_study_object, a_file_names )
+       download_file( a_file_object, an_output_dir, a_number_threads, an_enable_fresh, 0 )
        pass
+    else:
+      from balloon.amazon import separator_in_options
+      a_list_located_files = a_located_files.split( separator_in_options() )
+      
+      a_worker_pool = WorkerPool( a_number_threads )
+      
+      for a_file in a_list_located_files:
+          if not a_file.startswith( "/" ):
+             a_file = '/' +a_file
+             pass
+          a_file_object = TFileObject.get( a_study_object, a_file )
+          a_worker_pool.charge( download_file, ( a_file_object, an_output_dir, a_number_threads, an_enable_fresh, 0 ) )                    
+          pass
     
-    a_worker_pool = WorkerPool( a_number_threads )
-    
-    index = 0
-    for a_file_name in a_list_file_names:
-        if len( a_list_file_locations ) == 1:
-           a_file = os.path.join( a_list_file_locations[ 0 ], a_file_name )
-           pass
-        else:
-           a_file = os.path.join( a_list_file_locations[ index ], a_file_name )
-           pass
-        a_file_object = TFileObject.get( a_study_object, a_file )
-        a_worker_pool.charge( download_file, ( a_file_object, an_output_dir, a_number_threads, an_enable_fresh, 0 ) )                    
-        index += 1
-        pass
-    
-    a_worker_pool.shutdown()
-    a_worker_pool.join()
+      a_worker_pool.shutdown()
+      a_worker_pool.join()
+      pass
     pass
 
 print_d( "a_data_loading_time = %s, sec\n" % a_data_loading_time )
