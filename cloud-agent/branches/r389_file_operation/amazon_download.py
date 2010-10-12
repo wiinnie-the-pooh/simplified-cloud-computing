@@ -170,7 +170,7 @@ def download_files( the_study_object, the_output_dir, the_number_threads, the_en
 #------------------------------------------------------------------------------------------
 # Defining utility command-line interface
 
-an_usage_description = "%prog --study-name='my uploaded study' --file-names='/home/alexey' --output-dir='./tmp'"
+an_usage_description = "%prog --study-name='my uploaded study' --output-dir='./tmp'"
 an_usage_description += common.add_usage_description()
 an_usage_description += amazon.add_usage_description()
 an_usage_description += amazon.add_timeout_usage_description()
@@ -189,11 +189,6 @@ a_option_parser.add_option( "--study-name",
                             action = "store",
                             dest = "study_name",
                             help = "(intialized from input, otherwise)" )
-a_option_parser.add_option( "--file-names",
-                            metavar = "<  a files into uploaded study >",
-                            action = "store",
-                            dest = "file_names",
-                            help = "(if missed, all the study files will be downloaded)" )
 
 a_option_parser.add_option( "--located-files",
                             metavar = "< the file with path in the study  >",
@@ -264,36 +259,29 @@ print_d( "a_study_object = %s\n" % a_study_object )
 print_i( "--------------------------- Reading the study files -----------------------------\n" )
 a_data_loading_time = Timer()
 
-a_file_names = an_options.file_names
 a_located_files = an_options.located_files
 
-if a_file_names == None and a_located_files == None :
+if a_located_files == None :
     download_files( a_study_object, an_output_dir, a_number_threads, an_enable_fresh, 0 )
     pass
 else :
-    if a_located_files == None:
-       a_file_object = TFileObject.get( a_study_object, a_file_names )
-       download_file( a_file_object, an_output_dir, a_number_threads, an_enable_fresh, 0 )
-       pass
-    else:
-      from balloon.amazon import separator_in_options
-      a_list_located_files = a_located_files.split( separator_in_options() )
+    from balloon.amazon import separator_in_options
+    a_list_located_files = a_located_files.split( separator_in_options() )
       
-      a_worker_pool = WorkerPool( a_number_threads )
+    a_worker_pool = WorkerPool( a_number_threads )
       
-      for a_file in a_list_located_files:
-          if not a_file.startswith( "/" ):
-             a_file = '/' +a_file
-             pass
-          a_file_object = TFileObject.get( a_study_object, a_file )
-          a_worker_pool.charge( download_file, ( a_file_object, an_output_dir, a_number_threads, an_enable_fresh, 0 ) )                    
-          pass
+    for a_file in a_list_located_files:
+        if not a_file.startswith( "/" ):
+           a_file = '/' +a_file
+           pass
+        a_file_object = TFileObject.get( a_study_object, a_file )
+        a_worker_pool.charge( download_file, ( a_file_object, an_output_dir, a_number_threads, an_enable_fresh, 0 ) )                    
+        pass
     
-      a_worker_pool.shutdown()
-      a_worker_pool.join()
-      pass
+    a_worker_pool.shutdown()
+    a_worker_pool.join()
     pass
-
+    
 print_d( "a_data_loading_time = %s, sec\n" % a_data_loading_time )
 
 
