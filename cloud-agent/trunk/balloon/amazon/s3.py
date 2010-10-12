@@ -175,7 +175,7 @@ class TStudyObject :
         an_id, a_bucket_name = generate_id( the_root_object._id, the_study_name, an_api_version )
     
         a_bucket = None
-        try :
+        try : # in case of broken entity
             a_bucket = the_root_object._connection.get_bucket( a_bucket_name )
         except :
             print_d( "study '%s' has no corresponding bucket\n" % the_study_name )
@@ -308,11 +308,15 @@ class TFileObject :
         
         an_api_version = the_study_object._api_version
 
-        if the_study_object._api_version >= "0.3":
-            a_hex_md5, a_file_path = _extract_file_props( a_key, an_api_version )
-        else:
-            a_file_path = get_key_name( a_key )
-            a_hex_md5 = a_key.get_contents_as_string()
+        a_hex_md5, a_file_path = None, None
+        try : # in case of broken entity
+            if the_study_object._api_version >= "0.3":
+                a_hex_md5, a_file_path = _extract_file_props( a_key, an_api_version )
+            else:
+                a_file_path = get_key_name( a_key )
+                a_hex_md5 = a_key.get_contents_as_string()
+                pass
+        except :
             pass
     
         an_id, a_bucket_name = generate_id( the_study_object._id, the_located_file, an_api_version )
