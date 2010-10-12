@@ -118,31 +118,31 @@ from optparse import IndentedHelpFormatter
 a_help_formatter = IndentedHelpFormatter( width = 127 )
 
 from optparse import OptionParser
-a_option_parser = OptionParser( usage = an_usage_description, version="%prog 0.1", formatter = a_help_formatter )
+an_option_parser = OptionParser( usage = an_usage_description, version="%prog 0.1", formatter = a_help_formatter )
 
 # Definition of the command line arguments
-a_option_parser.add_option( "--study-name",
-                            metavar = "< an unique name of the user study >",
-                            action = "store",
-                            dest = "study_name",
-                            help = "(generated, by default)",
-                            default = 'tmp-' + str( uuid.uuid4() ) )
-a_option_parser.add_option( "--file-locations",
-                            metavar = "< location of files inside of the study >",
-                            action = "store",
-                            dest = "file_locations",
-                            help = "(\"%default\", by default)",
-                            default = '.' )
-a_option_parser.add_option( "--upload-item-size",
-                            metavar = "< size of file pieces to be uploaded, in bytes >",
-                            type = "int",
-                            action = "store",
-                            dest = "upload_seed_size",
-                            help = "(\"%default\", by default)",
-                            default = 65536 )
-common.add_parser_options( a_option_parser )
-amazon.add_parser_options( a_option_parser )
-amazon.add_timeout_options( a_option_parser )
+an_option_parser.add_option( "--study-name",
+                             metavar = "< an unique name of the user study >",
+                             action = "store",
+                             dest = "study_name",
+                             help = "(generated, by default)",
+                             default = 'tmp-' + str( uuid.uuid4() ) )
+an_option_parser.add_option( "--file-locations",
+                             metavar = "< location of files inside of the study >",
+                             action = "store",
+                             dest = "file_locations",
+                             help = "(\"%default\", by default)",
+                             default = '.' )
+an_option_parser.add_option( "--upload-item-size",
+                             metavar = "< size of file pieces to be uploaded, in bytes >",
+                             type = "int",
+                             action = "store",
+                             dest = "upload_seed_size",
+                             help = "(\"%default\", by default)",
+                             default = 65536 )
+common.add_parser_options( an_option_parser )
+amazon.add_parser_options( an_option_parser )
+amazon.add_timeout_options( an_option_parser )
     
 an_engine_dir = os.path.abspath( os.path.dirname( sys.argv[ 0 ] ) )
 
@@ -150,20 +150,20 @@ an_engine_dir = os.path.abspath( os.path.dirname( sys.argv[ 0 ] ) )
 #------------------------------------------------------------------------------------------
 # Extracting and verifying command-line arguments
 
-an_options, an_args = a_option_parser.parse_args()
+an_options, an_args = an_option_parser.parse_args()
 
 common.extract_options( an_options )
 
 a_files = list()
 for an_arg in an_args :
     if not os.path.exists( an_arg ) :
-        a_option_parser.error( "The given file should exists\n" )
+        an_option_parser.error( "The given file should exists\n" )
         pass
     a_files.append( os.path.abspath( an_arg ) )
     pass
 
 if len( a_files ) == 0 :
-    a_option_parser.error( "You should define one valid 'file' at least\n" )
+    an_option_parser.error( "You should define one valid 'file' at least\n" )
     pass
 
 print_d( "a_files = %r\n" % a_files )
@@ -173,7 +173,7 @@ a_file_locations = extract_locations( an_options.file_locations )
 a_file2locations = {}
 if len( a_file_locations ) > 1 :
     if len( a_files ) != len( a_file_locations ) :
-        a_option_parser.error( "The amount of file locations shoudl be equal to the number of given files\n" )
+        an_option_parser.error( "The amount of file locations shoudl be equal to the number of given files\n" )
     else :
         for an_id in range( len( a_files ) ) :
             a_file = a_files[ an_id ]
@@ -195,7 +195,7 @@ print_d( "a_study_name = '%s'\n" % a_study_name )
     
 AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY = amazon.extract_options( an_options )
 
-amazon.extract_timeout_options( an_options, a_option_parser )
+amazon.extract_timeout_options( an_options, an_option_parser )
 
 
 print_i( "--------------------------- Defining the study object ---------------------------\n" )
