@@ -92,9 +92,26 @@ a_login_name = a_login_name
 from balloon.common import ssh
 an_instance_2_ssh_client = {}
 
-print_d( "\n----------------- Transfering case data to the master node ----------------\n" )
+print_d( "\n------------------ Uploading case data to s3 -------------------------------\n"  )
+
+import tempfile
+an_archive_dir = tempfile.mkdtemp()
+an_archive_name = a_case_dir +'.tar' 
+an_archive_path = os.path.join( an_archive_dir, an_archive_name )
+sh_command( "tar -cz %s --file=%s --exclude='.*, *~' " % ( a_case_dir, an_archive_path ) )
+
+a_study_name = a_case_dir
+sh_command( 'amazon_upload_start.py --study-name=%s %s | amazon_upload_resume.py' % ( a_study_name, an_archive_path ) )
+
+import shutil
+shutil.rmtree( an_archive_dir )
+
 a_master_node = an_instance = a_reservation.instances[ 0 ]
 a_host_name = an_instance.public_dns_name
+
+print_d( "\n------------------ Installing balloon to master node ------------------------\n"  )
+sh_command( "balloon_deploy.py '.' --password=%s --identity-file=%s --host-port=%s --login-name=%s --host-name=%s " 
+                                 % (a_password, an_identity_file, a_host_port,a_login_name, a_host_name  ) )
 
 print_d( 'ssh -o "StrictHostKeyChecking no" -i %s -p %d %s@%s\n' % ( an_identity_file, a_host_port, a_login_name, a_host_name ) )
 a_ssh_client = ssh.connect( a_password, an_identity_file, a_host_port, a_login_name, a_host_name, 'env' )
@@ -102,9 +119,14 @@ an_instance_2_ssh_client[ an_instance ] = a_ssh_client
 
 a_remote_home = ssh.command( a_ssh_client, 'echo ${HOME}')[ 0 ][ : -1 ]
 a_tagret_dir = os.path.join( a_remote_home, os.path.basename( a_case_dir ) )
-sh_command( 'scp -o "StrictHostKeyChecking no" -i %s -P %d -rp %s %s@%s:%s' % 
-            ( an_identity_file, a_host_port, a_case_dir, a_login_name, a_host_name, a_remote_home ) )
 
+
+print_d( "\n------------ Downloading case data from s3 to the master node -----------\n"  )
+ssh.command( a_ssh_client, "amazon_download.py --study-name=%s --output-dir=%s --aws-access-key-id=%s --aws-secret-access-key=%s " \
+                            % ( a_study_name, a_tagret_dir, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY ) )
+
+ssh.command( a_ssh_client," tar -xf %s/%s" % ( a_tagret_dir, an_archive_name ) )
+ssh.command( a_ssh_client, " rm %s/%s " % ( a_tagret_dir, an_archive_name ) )
 
 print_d( "\n--- Sharing the solver case folder for all the cluster nodes through NFS --\n" )
 ssh.command( a_ssh_client, "sudo sh -c 'echo %s *\(rw,no_root_squash,sync,subtree_check\) >> /etc/exports'" % ( a_tagret_dir ) )
@@ -126,11 +148,22 @@ print_d( "\n------------------------- Running of the solver case ---------------
 a_ssh_client = an_instance_2_ssh_client[ a_master_node ]
 ssh.command( a_ssh_client, "source ~/.profile && %s/Allrun" % ( a_tagret_dir ) ) # running the solver case
 
-print_d( "\n------------------- Transfering the resulting data back -------------------\n" )
-a_source_dir = os.path.dirname( a_case_dir )
-sh_command( 'scp -o "StrictHostKeyChecking no" -i %s -P %d -rp %s@%s:%s %s' % 
-            ( an_identity_file, a_host_port, a_login_name, a_host_name, a_tagret_dir, a_source_dir ) )
+print_d( "\n-----------------------  Uploading results to s3 --------------------------\n" )
+ssh.command( a_ssh_client, "amazon_rm.py --study-name=%s %s --aws-access-key-id=%s --aws-secret-access-key=%s " \
+                            % ( a_study_name, an_archive_name, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY ) )
+an_archive_results = os.path.join( a_tagret_dir, an_archive_name )
+ssh.command( a_ssh_client, 'tar -cz %s --file=%s --exclude=".*, *~" ' % ( a_case_dir, an_archive_results ) )
+ssh.command( a_ssh_client, 'amazon_upload_start.py --study-name=%s %s --aws-access-key-id=%s --aws-secret-access-key=%s \
+                                                   | amazon_upload_resume.py --aws-access-key-id=%s --aws-secret-access-key=%s' \
+                            % ( a_study_name, an_archive_results, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY ) )
+ssh.command( a_ssh_client, 'rm %s' % an_archive_results )
 
+print_d( "\n-----------------------  Downloading results from s3 --------------------------\n" )
+a_source_dir = os.path.dirname( os.path.abspath( a_case_dir ) )
+a_source_archive = os.path.join( a_source_dir, an_archive_name )
+sh_command( "amazon_download.py --study-name=%s --output-dir=%s " % ( a_study_name, a_source_dir ) ) 
+sh_command( " tar -xf %s " % a_source_archive )
+sh_command( "rm %s" % a_source_archive )
 
 [ a_ssh_client.close() for a_ssh_client in an_instance_2_ssh_client.values() ]
 
