@@ -110,7 +110,7 @@ a_master_node = an_instance = a_reservation.instances[ 0 ]
 a_host_name = an_instance.public_dns_name
 
 print_d( "\n------------------ Installing balloon to master node ------------------------\n"  )
-sh_command( "balloon_deploy.py '.' --password=%s --identity-file=%s --host-port=%s --login-name=%s --host-name=%s " 
+sh_command( "./balloon_deploy.py --password=%s --identity-file=%s --host-port=%s --login-name=%s --host-name=%s " 
                                  % (a_password, an_identity_file, a_host_port,a_login_name, a_host_name  ) )
 
 print_d( 'ssh -o "StrictHostKeyChecking no" -i %s -p %d %s@%s\n' % ( an_identity_file, a_host_port, a_login_name, a_host_name ) )
