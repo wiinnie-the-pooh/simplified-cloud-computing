@@ -454,8 +454,9 @@ class TSeedObject :
 
         a_seed_key = get_key( the_file_object._bucket, a_seed_name )
         # a_part_key.set_contents_from_file( a_file_pointer, md5 = a_md5 ) # this method is not thread safe
-        a_seed_key.set_contents_from_file( a_file_pointer)
+        a_seed_key.set_contents_from_file( a_file_pointer, headers = { 'Content-Type' : 'application/x-tar' } )
         
+        a_file_pointer.close()
         os.remove( the_seed_path )
 
         return TSeedObject( the_file_object, a_seed_key, the_seed_name, a_hex_md5 )
