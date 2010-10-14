@@ -279,5 +279,9 @@ else :
 print_d( "a_data_loading_time = %s, sec\n" % a_data_loading_time )
 
 
+print_d( "\n------------------ Printing succussive pipeline arguments -----------------\n" )
+print a_study_name
+
+
 print_i( "-------------------------------------- OK ---------------------------------------\n" )
 
