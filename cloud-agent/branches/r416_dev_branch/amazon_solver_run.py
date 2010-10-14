@@ -48,6 +48,13 @@ an_option_parser.add_option( "--case-dir",
                              metavar = "< location of the source OpenFOAM case dir >",
                              action = "store",
                              dest = "case_dir" )
+
+an_option_parser.add_option( "--output-dir-suffix",
+                             metavar = "< case-dir suffix for output results >",
+                             action = "store",
+                             dest = "output_dir_suffix",
+                             default = '-out' )
+
 ec2.use.add_parser_options( an_option_parser )
 amazon.add_parser_options( an_option_parser )
 common.add_parser_options( an_option_parser )
@@ -68,7 +75,8 @@ if not os.path.isdir( a_case_dir ) :
     an_option_parser.error( "--case-dir='%s' should be a folder\n" % a_case_dir )
     pass
 
-
+an_output_dir_suffix = an_options.output_dir_suffix
+   
 print_d( "\n--------------------------- Canonical substitution ------------------------\n" )
 import sys
 an_engine = sys.argv[ 0 ]
@@ -146,7 +154,14 @@ ssh.command( a_ssh_client, 'amazon_upload_start.py --study-name=%s %s --aws-acce
                             % ( a_study_name, a_case_dir_name, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY ) )
 
 print_d( "\n----------------------  Downloading results from s3 -----------------------\n" )
-a_source_dir = os.path.dirname( os.path.abspath( a_case_dir ) )
+
+if an_output_dir_suffix:
+   a_source_dir = a_case_dir_name + an_output_dir_suffix
+   pass
+else:
+   a_source_dir = os.path.dirname( os.path.abspath( a_case_dir ) ) #rewrite case_dir
+   pass
+
 sh_command( "amazon_download.py --study-name=%s --output-dir=%s --enable-fresh" % ( a_study_name, a_source_dir ) ) 
 
 [ a_ssh_client.close() for a_ssh_client in an_instance_2_ssh_client.values() ]
