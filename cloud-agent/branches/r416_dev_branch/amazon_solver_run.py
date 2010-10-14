@@ -48,13 +48,11 @@ an_option_parser.add_option( "--case-dir",
                              metavar = "< location of the source OpenFOAM case dir >",
                              action = "store",
                              dest = "case_dir" )
-
-an_option_parser.add_option( "--output-dir-suffix",
-                             metavar = "< case-dir suffix for output results >",
+an_option_parser.add_option( "--output-suffix",
+                             metavar = "< folder suffix for the output results >",
                              action = "store",
-                             dest = "output_dir_suffix",
-                             default = '-out' )
-
+                             dest = "output_suffix",
+                             default = '.out' )
 ec2.use.add_parser_options( an_option_parser )
 amazon.add_parser_options( an_option_parser )
 common.add_parser_options( an_option_parser )
@@ -75,13 +73,14 @@ if not os.path.isdir( a_case_dir ) :
     an_option_parser.error( "--case-dir='%s' should be a folder\n" % a_case_dir )
     pass
 
-an_output_dir_suffix = an_options.output_dir_suffix
-   
+an_output_suffix = an_options.output_suffix
+
+
 print_d( "\n--------------------------- Canonical substitution ------------------------\n" )
 import sys
 an_engine = sys.argv[ 0 ]
 
-a_call = "%s --case-dir='%s' %s %s" % ( an_engine, a_case_dir, ec2.use.compose_call( an_options ), amazon.compose_call( an_options ) )
+a_call = "%s --case-dir='%s' %s" % ( an_engine, a_case_dir, ec2.use.compose_call( an_options ) )
 print_d( a_call + '\n' )
 
 
@@ -97,36 +96,37 @@ a_host_port = a_host_port
 a_login_name = a_login_name
 
 from balloon.common import ssh
-an_instance_2_ssh_client = {}
+an_instance2ssh = {}
 
-print_d( "\n--------------------- Uploading case data to s3 ---------------------------\n"  )
-
-a_case_dir_name = os.path.basename( a_case_dir )
-
-a_study_name = a_case_dir_name
-sh_command( 'amazon_upload_start.py --study-name=%s %s | amazon_upload_resume.py' % ( a_study_name, a_case_dir ) )
-
+a_security_credentials = "--aws-access-key-id=%s --aws-secret-access-key=%s" % ( AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY )
 a_master_node = an_instance = a_reservation.instances[ 0 ]
 a_host_name = an_instance.public_dns_name
 
+
+print_d( "\n--------------------- Uploading case data to s3 ---------------------------\n"  )
+a_case_name = os.path.basename( a_case_dir )
+a_study_name = sh_command( 'amazon_upload_start.py %s %s | amazon_upload_resume.py %s' %
+                           ( a_case_dir, a_security_credentials, a_security_credentials ) )[ 0 ][ : -1 ]
+print_d( "a_study_name = '%s'\n" % a_study_name )
+
+
 print_d( "\n------------------ Installing balloon to master node ----------------------\n"  )
-sh_command( "./balloon_deploy.py --password=%s --identity-file=%s --host-port=%s --login-name=%s --host-name=%s " 
-                                 % (a_password, an_identity_file, a_host_port,a_login_name, a_host_name  ) )
+sh_command( "./balloon_deploy.py --identity-file=%s --host-port=%s --login-name=%s --host-name=%s" %
+            ( an_identity_file, a_host_port, a_login_name, a_host_name ) )
 
 print_d( 'ssh -o "StrictHostKeyChecking no" -i %s -p %d %s@%s\n' % ( an_identity_file, a_host_port, a_login_name, a_host_name ) )
 a_ssh_client = ssh.connect( a_password, an_identity_file, a_host_port, a_login_name, a_host_name, 'env' )
-an_instance_2_ssh_client[ an_instance ] = a_ssh_client
-
-a_remote_home = ssh.command( a_ssh_client, 'echo ${HOME}')[ 0 ][ : -1 ]
-a_tagret_dir = os.path.join( a_remote_home ) 
+an_instance2ssh[ an_instance ] = a_ssh_client
 
 
 print_d( "\n------------- Downloading case data from s3 to the master node ------------\n"  )
-ssh.command( a_ssh_client, "amazon_download.py --study-name=%s --output-dir=%s --aws-access-key-id=%s --aws-secret-access-key=%s " \
-                            % ( a_study_name, a_tagret_dir, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY ) )
+a_working_dir = ssh.command( a_ssh_client, 'python -c "import os, os.path, tempfile; print tempfile.mkdtemp()"' )[ 0 ][ : -1 ]
+print_d( "a_working_dir = '%s'\n" % a_working_dir )
+
+ssh.command( a_ssh_client, "amazon_download.py --study-name=%s --output-dir=%s %s" % ( a_study_name, a_working_dir, a_security_credentials ) )
 
 print_d( "\n--- Sharing the solver case folder for all the cluster nodes through NFS --\n" )
-ssh.command( a_ssh_client, "sudo sh -c 'echo %s *\(rw,no_root_squash,sync,subtree_check\) >> /etc/exports'" % ( a_tagret_dir ) )
+ssh.command( a_ssh_client, "sudo sh -c 'echo %s *\(rw,no_root_squash,sync,subtree_check\) >> /etc/exports'" % ( a_working_dir ) )
 ssh.command( a_ssh_client, "sudo exportfs -a" ) # make changes effective on the running NFS server
 
 for an_instance in a_reservation.instances[ 1 : ] :
@@ -134,37 +134,44 @@ for an_instance in a_reservation.instances[ 1 : ] :
     print_d( 'ssh -o "StrictHostKeyChecking no" -i %s -p %d %s@%s\n' % ( an_identity_file, a_host_port, a_login_name, a_host_name ) )
 
     a_ssh_client = ssh.connect( a_password, an_identity_file, a_host_port, a_login_name, a_host_name )
-    ssh.command( a_ssh_client, "mkdir -p %s" % ( a_tagret_dir ) )
-    ssh.command( a_ssh_client, "sudo mount %s:%s %s" % ( a_master_node.private_ip_address, a_tagret_dir, a_tagret_dir ) )
+    ssh.command( a_ssh_client, "mkdir -p %s" % ( a_working_dir ) )
+    ssh.command( a_ssh_client, "sudo mount %s:%s %s" % ( a_master_node.private_ip_address, a_working_dir, a_working_dir ) )
 
-    an_instance_2_ssh_client[ an_instance ] = a_ssh_client
+    an_instance2ssh[ an_instance ] = a_ssh_client
     pass
 
 
 print_d( "\n----------------------- Running of the solver case ------------------------\n" )
-a_ssh_client = an_instance_2_ssh_client[ a_master_node ]
-ssh.command( a_ssh_client, "source ~/.profile && %s/%s/Allrun" % ( a_tagret_dir, a_case_dir_name ) ) # running the solver case
+a_ssh_client = an_instance2ssh[ a_master_node ]
+a_tagret_dir = os.path.join( a_working_dir, a_case_name )
+ssh.command( a_ssh_client, "source ~/.profile && %s/Allrun" % ( a_tagret_dir ) ) # running the solver case
+
 
 print_d( "\n-----------------------  Uploading results to s3 --------------------------\n" )
-ssh.command( a_ssh_client, "amazon_rm.py --study-name=%s %s --aws-access-key-id=%s --aws-secret-access-key=%s " \
-                            % ( a_study_name, a_case_dir_name, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY ) )
+ssh.command( a_ssh_client, "amazon_rm_study.py %s %s" % ( a_study_name, a_security_credentials ) )
 
-ssh.command( a_ssh_client, 'amazon_upload_start.py --study-name=%s %s --aws-access-key-id=%s --aws-secret-access-key=%s \
-                                                   | amazon_upload_resume.py --aws-access-key-id=%s --aws-secret-access-key=%s' \
-                            % ( a_study_name, a_case_dir_name, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY ) )
+a_study_name = ssh.command( a_ssh_client, 'amazon_upload_start.py %s %s | amazon_upload_resume.py %s' %
+                            ( a_tagret_dir, a_security_credentials, a_security_credentials ) )[ 0 ][ : -1 ]
+print_d( "a_study_name = '%s'\n" % a_study_name )
+
 
 print_d( "\n----------------------  Downloading results from s3 -----------------------\n" )
+import tempfile
+an_output_dir = tempfile.mkdtemp()
+sh_command( "amazon_download.py --study-name=%s --output-dir=%s %s" % ( a_study_name, an_output_dir, a_security_credentials ) )[ 0 ][ : -1 ]
+print_d( "an_output_dir = '%s'\n" % an_output_dir )
 
-if an_output_dir_suffix:
-   a_source_dir = a_case_dir_name + an_output_dir_suffix
-   pass
-else:
-   a_source_dir = os.path.dirname( os.path.abspath( a_case_dir ) ) #rewrite case_dir
-   pass
+import shutil
+a_tagret_dir = a_case_dir + an_output_suffix
+print_d( "a_tagret_dir = '%s'\n" % a_tagret_dir )
 
-sh_command( "amazon_download.py --study-name=%s --output-dir=%s --enable-fresh" % ( a_study_name, a_source_dir ) ) 
+# shutil.rmtree( a_tagret_dir, True )
+shutil.move( os.path.join( an_output_dir, a_case_name ), a_tagret_dir )
+shutil.rmtree( an_output_dir, True )
 
-[ a_ssh_client.close() for a_ssh_client in an_instance_2_ssh_client.values() ]
+sh_command( "amazon_rm_study.py %s %s" % ( a_study_name, a_security_credentials ) )
+
+[ a_ssh_client.close() for a_ssh_client in an_instance2ssh.values() ]
 
 print_d( "a_spent_time = %s, sec\n" % a_spent_time )
 
