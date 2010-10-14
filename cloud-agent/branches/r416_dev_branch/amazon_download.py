@@ -110,7 +110,12 @@ def download_file( the_file_object, the_output_dir, the_number_threads, the_enab
     a_file_path = os.path.join( an_output_dir, a_file_basename )
     if the_enable_fresh :
         if os.path.exists( a_file_path ):
-           os.remove( a_file_path )
+           if os.path.isfile( a_file_path ):
+              os.remove( a_file_path )
+              pass
+           else:
+              import shutil
+              shutil.rmtree( a_file_path )
            pass
         pass
 
