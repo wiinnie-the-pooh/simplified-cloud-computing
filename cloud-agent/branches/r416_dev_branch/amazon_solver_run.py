@@ -165,7 +165,7 @@ import shutil
 a_tagret_dir = a_case_dir + an_output_suffix
 print_d( "a_tagret_dir = '%s'\n" % a_tagret_dir )
 
-# shutil.rmtree( a_tagret_dir, True )
+shutil.rmtree( a_tagret_dir, True )
 shutil.move( os.path.join( an_output_dir, a_case_name ), a_tagret_dir )
 shutil.rmtree( an_output_dir, True )
 
