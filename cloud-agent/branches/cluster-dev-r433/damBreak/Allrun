@@ -1,8 +1,10 @@
-#!/bin/sh -x
+#!/bin/bash -x
 
 #--------------------------------------------------------------------------------------
 cd ${0%/*} || exit 1    # run from this directory
-. $WM_PROJECT_DIR/bin/tools/RunFunctions # source tutorial run functions
+source $WM_PROJECT_DIR/bin/tools/RunFunctions # source tutorial run functions
+
+a_number_nodes=${1}
 
 
 #--------------------------------------------------------------------------------------
@@ -13,10 +15,35 @@ application="interFoam"
 #--------------------------------------------------------------------------------------
 runApplication blockMesh
 runApplication setFields
+
+
+#--------------------------------------------------------------------------------------
+a_slots=`python -c "import os; print os.sysconf( 'SC_NPROCESSORS_ONLN' )"`
+a_number_processors=`python -c "print ${a_number_nodes} * ${a_slots}"`
+weights=`python -c "print tuple( [ 1 for an_id in range( ${a_number_processors} ) ] )"`
+processorWeights=`echo ${weights} | sed -e "s%,%%g"`
+
+cat > ./system/decomposeParDict <<EOF
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    location    "system";
+    object      decomposeParDict;
+}
+numberOfSubdomains ${a_number_processors};
+method scotch;
+scotchCoeffs
+{
+    processorWeights ${processorWeights};
+}
+EOF
+
 runApplication decomposePar
 
 mpirun --hostfile ~/.openmpi_hostfile -x LD_LIBRARY_PATH -x PATH -x WM_PROJECT_DIR -x MPI_BUFFER_SIZE \
-    -np 4 ${application} -case . -parallel < /dev/null > log.${application} 2>&1
+    -np ${a_number_processors} ${application} -case . -parallel < /dev/null > log.${application} 2>&1
 
 # This step can be perfomed afterwards, when the resulting data will be trasfered back
 # runApplication reconstructPar 

@@ -63,7 +63,7 @@ print_d( "\n--------------------------- Canonical substitution -----------------
 import sys
 an_engine = sys.argv[ 0 ]
 
-a_call = "%s %s %s" % ( an_engine, ec2.use.compose_call( an_options ), amazon.compose_call( an_options ) )
+a_call = "%s %s" % ( an_engine, ec2.use.compose_call( an_options ) )
 print_d( a_call + '\n' )
 
 
@@ -120,7 +120,8 @@ for a_master_node in a_reservation.instances :
     for an_instance in a_reservation.instances :
         if an_instance == a_master_node :
             continue
-        ssh.command( a_ssh_client, 'echo %s >> .openmpi_hostfile' % ( an_instance.private_ip_address ) )
+        a_number_cpu = ssh.command( a_ssh_client, """python -c 'import os; print os.sysconf( "SC_NPROCESSORS_ONLN" )'""" )[ 0 ][ : -1 ]
+        ssh.command( a_ssh_client, 'echo %s slots=%d >> .openmpi_hostfile' % ( an_instance.private_ip_address, int( a_number_cpu ) ) )
         pass
 
     pass
