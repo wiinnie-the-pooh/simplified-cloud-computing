@@ -73,7 +73,17 @@ class BalloonDeploy( ResultHolder ) :
         a_ssh_client = ssh.connect( the_password, the_identity_file, the_host_port, the_login_name, the_host_name )
 
         print_d( "\n------------------ Installing balloon to master node ----------------------\n" )
-        ssh.command( a_ssh_client, "sudo easy_install balloon" )
+        # - In case of development version
+        # sh_command( "./balloon_deploy.py --identity-file=%s --host-port=%s --login-name=%s --host-name=%s" %
+        #             ( an_identity_file, a_host_port, a_login_name, a_host_name ) )
+
+        # - In case of stable version
+        # ssh.command( a_ssh_client, "sudo easy_install balloon" )
+
+        # - In case of contect dependant version
+        import balloon
+        an_install_requires = 'install_requires = [ "%s == %s"]' % ( balloon.NAME, balloon.VERSION )
+        ssh.command( a_ssh_client, """sudo python -c 'from setuptools import setup; setup( name = "dummy", %s )' install""" % an_install_requires )
 
         self.keep( a_ssh_client )
         pass
