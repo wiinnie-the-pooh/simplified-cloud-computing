@@ -47,22 +47,26 @@ class ValueWrapper :
 
 
 #--------------------------------------------------------------------------------------
-class UploadStart :
-    def __init__( self, the_value_wrapper ) :
-        self.value_wrapper = the_value_wrapper
-        pass
-
-    def assign( self, the_value ) :
-        self.value_wrapper.assign( the_value )
-        pass
-    
+def upload_start( the_case_dir, the_security_credentials, the_result_holder ) :
+    an_study_name = sh_command( 'amazon_upload_start.py %s %s' % ( the_case_dir, the_security_credentials ) )[ 0 ][ : -1 ]
+    the_result_holder.assign( an_study_name )
     pass
 
 
 #--------------------------------------------------------------------------------------
-def upload_start( the_case_dir, the_security_credentials, the_result_holder ) :
-    an_study_name = sh_command( 'amazon_upload_start.py %s %s' % ( the_case_dir, the_security_credentials ) )[ 0 ][ : -1 ]
-    the_result_holder.assign( an_study_name )
+class UploadStart :
+    def __init__( self ) :
+        self._value = None
+        pass
+
+    def __call__( self, the_case_dir, the_security_credentials ) :
+        an_study_name = sh_command( 'amazon_upload_start.py %s %s' % ( the_case_dir, the_security_credentials ) )[ 0 ][ : -1 ]
+        self._value = an_study_name
+        pass
+
+    def get( self ) :
+        return self._value
+    
     pass
 
 
@@ -149,13 +153,13 @@ a_case_name = os.path.basename( a_case_dir )
 
 a_worker_pool = WorkerPool( 3 )
 
-an_input_study_wrapper = ValueWrapper()
-a_worker_pool.charge( upload_start, ( a_case_dir, a_security_credentials, an_input_study_wrapper ) )
+an_upload_start = UploadStart()
+a_worker_pool.charge( an_upload_start, ( a_case_dir, a_security_credentials ) )
 
 a_worker_pool.shutdown()
 a_worker_pool.wait()
 
-an_input_study = an_input_study_wrapper.get()
+an_input_study = an_upload_start.get()
 print_d( "an_input_study = '%s'\n" % an_input_study )
 
 sh_command( 'amazon_upload_resume.py --study-name=%s %s' % ( an_input_study, a_security_credentials ) )
