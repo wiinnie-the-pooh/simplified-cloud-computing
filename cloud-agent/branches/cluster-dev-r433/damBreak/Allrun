@@ -27,7 +27,7 @@ setDamBreakFine ()
     mv temp.$$ ${blockMeshDict}
     sed \
     -e s/"\(deltaT[ \t]*\) 0.001;"/"\1 5e-04;"/g \
-    -e s/"\(endTime[ \t]*\) 1;"/"\1 1.0;"/g \
+    -e s/"\(endTime[ \t]*\) 1;"/"\1 0.4;"/g \
     ${controlDict} > temp.$$
     mv temp.$$ ${controlDict}
 }
