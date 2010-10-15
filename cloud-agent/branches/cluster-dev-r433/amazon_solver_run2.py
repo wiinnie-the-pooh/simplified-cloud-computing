@@ -80,7 +80,7 @@ class BalloonDeploy( ResultHolder ) :
         # - In case of stable version
         # ssh.command( a_ssh_client, "sudo easy_install balloon" )
 
-        # - In case of contect dependant version
+        # - In case of context dependant version (use exactly the same version as locally installed)
         import balloon
         an_install_requires = 'install_requires = [ "%s == %s"]' % ( balloon.NAME, balloon.VERSION )
         ssh.command( a_ssh_client, """sudo python -c 'from setuptools import setup; setup( name = "dummy", %s )' install""" % an_install_requires )
