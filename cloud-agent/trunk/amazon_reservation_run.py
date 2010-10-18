@@ -63,7 +63,7 @@ print_d( "\n--------------------------- Canonical substitution -----------------
 import sys
 an_engine = sys.argv[ 0 ]
 
-a_call = "%s %s %s" % ( an_engine, ec2.run.compose_call( an_options ), amazon.compose_call( an_options ) )
+a_call = "%s %s" % ( an_engine, ec2.run.compose_call( an_options ) )
 print_d( a_call + '\n' )
 
 

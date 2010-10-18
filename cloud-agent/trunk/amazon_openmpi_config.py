@@ -63,7 +63,7 @@ print_d( "\n--------------------------- Canonical substitution -----------------
 import sys
 an_engine = sys.argv[ 0 ]
 
-a_call = "%s %s %s" % ( an_engine, ec2.use.compose_call( an_options ), amazon.compose_call( an_options ) )
+a_call = "%s %s" % ( an_engine, ec2.use.compose_call( an_options ) )
 print_d( a_call + '\n' )
 
 
@@ -82,7 +82,7 @@ a_login_name = a_login_name
 
 print_d( "\n-------------------- Providing seamless ssh connection --------------------\n" )
 from balloon.common import ssh
-an_instance_2_ssh_client = {}
+an_instance2ssh = {}
 for an_instance in a_reservation.instances :
     a_host_name = an_instance.public_dns_name
     print_d( 'ssh -o "StrictHostKeyChecking no" -i %s -p %d %s@%s\n' % ( an_identity_file, a_host_port, a_login_name, a_host_name ) )
@@ -104,7 +104,7 @@ for an_instance in a_reservation.instances :
     except :
         pass
 
-    an_instance_2_ssh_client[ an_instance ] = a_ssh_client, a_sftp_client
+    an_instance2ssh[ an_instance ] = a_ssh_client
     pass
 
 print_d( "\n--- Listing all the cluster nodes into special '.openmpi_hostfile' file ---\n" )
@@ -114,18 +114,20 @@ print_d( "\n--- Listing all the cluster nodes into special '.openmpi_hostfile' f
 for a_master_node in a_reservation.instances :
     a_host_name = a_master_node.public_dns_name
 
-    a_ssh_client, a_sftp_client = an_instance_2_ssh_client[ a_master_node ]
-    ssh.command( a_ssh_client, 'echo %s > .openmpi_hostfile' % ( a_master_node.private_ip_address ) )
+    a_ssh_client = an_instance2ssh[ a_master_node ]
+
+    a_number_cpu = ssh.command( a_ssh_client, """python -c 'import os; print os.sysconf( "SC_NPROCESSORS_ONLN" )'""" )[ 0 ][ : -1 ]
+    ssh.command( a_ssh_client, 'echo %s slots=%d > .openmpi_hostfile' % ( a_master_node.private_ip_address, int( a_number_cpu ) ) )
 
     for an_instance in a_reservation.instances :
         if an_instance == a_master_node :
             continue
-        ssh.command( a_ssh_client, 'echo %s >> .openmpi_hostfile' % ( an_instance.private_ip_address ) )
+        ssh.command( a_ssh_client, 'echo %s slots=%d >> .openmpi_hostfile' % ( an_instance.private_ip_address, int( a_number_cpu ) ) )
         pass
 
     pass
 
-[ a_ssh_client.close() for a_ssh_client, a_sftp_client in an_instance_2_ssh_client.values() ]
+[ a_ssh_client.close() for a_ssh_client in an_instance2ssh.values() ]
 
 print_d( "a_spent_time = %s, sec\n" % a_spent_time )
 
