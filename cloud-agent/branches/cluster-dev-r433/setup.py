@@ -41,7 +41,7 @@ for a_file in os.listdir( an_engine_dir ) :
         continue
 
     if os.path.isfile( a_file ) : 
-        if os.access( a_file, os.X_OK ) or os.path.splitext( a_file )[ 1 ] == '.sh' :
+        if os.access( a_file, os.X_OK ) :
             a_scripts.append( a_file )
             pass
         pass
