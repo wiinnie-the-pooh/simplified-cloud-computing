@@ -33,40 +33,38 @@ import os
 
   
 #--------------------------------------------------------------------------------------
-def run_test_region ( the_region, the_file, count_crash ):
-    
-    a_conn=S3Connection( aws_access_key_id=os.getenv( "AWS_ACCESS_KEY_ID" ), aws_secret_access_key=os.getenv( "AWS_SECRET_ACCESS_KEY" ) )
-    a_backet_name="testing-" + str( uuid.uuid4() )
-    a_backet=a_conn.create_bucket( a_backet_name, location=the_region )
-    a_key=Key( a_backet, 'testing_' + the_region )
-    a_begin_time=time.time()
-    try:
-       a_key.set_contents_from_filename( the_file )
-       a_end_time=time.time()
-       #print "uploading time=", ( a_end_time - a_begin_time )
-       a_timeout=a_end_time - a_begin_time
-       print " uploading speed =", str( "%f" % ( ( ( a_size * 8 ) / ( a_end_time - a_begin_time ) ) / 1024 ) ), "kbs" 
-       a_begin_time=time.time()
-       a_key.get_contents_to_filename( the_file + '.out' )
-       a_end_time=time.time()
-       #print " downloading time =", ( a_end_time - a_begin_time ), "c"
-       print " downloading speed =", str( "%f" % ( ( ( a_size * 8 ) / ( a_end_time - a_begin_time ) ) / 1024 ) ), "kbs" 
-       a_key.delete()
-       a_backet.delete()
-       
-    except Exception as exc:
-       a_end_time=time.time()
-       print a_end_time - a_begin_time
-       print "crashed"
-       a_key.delete()
-       a_backet.delete()
-       count_crash=count_crash + 1
-       #raise exc
-       a_timeout=0
-       import sys, traceback
-       traceback.print_exc( file = sys.stderr )
-       
-    return count_crash, a_timeout
+def run_test_region ( the_backet, the_file, the_count_attempts ):
+    a_attemp=0
+    a_bad_attemps=0.0
+    while a_attemp < the_count_attempts:
+       a_key=Key( the_backet, 'testing_' + str( a_attemp ) )
+       try:
+          a_begin_time=time.time()
+          a_key.set_contents_from_filename( the_file )
+          a_end_time=time.time()
+          #print "uploading time=", ( a_end_time - a_begin_time )
+          a_timeout = a_end_time - a_begin_time
+          print " uploading speed =", str( "%f" % ( ( ( a_size * 8 ) / ( a_end_time - a_begin_time ) ) / 1024 ) ), "kbs" 
+          a_key.delete()
+       except Exception as exc:
+          a_end_time=time.time()
+          print a_end_time - a_begin_time
+          print "crashed"
+          a_key.delete()
+          #raise exc
+          #import sys, traceback
+          #traceback.print_exc( file = sys.stderr )
+          a_bad_attemps+=1
+          print a_bad_attemps
+          a_timeout = 0 # dummy timeout
+          pass
+       a_attemp+=1
+       pass
+    print "a_bad_attemps = ", a_bad_attemps
+    upload_probability=  1- a_bad_attemps /the_count_attempts
+    print "upload probability = ", upload_probability 
+
+    return upload_probability, a_timeout
 
 
 #---------------------------------------------------------------------------------------------
@@ -89,6 +87,39 @@ an_option_parser.add_option( "--socket-timeout",
                              dest = "socket_timeout",
                              help = "(\"%default\", by default)",
                              default = None )
+
+an_option_parser.add_option( "--initial-size",
+                             metavar = "< The start value size of testing file, Kbytes >",
+                             type = "int",
+                             action = "store",
+                             dest = "initial_size",
+                             help = "(\"%default\", by default)",
+                             default = 0 )
+                             
+an_option_parser.add_option( "--step-size",
+                             metavar = "< The size of the step in bytes, Kbytes >",
+                             type = "int",
+                             action = "store",
+                             dest = "step_size",
+                             help = "(\"%default\", by default)",
+                             default = 0 )
+
+an_option_parser.add_option( "--count-steps",
+                             metavar = "< The count steps >",
+                             type = "int",
+                             action = "store",
+                             dest = "count_steps",
+                             help = "(\"%default\", by default)",
+                             default = 0 )
+
+an_option_parser.add_option( "--count-attempts",
+                             metavar = "< The count attempts for each file >",
+                             type = "int",
+                             action = "store",
+                             dest = "count_attempts",
+                             help = "(\"%default\", by default)",
+                             default = 10 )
+
 
 an_options, an_args = an_option_parser.parse_args()
 
@@ -113,35 +144,44 @@ for a_region in a_regions:
       pass
    pass
 
+a_count_steps = an_options.count_steps 
 
+a_step_size = an_options.step_size * 1024
+
+an_initial_size = an_options.initial_size * 1024
+
+a_count_attempts = an_options.count_attempts
 
 a_filename='upload_test'
 
 
 for a_region in a_testing_regions:
+   a_conn=S3Connection( aws_access_key_id=os.getenv( "AWS_ACCESS_KEY_ID" ), aws_secret_access_key=os.getenv( "AWS_SECRET_ACCESS_KEY" ) )
+   a_backet_name="testing-" + str( uuid.uuid4() )
+   a_backet=a_conn.create_bucket( a_backet_name, location=a_region )  
    import socket
    if an_options.socket_timeout == None:
       a_size = 8192
       sh_command( 'dd if=/dev/zero of=timeout bs=%d count=1' % a_size , 0 )
-      dummy, a_timeout=run_test_region( a_region, 'timeout', 0 )
+      dummy, a_timeout=run_test_region( a_backet, 'timeout', 1)
       pass
    else:
       a_timeout = an_options.socket_timeout
+      pass
    print "socket-time  in",a_region, " = ", a_timeout, ", c"
    socket.setdefaulttimeout( a_timeout )
 
-   count_crash = 0
-   for i in range( 1, 100 ):
-      a_size=i*10*1024
+   a_upload_probability = 0
+   for i in range( 0, a_count_steps-1 ):
+      a_size=an_initial_size + i * a_step_size
       print "\n\ncreate testing data .... ", a_size, "bytes\n"
-      sh_command( 'dd if=/dev/zero of=%s bs=%d count=1' % ( a_filename, a_size), 0 )   
-      #print a_region
-      count_crash, a_timeout=run_test_region( a_region, a_filename, count_crash )
-      #socket.setdefaulttimeout( a_timeout )
-      if count_crash > 3:
-         break 
-         pass
+      sh_command( 'dd if=/dev/zero of=%s bs=%d count=1' % ( a_filename, a_size), 0 ) 
+      a_upload_probability, a_timeout=run_test_region( a_backet, a_filename, a_count_attempts  )
+      if a_upload_probability == 0:
+         break
       pass
+   socket.setdefaulttimeout( None )
+   a_backet.delete
    pass      
 sh_command( '%s upload_test.out' %a_filename )
 
