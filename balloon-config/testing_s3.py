@@ -69,9 +69,13 @@ def run_test_region ( the_backet, the_file, the_count_attempts ):
 
 #---------------------------------------------------------------------------------------------
 an_usage_description = "%prog"
-an_usage_description += " --socket-timeout=  , c"
+an_usage_description += " --socket-timeout= None, c"
 an_usage_description += " --located-files= '<location-in-study-1/file-1>, <location-in-study-2/file-2>' ... "
 an_usage_description += " <amazon location 1> < amazon location 2> ..."
+an_usage_description += " --initial-size= 1,Kbytes"
+an_usage_description += " --step-size= 1,Kbytes"
+an_usage_description += " --count-steps= 1"
+an_usage_description += " --count-attempts= 10"
 
 from optparse import IndentedHelpFormatter
 a_help_formatter = IndentedHelpFormatter( width = 127 )
@@ -94,7 +98,7 @@ an_option_parser.add_option( "--initial-size",
                              action = "store",
                              dest = "initial_size",
                              help = "(\"%default\", by default)",
-                             default = 0 )
+                             default = 1 )
                              
 an_option_parser.add_option( "--step-size",
                              metavar = "< The size of the step in bytes, Kbytes >",
@@ -102,7 +106,7 @@ an_option_parser.add_option( "--step-size",
                              action = "store",
                              dest = "step_size",
                              help = "(\"%default\", by default)",
-                             default = 0 )
+                             default = 1 )
 
 an_option_parser.add_option( "--count-steps",
                              metavar = "< The count steps >",
@@ -172,7 +176,7 @@ for a_region in a_testing_regions:
    socket.setdefaulttimeout( a_timeout )
 
    a_upload_probability = 0
-   for i in range( 0, a_count_steps-1 ):
+   for i in range( 0, a_count_steps ):
       a_size=an_initial_size + i * a_step_size
       print "\n\ncreate testing data .... ", a_size, "bytes\n"
       sh_command( 'dd if=/dev/zero of=%s bs=%d count=1' % ( a_filename, a_size), 0 ) 
