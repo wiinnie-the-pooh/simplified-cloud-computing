@@ -53,22 +53,26 @@ def delete_object( the_object ):
 
 #--------------------------------------------------------------------------------------
 def calculate_timeout( the_region ):
+    #print "create conn "
     a_conn=S3Connection( aws_access_key_id=os.getenv( "AWS_ACCESS_KEY_ID" ), aws_secret_access_key=os.getenv( "AWS_SECRET_ACCESS_KEY" ) )
     a_backet_name="testing-" + str( uuid.uuid4() )
+    #print "create backet"
     a_backet=a_conn.create_bucket( a_backet_name, location=the_region ) 
     
     a_filename='timeout_test_file'
     a_filesize=8192
     a_file = create_test_file( a_filesize )
+    #print "create key"
     a_key=Key( a_backet, 'testing_' + the_region )
   
     a_begin_time=time.time()
+    #print "put data in the key "
     a_key.set_contents_from_filename( a_file )
     a_end_time=time.time()
     a_timeout = a_end_time - a_begin_time
   
-    a_key.delete()
-    a_backet.delete()
+    delete_object( a_key )
+    delete_object( a_backet )
     sh_command( 'rm %s' % a_file )
     return a_timeout
 
@@ -104,7 +108,7 @@ def calculate_optimize_seed( the_region, the_initial_size, the_end_size, the_pre
     
     a_start_size = the_initial_size
     a_end_size = the_end_size
-    count_attempts=4
+    count_attempts=2
     a_test_size = a_end_size
     while float( a_end_size - a_start_size ) / a_start_size > float( the_precision ) / 100 :
        an_upload_test = False 
@@ -143,10 +147,11 @@ def calculate_optimize_seed( the_region, the_initial_size, the_end_size, the_pre
     #Testing result 
     optimize_seed = a_test_size
     
-    test_result_size = a_start_size * ( 1 + float( the_precision ) / 100 )
+    test_result_size = optimize_seed * ( 1 + float( the_precision ) / 100 )
     print "Upload optimize + precision ", try_upload_file( a_backet, test_result_size )
     print "Upload optimize + precision ", try_upload_file( a_backet, test_result_size )
     print "Upload optimize + precision ", try_upload_file( a_backet, test_result_size )
+    
     delete_object( a_backet )
         
     return a_test_size
@@ -252,6 +257,7 @@ for a_region in a_testing_regions:
    a_time=time.time()
    a_timeout = calculate_timeout( a_region )
    print "The timeout in \"%s\" region is " %a_region, a_timeout
+   print "Time : ",  time.time() - a_time
    import socket
    socket.setdefaulttimeout( a_timeout )
    an_optimize_size = calculate_optimize_seed( a_region, an_initial_size, an_end_size, a_precision )
