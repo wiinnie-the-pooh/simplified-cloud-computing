@@ -22,6 +22,143 @@
 
 
 #--------------------------------------------------------------------------------------
+def create_boto_config( the_name ):
+    fp=open( the_name, 'w' )
+    import ConfigParser
+    config = ConfigParser.SafeConfigParser()
+    config.add_section( 'Boto' )
+    config.set( 'Boto', 'num_retries', '0' )
+    config.write( fp )
+    fp.close()
+
+
+#--------------------------------------------------------------------------------------
+def create_test_file( the_size ):
+    a_filename='upload_test'+str( the_size )
+    sh_command( 'dd if=/dev/zero of=%s bs=%d count=1' % ( a_filename, the_size ) , 0 )
+    return a_filename
+    
+
+#--------------------------------------------------------------------------------------
+def delete_object( the_object ):
+    an_allright=False
+    while not an_allright:
+       try:
+         the_object.delete()
+         an_allright = True
+       except:
+         pass 
+    pass
+
+
+#--------------------------------------------------------------------------------------
+def calculate_timeout( the_region ):
+    a_conn=S3Connection( aws_access_key_id=os.getenv( "AWS_ACCESS_KEY_ID" ), aws_secret_access_key=os.getenv( "AWS_SECRET_ACCESS_KEY" ) )
+    a_backet_name="testing-" + str( uuid.uuid4() )
+    a_backet=a_conn.create_bucket( a_backet_name, location=the_region ) 
+    
+    a_filename='timeout_test_file'
+    a_filesize=8192
+    a_file = create_test_file( a_filesize )
+    a_key=Key( a_backet, 'testing_' + the_region )
+  
+    a_begin_time=time.time()
+    a_key.set_contents_from_filename( a_file )
+    a_end_time=time.time()
+    a_timeout = a_end_time - a_begin_time
+  
+    a_key.delete()
+    a_backet.delete()
+    sh_command( 'rm %s' % a_file )
+    return a_timeout
+
+#--------------------------------------------------------------------------------------
+def try_upload_file( the_backet, the_size ):
+    a_key=Key( the_backet, 'testing_' )
+    a_file = create_test_file( the_size )
+    #print "try : ", the_size, "bytes"
+    try:
+       a_begin_time=time.time()
+       a_key.set_contents_from_filename( a_file )
+       a_end_time=time.time()
+       #print "uploading time=", ( a_end_time - a_begin_time )
+       a_timeout = a_end_time - a_begin_time
+       a_speed = ( float( the_size * 8 ) / ( a_end_time - a_begin_time ) ) / 1024
+       #print " uploading speed =", str( "%5d" % a_sp ) ), "kbs" 
+       print the_size, " ",a_speed
+       delete_object( a_key )
+       sh_command( 'rm %s' % a_file )
+       return True
+    except Exception as exc:
+       print the_size," crash"
+       delete_object( a_key )
+       sh_command( 'rm %s' % a_file )
+       return False
+    pass
+
+#--------------------------------------------------------------------------------------
+def calculate_optimize_seed( the_region, the_initial_size, the_end_size, the_precision ):
+    a_conn=S3Connection( aws_access_key_id=os.getenv( "AWS_ACCESS_KEY_ID" ), aws_secret_access_key=os.getenv( "AWS_SECRET_ACCESS_KEY" ) )
+    a_backet_name="testing-" + str( uuid.uuid4() )
+    a_backet=a_conn.create_bucket( a_backet_name, location=the_region )
+    
+    a_start_size = the_initial_size
+    a_end_size = the_end_size
+    count_attempts=4
+    a_test_size = a_end_size
+    while float( a_end_size - a_start_size ) / a_start_size > float( the_precision ) / 100 :
+       an_upload_test = False 
+       while not an_upload_test:
+          an_upload_attempt = {}
+          for i in range( 0, count_attempts ):
+             an_upload_attempt[i] = try_upload_file( a_backet, a_test_size )
+             if i >= 1 and ( not an_upload_attempt[i-1] and not an_upload_attempt[ i ] ):
+                break
+             pass
+          a_count_false = 0
+          for i in range( 0, count_attempts ):
+             try:             
+                if not an_upload_attempt[i]:
+                   a_count_false = a_count_false + 1
+             except KeyError:   
+                break
+             pass
+          if a_count_false >= 2: 
+             a_end_size = a_test_size
+             a_test_size = a_end_size -( a_end_size - a_start_size ) / 2
+             pass
+          else:
+             an_upload_test=True
+             pass
+          if float( a_end_size - a_start_size ) / a_start_size < float( the_precision ) / 100:
+             a_test_size=a_start_size
+             break
+          pass
+       a_start_size = a_test_size
+       a_test_size = a_end_size
+       print "Start size", a_start_size
+       print "End_size",  a_end_size
+       
+       pass
+    #Testing result 
+    optimize_seed = a_test_size
+    
+    test_result_size = a_start_size * ( 1 + float( the_precision ) / 100 )
+    print "Upload optimize + precision ", try_upload_file( a_backet, test_result_size )
+    print "Upload optimize + precision ", try_upload_file( a_backet, test_result_size )
+    print "Upload optimize + precision ", try_upload_file( a_backet, test_result_size )
+    delete_object( a_backet )
+        
+    return a_test_size
+   
+
+#---------------------------------------------------------------------------------------------
+import os
+a_saved_environ = os.environ
+a_boto_config = './boto_cfg'
+create_boto_config( a_boto_config )
+os.environ[ 'BOTO_CONFIG' ] = a_boto_config
+
 import boto.ec2
 from boto.s3.connection import S3Connection
 from boto.s3.key import Key
@@ -31,51 +168,15 @@ from balloon.common import sh_command
 import time
 import os
 
-  
-#--------------------------------------------------------------------------------------
-def run_test_region ( the_backet, the_file, the_count_attempts ):
-    a_attemp=0
-    a_bad_attemps=0.0
-    while a_attemp < the_count_attempts:
-       a_key=Key( the_backet, 'testing_' + str( a_attemp ) )
-       try:
-          a_begin_time=time.time()
-          a_key.set_contents_from_filename( the_file )
-          a_end_time=time.time()
-          #print "uploading time=", ( a_end_time - a_begin_time )
-          a_timeout = a_end_time - a_begin_time
-          print " uploading speed =", str( "%f" % ( ( ( a_size * 8 ) / ( a_end_time - a_begin_time ) ) / 1024 ) ), "kbs" 
-          a_key.delete()
-       except Exception as exc:
-          a_end_time=time.time()
-          print a_end_time - a_begin_time
-          print "crashed"
-          a_key.delete()
-          #raise exc
-          #import sys, traceback
-          #traceback.print_exc( file = sys.stderr )
-          a_bad_attemps+=1
-          print a_bad_attemps
-          a_timeout = 0 # dummy timeout
-          pass
-       a_attemp+=1
-       pass
-    print "a_bad_attemps = ", a_bad_attemps
-    upload_probability=  1- a_bad_attemps /the_count_attempts
-    print "upload probability = ", upload_probability 
 
-    return upload_probability, a_timeout
+import time
 
-
-#---------------------------------------------------------------------------------------------
 an_usage_description = "%prog"
-an_usage_description += " --socket-timeout= None, c"
-an_usage_description += " --located-files= '<location-in-study-1/file-1>, <location-in-study-2/file-2>' ... "
-an_usage_description += " <amazon location 1> < amazon location 2> ..."
-an_usage_description += " --initial-size= 1,Kbytes"
-an_usage_description += " --step-size= 1,Kbytes"
-an_usage_description += " --count-steps= 1"
-an_usage_description += " --count-attempts= 10"
+an_usage_description += " 'EU' 'us-west-1' 'ap-southeast-1' "
+an_usage_description += " --initial-size=1"
+an_usage_description += " --end-size=2048"
+an_usage_description += " --precision=11"
+
 
 from optparse import IndentedHelpFormatter
 a_help_formatter = IndentedHelpFormatter( width = 127 )
@@ -93,36 +194,28 @@ an_option_parser.add_option( "--socket-timeout",
                              default = None )
 
 an_option_parser.add_option( "--initial-size",
-                             metavar = "< The start value size of testing file, Kbytes >",
+                             metavar = "< The start size in the search range, Kbytes >",
                              type = "int",
                              action = "store",
                              dest = "initial_size",
                              help = "(\"%default\", by default)",
                              default = 1 )
                              
-an_option_parser.add_option( "--step-size",
-                             metavar = "< The size of the step in bytes, Kbytes >",
+an_option_parser.add_option( "--end-size",
+                             metavar = "< The end size in the search range, Kbytes >",
                              type = "int",
                              action = "store",
-                             dest = "step_size",
+                             dest = "end_size",
                              help = "(\"%default\", by default)",
-                             default = 1 )
+                             default = 2048 )
 
-an_option_parser.add_option( "--count-steps",
-                             metavar = "< The count steps >",
+an_option_parser.add_option( "--precision",
+                             metavar = "< The precision, % >",
                              type = "int",
                              action = "store",
-                             dest = "count_steps",
+                             dest = "precision",
                              help = "(\"%default\", by default)",
-                             default = 0 )
-
-an_option_parser.add_option( "--count-attempts",
-                             metavar = "< The count attempts for each file >",
-                             type = "int",
-                             action = "store",
-                             dest = "count_attempts",
-                             help = "(\"%default\", by default)",
-                             default = 10 )
+                             default = 11 )
 
 
 an_options, an_args = an_option_parser.parse_args()
@@ -148,44 +241,23 @@ for a_region in a_regions:
       pass
    pass
 
-a_count_steps = an_options.count_steps 
-
-a_step_size = an_options.step_size * 1024
-
 an_initial_size = an_options.initial_size * 1024
 
-a_count_attempts = an_options.count_attempts
+an_end_size = an_options.end_size * 1024
 
-a_filename='upload_test'
+a_precision = an_options.precision
 
 
 for a_region in a_testing_regions:
-   a_conn=S3Connection( aws_access_key_id=os.getenv( "AWS_ACCESS_KEY_ID" ), aws_secret_access_key=os.getenv( "AWS_SECRET_ACCESS_KEY" ) )
-   a_backet_name="testing-" + str( uuid.uuid4() )
-   a_backet=a_conn.create_bucket( a_backet_name, location=a_region )  
+   a_time=time.time()
+   a_timeout = calculate_timeout( a_region )
+   print "The timeout in \"%s\" region is " %a_region, a_timeout
    import socket
-   if an_options.socket_timeout == None:
-      a_size = 8192
-      sh_command( 'dd if=/dev/zero of=timeout bs=%d count=1' % a_size , 0 )
-      dummy, a_timeout=run_test_region( a_backet, 'timeout', 1)
-      pass
-   else:
-      a_timeout = an_options.socket_timeout
-      pass
-   print "socket-time  in",a_region, " = ", a_timeout, ", c"
    socket.setdefaulttimeout( a_timeout )
+   an_optimize_size = calculate_optimize_seed( a_region, an_initial_size, an_end_size, a_precision )
+   print "Time: ", time.time() - a_time
+   print an_optimize_size
+   pass
 
-   a_upload_probability = 0
-   for i in range( 0, a_count_steps ):
-      a_size=an_initial_size + i * a_step_size
-      print "\n\ncreate testing data .... ", a_size, "bytes\n"
-      sh_command( 'dd if=/dev/zero of=%s bs=%d count=1' % ( a_filename, a_size), 0 ) 
-      a_upload_probability, a_timeout=run_test_region( a_backet, a_filename, a_count_attempts  )
-      if a_upload_probability == 0:
-         break
-      pass
-   socket.setdefaulttimeout( None )
-   a_backet.delete
-   pass      
-sh_command( '%s upload_test.out' %a_filename )
-
+sh_command( 'rm %s' % a_boto_config )
+os.environ = a_saved_environ 
