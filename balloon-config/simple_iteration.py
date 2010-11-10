@@ -248,8 +248,11 @@ def main():
             a_size=an_initial_size + i * a_step_size
             print "Try upload %d bytes" % a_size 
             a_res = try_upload_file( a_backet, a_size, a_count_attempts, a_logfile )
-                
+            pass
+        delete_object( a_backet )        
+        pass
     os.environ = a_saved_environ
+    
     pass
    
 #--------------------------------------------------------------------------------------------------------------
