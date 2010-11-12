@@ -23,7 +23,7 @@
 #--------------------------------------------------------------------------------------
 class function():
    def __init__( self, the_logfiles, the_initial_x, the_finite_x ):
- 
+      #We read the_logfiles and for all values x from the logfile, we calculate probability and arithmetic average of f(x)
       self.x_values = list()
       self.list_fun_values = {}
       for a_logfile in the_logfiles:
@@ -47,9 +47,8 @@ class function():
       self.x_values.sort()
 
       if self.x_values[ 0 ] > the_initial_x or self.x_values[ -1 ] < the_finite_x :
-         raise ValueError( "The log file is not correct. The least x in logfiles is more " + \
+         raise ValueError( "The given region is not correct. The least x in logfiles is more " + \
                             "than the_initial size or the greatest x in logfiles is less than the_finite_x " )
-      
       self.probability2x = {}
       self.fun_value2x ={}
       for a_x in self.x_values:
@@ -77,7 +76,9 @@ class function():
       
    #------------------------------------------------------------------------------------
    def __call__( self, the_x ):
-      ## we search the a_x1 and a_x2 that  a_x1 < the_x < a_x2
+      ## If the_x is in the table of x_values and values f(x), we return f(x) with probability p(x)
+      ## If the_x is not  in the table, we search the a_x1 and a_x2 that  a_x1 < the_x < a_x2 and 
+      ## calculate f(x) and probability, using linear  approximation
       if the_x not in self.x_values:
          a_x1 = 0
          a_x2 = 0
