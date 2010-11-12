@@ -22,54 +22,52 @@
 
 
 #--------------------------------------------------------------------------------------
-def calculate_optimize_value( the_logfiles, the_initial_x, the_finite_x, the_precision ):
-    from artificial import function
-    fun = function( the_logfiles, the_initial_x, the_finite_x )
+def calculate_optimize_value( fun, the_initial_x, the_finite_x, the_precision, the_count_attempts ):
+    # To search optimize value we use binary search, in each point of we calculate f(x) "count_attempts" times
+    # if function returns "zero" ( "count_attempts" / 2 ) times, we pass to the following point.
+    # if the function returns "non-zero value" "count_attempt" times, it point becomes the initial
+    # point if our range an all try again.
+    # if we inside of the given precision - this is the result
     a_start_x = the_initial_x
     a_end_x = the_finite_x
-    count_attempts = 4
+    count_attempts = the_count_attempts
     a_test_x = a_end_x
-    while float( a_end_x - a_start_x ) / a_start_x > float( the_precision ) / 100 :
-       an_upload_test = False 
-       while not an_upload_test:
-          an_upload_attempt = {}
-          for i in range( 0, count_attempts ):
-             an_upload_attempt[i] = fun( a_test_x )
-             if i >= 1 and ( an_upload_attempt[i-1] == 0 and an_upload_attempt[ i ] == 0 ):
-                break
-             pass
+    a_cost = 0
+    while float( a_end_x - a_start_x ) / a_start_x > float( the_precision ) / float( 100 ) :
+       a_test = False 
+
+       while not a_test:
+          an_attempt = {}
           a_count_false = 0
           for i in range( 0, count_attempts ):
-             try:             
-                if an_upload_attempt[i] == 0:
-                   a_count_false = a_count_false + 1
-             except KeyError:   
+             an_attempt[i] = fun( a_test_x )
+             a_cost = a_cost + a_test_x
+             if an_attempt[i] == 0:
+                a_count_false = a_count_false + 1
+                pass
+             if a_count_false > ( count_attempts / 2 ):
                 break
              pass
-          if a_count_false >= 2: 
+          if a_count_false > ( ( count_attempts ) / 2 ): 
              a_end_x = a_test_x
-             a_test_x = a_end_x -( a_end_x - a_start_x ) / 2
+             a_test_x = a_end_x -( a_end_x - a_start_x ) / float( 2 )
              pass
           else:
-             an_upload_test=True
+             a_test=True
              pass
-          if float( a_end_x - a_start_x ) / a_start_x < float( the_precision ) / 100:
+          if float( a_end_x - a_start_x ) / a_start_x < float( the_precision ) / float( 100 ):
              a_test_x=a_start_x
              break
           pass
        a_start_x = a_test_x
        a_test_x = a_end_x
-       print "Start size", a_start_x
-       print "End_size",  a_end_x
+       #print "Start size", a_start_x
+       #print "End_size",  a_end_x
        
        pass
-    #Testing result 
     optimize_x = a_test_x
-    print "The optimize value  is " , optimize_x
-    #test_result_x = optimize_x * ( 1 + float( the_precision ) / 100 )
-    #print "Checking optimize + precision ", fun( test_result_x )
-    #print "Checking optimize + precision ", fun( test_result_x )
-    #print "Checking optimize + precision ", fun( test_result_x )
+    print "\nThe optimize value  is " , optimize_x
+    print "\nThe cost is ", a_cost, "kB"
     
     return a_test_x
    
@@ -80,6 +78,7 @@ an_usage_description += " ['logfile1' ['logfile2' ['logfile3'...]]] "
 an_usage_description += " --initial-x=1"
 an_usage_description += " --finite-x=2048"
 an_usage_description += " --precision=11"
+an_usage_description += " --count-attempts=4"
 
 
 from optparse import IndentedHelpFormatter
@@ -113,7 +112,13 @@ an_option_parser.add_option( "--precision",
                              help = "(\"%default\", by default)",
                              default = 11 )
 
-
+an_option_parser.add_option( "--count-attempts",
+                             metavar = "< The count of calculaete f(x), % >",
+                             type = "int",
+                             action = "store",
+                             dest = "count_attempts",
+                             help = "(\"%default\", by default)",
+                             default = 4 )
 
 an_options, an_args = an_option_parser.parse_args()
 
@@ -133,11 +138,12 @@ for a_logfile in a_logfiles:
    pass
 
 an_initial_x = an_options.initial_x
-
-an_finite_x = an_options.finite_x
-
+a_finite_x = an_options.finite_x
 a_precision = an_options.precision
+a_count_attempts = an_options.count_attempts
 
-an_optimize_size = calculate_optimize_value( a_logfiles, an_initial_x, an_finite_x, a_precision )
+from artificial import function
+fun = function( a_logfiles, an_initial_x, a_finite_x )
+an_optimize_size = calculate_optimize_value( fun, an_initial_x, a_finite_x, a_precision, a_count_attempts )
 
 
