@@ -70,16 +70,17 @@ class function():
             pass
          self.probability2x[ a_x ] = a_probability
          self.fun_value2x[ a_x ] = an_average_fun_value
+         
          pass
       pass
       
       
    #------------------------------------------------------------------------------------
-   def __call__( self, the_x ):
-      ## If the_x is in the table of x_values and values f(x), we return f(x) with probability p(x)
-      ## If the_x is not  in the table, we search the a_x1 and a_x2 that  a_x1 < the_x < a_x2 and 
-      ## calculate f(x) and probability, using linear  approximation
-      if the_x not in self.x_values:
+   def fun_linear_approximation( self, the_x ):
+      # return f( x )( using  linear_approximation ) and probability for x
+
+      #If the_x is not  in the table, we search the a_x1 and a_x2 that  a_x1 < the_x < a_x2 and 
+      if the_x not in self.x_values: 
          a_x1 = 0
          a_x2 = 0
          for a_x in self.x_values:
@@ -94,20 +95,25 @@ class function():
          a_fun_x1 = self.fun_value2x[ a_x1 ]
          a_probability_x2 = self.probability2x[ a_x2 ]
          a_fun_x2 = self.fun_value2x[ a_x2 ]
-         
+         # calculate f(x) and probability, using linear  approximation
          a_probability_x = ( a_probability_x1 * ( a_x2 - a_x ) + a_probability_x1 * ( a_x - a_x1 ) ) / ( a_x2 - a_x1 )
          a_fun_x = ( a_fun_x1 * ( a_x2 - a_x ) + a_fun_x2 * ( a_x - a_x1 ) ) / ( a_x2 - a_x1 )
+      # If the_x is in the table of x_values , we return f(x) and probability p(x)
       else:
          a_fun_x = self.fun_value2x[ the_x ]
          a_probability_x = self.probability2x[ the_x ]
          pass
-      #print a_probability_x
+      return a_fun_x, a_probability_x
+   
+   #------------------------------------------------------------------------------------
+   def __call__( self, the_x ):
+      #returns f(x) with the probability Px
+      a_fun_x, a_probability_x = self.fun_linear_approximation( the_x )
       import random
       a_random_value = random.random()
       if a_random_value < a_probability_x:
          return a_fun_x
       else:
          return 0
-
-
+   
 #--------------------------------------------------------------------------------------
