@@ -21,55 +21,56 @@
 ##
 
 
+
 #--------------------------------------------------------------------------------------
 def calculate_optimize_value( fun, the_initial_x, the_finite_x, the_precision, the_count_attempts ):
-    # To search optimize value we use binary search, in each point of we calculate f(x) "count_attempts" times
-    # if function returns "zero" ( "count_attempts" / 2 ) times, we pass to the following point.
-    # if the function returns "non-zero value" "count_attempt" times, it point becomes the initial
-    # point if our range an all try again.
-    # if we inside of the given precision - this is the result
-    a_start_x = the_initial_x
+    # To search optimize value we use "division by 2" method, in each point of we calculate F(x) "the_count_attempts" times and
+    # search max F(x) * P(x)  
+        a_start_x = the_initial_x
+    #we mean that in the start point probability is 100%.
+    a_FP_start_x = fun( a_start_x )
+    a_cost = a_start_x
     a_end_x = the_finite_x
     count_attempts = the_count_attempts
     a_test_x = a_end_x
-    a_cost = 0
+    # if we inside of the given precision - this is the result
     while float( a_end_x - a_start_x ) / a_start_x > float( the_precision ) / float( 100 ) :
-       a_test = False 
-
-       while not a_test:
-          an_attempt = {}
-          a_count_false = 0
-          for i in range( 0, count_attempts ):
-             an_attempt[i] = fun( a_test_x )
-             a_cost = a_cost + a_test_x
-             if an_attempt[i] == 0:
-                a_count_false = a_count_false + 1
-                pass
-             if a_count_false > ( count_attempts / 2 ):
-                break
-             pass
-          if a_count_false > ( ( count_attempts ) / 2 ): 
-             a_end_x = a_test_x
-             a_test_x = a_end_x -( a_end_x - a_start_x ) / float( 2 )
-             pass
-          else:
-             a_test=True
-             pass
-          if float( a_end_x - a_start_x ) / a_start_x < float( the_precision ) / float( 100 ):
-             a_test_x=a_start_x
-             break
-          pass
-       a_start_x = a_test_x
-       a_test_x = a_end_x
-       #print "Start size", a_start_x
-       #print "End_size",  a_end_x
-       
-       pass
-    optimize_x = a_test_x
-    print "\nThe optimize value  is " , optimize_x
+        a_count_crash = 0
+        a_summ_fun_x = 0
+        for i in range( 0, count_attempts ):
+           an_attempt = fun( a_test_x )
+           a_cost = a_cost + a_test_x
+           a_summ_fun_x += an_attempt
+           if an_attempt == 0:
+              a_count_crash += 1
+              pass
+           pass
+        a_probability_test_x = 1 - float( a_count_crash ) / float( count_attempts )
+        if a_count_crash == count_attempts:
+           an_average_fun_test_x = 0
+           pass
+        else:
+           an_average_fun_test_x = a_summ_fun_x / ( count_attempts - a_count_crash )
+           pass
+        a_FP_test_x = an_average_fun_test_x * a_probability_test_x
+        if a_FP_test_x > a_FP_start_x :
+           a_start_x = a_test_x
+           a_FP_start_x = a_FP_test_x
+           a_test_x = a_start_x + float( a_end_x - a_start_x ) / float( 2 )
+           an_optimize_x = a_test_x
+           pass
+        else:
+           a_end_x = a_test_x 
+           a_test_x = a_start_x + float( a_end_x - a_start_x ) / float( 2 )
+           an_optimize_x = a_start_x
+           pass
+        pass
+        
+    print "\nThe optimize value  is " , an_optimize_x
     print "\nThe cost is ", a_cost, "kB"
     
-    return a_test_x
+    #print count_attempts, an_optimize_x, a_cost
+    return an_optimize_x
    
 
 #---------------------------------------------------------------------------------------------
