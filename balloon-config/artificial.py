@@ -22,7 +22,7 @@
 
 #--------------------------------------------------------------------------------------
 class function():
-   def __init__( self, the_logfiles, the_initial_x, the_finite_x ):
+   def __init__( self, the_logfiles ):
       #We read the_logfiles and for all values x from the logfile, we calculate probability and arithmetic average of f(x)
       self.x_values = list()
       self.list_fun_values = {}
@@ -46,9 +46,6 @@ class function():
          pass
       self.x_values.sort()
 
-      if self.x_values[ 0 ] > the_initial_x or self.x_values[ -1 ] < the_finite_x :
-         raise ValueError( "The given region is not correct. The least x in logfiles is more " + \
-                            "than the_initial size or the greatest x in logfiles is less than the_finite_x " )
       self.probability2x = {}
       self.fun_value2x ={}
       for a_x in self.x_values:
@@ -73,7 +70,20 @@ class function():
          
          pass
       pass
+
+
+   #------------------------------------------------------------------------------------
+   def get_defintion_domain( self ) :
+      return self.x_values[ 0 ], self.x_values[ -1 ]
+
       
+   #------------------------------------------------------------------------------------
+   def check_defintion_domain( self, the_initial_x, the_finite_x ) :
+      if self.x_values[ 0 ] > the_initial_x or self.x_values[ -1 ] < the_finite_x :
+         return False
+      
+      return True
+
       
    #------------------------------------------------------------------------------------
    def fun_linear_approximation( self, the_x ):

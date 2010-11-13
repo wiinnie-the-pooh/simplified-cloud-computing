@@ -17,9 +17,8 @@
 ##
 ## See http://sourceforge.net/apps/mediawiki/balloon-foam
 ##
-## Author : Alexey Petrov
+## Author : Andrey Simurzin
 ##
-
 
 
 #--------------------------------------------------------------------------------------
@@ -99,16 +98,16 @@ an_option_parser.add_option( "--initial-x",
                              type = "int",
                              action = "store",
                              dest = "initial_x",
-                             help = "(\"%default\", by default)",
-                             default = 1 )
+                             help = "(taken from the log file, by default)",
+                             default = None )
                              
 an_option_parser.add_option( "--finite-x",
-                             metavar = "< The finite value  of the search range, Kbytes >",
+                             metavar = "< The finite value of the search range, Kbytes >",
                              type = "int",
                              action = "store",
                              dest = "finite_x",
-                             help = "(\"%default\", by default)",
-                             default = 2048 )
+                             help = "(taken from the log file, by default)",
+                             default = None )
 
 an_option_parser.add_option( "--precision",
                              metavar = "< The precision, % >",
@@ -143,13 +142,33 @@ for a_logfile in a_logfiles:
       pass
    pass
 
+from artificial import function
+a_fun = function( a_logfiles )
+
+a_start, an_end = a_fun.get_defintion_domain()
+
 an_initial_x = an_options.initial_x
+if an_initial_x == None :
+   an_initial_x = a_start
+   print "The start value = %f" % an_initial_x
+   pass
+
 a_finite_x = an_options.finite_x
+if a_finite_x == None :
+   a_finite_x = an_end
+   print "The finite value = %f" % a_finite_x
+   pass
+
+if not a_fun.check_defintion_domain( an_initial_x, a_finite_x ) :
+   print "The given region is not correct. The least x in logfiles is more " \
+       "than the_initial size or the greatest x in logfiles is less than the_finite_x"
+   import os; os._exit( os.EX_USAGE )
+   pass
+
 a_precision = an_options.precision
 a_count_attempts = an_options.count_attempts
 
-from artificial import function
-fun = function( a_logfiles, an_initial_x, a_finite_x )
-an_optimize_size = calculate_optimize_value( fun, an_initial_x, a_finite_x, a_precision, a_count_attempts )
+an_optimize_size = calculate_optimize_value( a_fun, an_initial_x, a_finite_x, a_precision, a_count_attempts )
 
 
+#---------------------------------------------------------------------------------------------
