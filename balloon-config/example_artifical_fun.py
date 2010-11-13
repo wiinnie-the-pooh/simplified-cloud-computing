@@ -26,17 +26,18 @@
 def calculate_optimize_value( fun, the_initial_x, the_finite_x, the_precision, the_count_attempts ):
     # To search optimize value we use "division by 2" method, in each point of we calculate F(x) "the_count_attempts" times and
     # search max F(x) * P(x)  
+    # if we inside of the given precision - this is the result
     a_start_x = the_initial_x
-    #we mean that in the start point probability is 100%.
+    #we mean that in the start point the probability is 100%.
     a_FP_start_x = fun( a_start_x )
     a_cost = a_start_x
     a_end_x = the_finite_x
     count_attempts = the_count_attempts
     a_test_x = a_end_x
-    # if we inside of the given precision - this is the result
     while float( a_end_x - a_start_x ) / a_start_x > float( the_precision ) / float( 100 ) :
         a_count_crash = 0
         a_summ_fun_x = 0
+        print "start:", a_start_x, "f(X)*P(x) = ", a_FP_start_x
         for i in range( 0, count_attempts ):
            an_attempt = fun( a_test_x )
            a_cost = a_cost + a_test_x
@@ -52,24 +53,28 @@ def calculate_optimize_value( fun, the_initial_x, the_finite_x, the_precision, t
         else:
            an_average_fun_test_x = a_summ_fun_x / ( count_attempts - a_count_crash )
            pass
+        print "test_point:", a_test_x, "a_probability ", a_probability_test_x
+        print "test_point:", a_test_x, "a_average_f(x) ", an_average_fun_test_x
         a_FP_test_x = an_average_fun_test_x * a_probability_test_x
+        print "test_point:", a_test_x, "f(X)*P(x) = ", a_FP_test_x
         if a_FP_test_x > a_FP_start_x :
            a_start_x = a_test_x
            a_FP_start_x = a_FP_test_x
-           a_test_x = a_start_x + float( a_end_x - a_start_x ) / float( 2 )
-           an_optimize_x = a_test_x
            pass
         else:
            a_end_x = a_test_x 
-           a_test_x = a_start_x + float( a_end_x - a_start_x ) / float( 2 )
-           an_optimize_x = a_start_x
            pass
+        print "-----------------------------------------------------------------------\n"
+        a_test_x = a_start_x + float( a_end_x - a_start_x ) / float( 2 )
+        an_optimize_x = a_start_x
+        print "start point :", a_start_x
+        print "end:", a_end_x
         pass
         
-    print "\nThe optimize value  is " , an_optimize_x
-    print "\nThe cost is ", a_cost, "kB"
+    #print "\nThe optimize value  is " , optimize_x
+    #print "\nThe cost is ", a_cost, "kB"
     
-    #print count_attempts, an_optimize_x, a_cost
+    print count_attempts, an_optimize_x, a_cost
     return an_optimize_x
    
 
