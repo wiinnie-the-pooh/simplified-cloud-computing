@@ -26,7 +26,7 @@
 def calculate_optimize_value( fun, the_initial_x, the_finite_x, the_precision, the_count_attempts ):
     # To search optimize value we use "division by 2" method, in each point of we calculate F(x) "the_count_attempts" times and
     # search max F(x) * P(x)  
-        a_start_x = the_initial_x
+    a_start_x = the_initial_x
     #we mean that in the start point probability is 100%.
     a_FP_start_x = fun( a_start_x )
     a_cost = a_start_x
