@@ -36,7 +36,7 @@ def calculate_optimize_value( fun, the_initial_x, the_finite_x, the_precision, t
     while float( a_end_x - a_start_x ) / a_start_x > float( the_precision ) / float( 100 ) :
         a_count_crash = 0
         a_summ_fun_x = 0
-        print "start:", a_start_x, "f(X)*P(x) = ", a_FP_start_x
+        #print "start:", a_start_x, "f(X)*P(x) = ", a_FP_start_x
         for i in range( 0, count_attempts ):
            an_attempt = fun( a_test_x )
            a_cost = a_cost + a_test_x
@@ -52,10 +52,10 @@ def calculate_optimize_value( fun, the_initial_x, the_finite_x, the_precision, t
         else:
            an_average_fun_test_x = a_summ_fun_x / ( count_attempts - a_count_crash )
            pass
-        print "test_point:", a_test_x, "a_probability ", a_probability_test_x
-        print "test_point:", a_test_x, "a_average_f(x) ", an_average_fun_test_x
+        #print "test_point:", a_test_x, "a_probability ", a_probability_test_x
+        #print "test_point:", a_test_x, "a_average_f(x) ", an_average_fun_test_x
         a_FP_test_x = an_average_fun_test_x * a_probability_test_x
-        print "test_point:", a_test_x, "f(X)*P(x) = ", a_FP_test_x
+        #print "test_point:", a_test_x, "f(X)*P(x) = ", a_FP_test_x
         if a_FP_test_x > a_FP_start_x :
            a_start_x = a_test_x
            a_FP_start_x = a_FP_test_x
@@ -63,11 +63,11 @@ def calculate_optimize_value( fun, the_initial_x, the_finite_x, the_precision, t
         else:
            a_end_x = a_test_x 
            pass
-        print "-----------------------------------------------------------------------\n"
+        #print "-----------------------------------------------------------------------\n"
         a_test_x = a_start_x + float( a_end_x - a_start_x ) / float( 2 )
         an_optimize_x = a_start_x
-        print "start point :", a_start_x
-        print "end:", a_end_x
+        #print "start point :", a_start_x
+        #print "end:", a_end_x
         pass
         
     #print "\nThe optimize value  is " , optimize_x
