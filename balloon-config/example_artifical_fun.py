@@ -150,13 +150,13 @@ a_start, an_end = a_fun.get_defintion_domain()
 an_initial_x = an_options.initial_x
 if an_initial_x == None :
    an_initial_x = a_start
-   print "The start value = %f" % an_initial_x
+   print "The start value = %d" % an_initial_x
    pass
 
 a_finite_x = an_options.finite_x
 if a_finite_x == None :
    a_finite_x = an_end
-   print "The finite value = %f" % a_finite_x
+   print "The finite value = %d" % a_finite_x
    pass
 
 if not a_fun.check_defintion_domain( an_initial_x, a_finite_x ) :
