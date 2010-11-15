@@ -22,27 +22,39 @@
 
 
 #--------------------------------------------------------------------------------------
-def fun_division_by_2( fun, the_initial_x, the_finite_x, the_precision, the_count_attempts ):
+def fun_division_by_2( the_fun, the_initial_x, the_finite_x, the_precision, the_count_attempts ):
     # To search optimize value we use "division by 2" method, in each point of we calculate F(x) "the_count_attempts" times and
     # search max F(x) * P(x)  
     # if we inside of the given precision - this is the result
     a_start_x = the_initial_x
-    # we mean that in the start point the probability is 100%.
-    a_FP_start_x = fun( a_start_x )
     a_cost = a_start_x
     an_end_x = the_finite_x
     a_count_attempts = the_count_attempts
     a_test_x = an_end_x
     
     a_xs = []
+    a_x2y = {}
     a_x = a_start_x
+    an_ok_counter = 0
+    a_fun_sum_all = 1
     a_step = ( an_end_x - a_start_x ) / float( a_count_attempts )
     for an_id in range( a_count_attempts + 1 ) :
         a_xs.append( a_x )
+        an_y = the_fun( a_x )
+        a_x2y[ a_x ] = an_y
+        a_fun_sum_all += an_y
+        if an_y > 0.0 :
+            an_ok_counter += 1
+            pass
         a_x += a_step
         pass
 
-    print a_step, a_xs
+    an_average_fun_ok = a_fun_sum_all / an_ok_counter
+    an_average_fun_all = a_fun_sum_all / ( a_count_attempts + 1 )
+    a_probability_interval = an_average_fun_all / an_average_fun_ok
+    print a_step, an_average_fun_ok, an_average_fun_all, a_probability_interval
+    print a_xs
+    print a_x2y
 
     return
 
