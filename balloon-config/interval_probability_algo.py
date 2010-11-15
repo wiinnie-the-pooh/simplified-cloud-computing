@@ -61,6 +61,43 @@ def print2_dict( the_sub_keys, the_dict ) :
 
 
 #--------------------------------------------------------------------------------------
+def sub_algo( the_x2y, the_fun, the_start_x, the_end_x, the_probability_interval, the_count_attempts ) :
+    an_end_x = the_start_x + ( the_end_x - the_start_x ) * the_probability_interval
+    a_sub_xs = filter( TFilterFunctor( the_start_x, an_end_x ), the_x2y.keys() )
+    an_additional_attempts = the_count_attempts - len( a_sub_xs )
+    print an_end_x, an_additional_attempts,
+
+    a_x = an_end_x
+    a_step = ( an_end_x - the_start_x ) / float( the_count_attempts )
+    for an_id in range( an_additional_attempts + 1 ) :
+        a_sub_xs.append( a_x )
+        an_y = the_fun( a_x )
+        the_x2y[ a_x ] = an_y
+        a_x -= a_step
+        pass
+
+    an_ok_counter = 1
+    a_fun_sum_all = 0.0
+    for a_x in a_sub_xs :
+        an_y = the_x2y[ a_x ]
+        a_fun_sum_all += an_y
+        if an_y > 0.0 :
+            an_ok_counter += 1
+            pass
+        pass
+
+    an_average_fun_ok = a_fun_sum_all / float( an_ok_counter )
+    an_average_fun_all = a_fun_sum_all / float( len( a_sub_xs ) )
+    a_probability_interval = an_average_fun_all / an_average_fun_ok
+
+    print a_probability_interval
+    print2_dict( a_sub_xs, the_x2y )
+    print
+
+    return the_x2y, a_sub_xs, a_probability_interval
+
+
+#--------------------------------------------------------------------------------------
 def entry_point( the_fun, the_initial_x, the_finite_x, the_precision, the_count_attempts ):
     # To search optimize value we use "division by 2" method, in each point of we calculate F(x) "the_count_attempts" times and
     # search max F(x) * P(x)  
@@ -74,7 +111,7 @@ def entry_point( the_fun, the_initial_x, the_finite_x, the_precision, the_count_
     a_xs = []
     a_x2y = {}
     a_x = a_start_x
-    an_ok_counter = 0
+    an_ok_counter = 1
     a_fun_sum_all = 0.0
     a_step = ( an_end_x - a_start_x ) / float( a_count_attempts )
     for an_id in range( a_count_attempts + 1 ) :
@@ -130,38 +167,7 @@ def entry_point( the_fun, the_initial_x, the_finite_x, the_precision, the_count_
     print
 
     #-----------------------------------------------------------------------------------------
-    an_end_x = a_start_x + ( an_end_x - a_start_x ) * a_probability_interval
-    a_sub_xs = filter( TFilterFunctor( a_start_x, an_end_x ), a_xs )
-    an_additional_attempts = a_count_attempts - len( a_sub_xs )
-    print an_end_x, an_additional_attempts, a_sub_xs
-
-    a_x = an_end_x
-    a_step = ( an_end_x - a_start_x ) / float( a_count_attempts )
-    for an_id in range( an_additional_attempts + 1 ) :
-        a_xs.append( a_x )
-        a_sub_xs.append( a_x )
-        an_y = the_fun( a_x )
-        a_x2y[ a_x ] = an_y
-        a_x -= a_step
-        pass
-
-    an_ok_counter = 0
-    a_fun_sum_all = 0.0
-    a_sub_xs = filter( TFilterFunctor( a_start_x, an_end_x ), a_xs )
-    for a_x in a_sub_xs :
-        an_y = a_x2y[ a_x ]
-        a_fun_sum_all += an_y
-        if an_y > 0.0 :
-            an_ok_counter += 1
-            pass
-        pass
-
-    an_average_fun_ok = a_fun_sum_all / float( an_ok_counter )
-    an_average_fun_all = a_fun_sum_all / float( len( a_sub_xs ) )
-    a_probability_interval = an_average_fun_all / an_average_fun_ok
-    print a_step, an_average_fun_ok, an_average_fun_all, a_probability_interval
-    print2_dict( a_sub_xs, a_x2y )
-    
+    a_x2y, a_sub_xs, a_probability_interval = sub_algo( a_x2y, the_fun, a_start_x, an_end_x, a_probability_interval, a_count_attempts )    
 
     return
 
