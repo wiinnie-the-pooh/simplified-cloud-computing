@@ -36,36 +36,77 @@ class TFilterFunctor :
 
 
 #--------------------------------------------------------------------------------------
-def print_dict( the_dict ) :
-    a_keys = the_dict.keys()
-    a_keys.sort()
-    for a_key in a_keys :
-        print "%4d : %4.0f" % ( a_key, the_dict[ a_key ] )
+def print_dict( the_x2y ) :
+    a_xs = the_x2y.keys()
+    a_xs.sort()
+    for a_x in a_xs :
+        print "%4d : %4.0f" % ( a_x, the_x2y[ a_x ] )
         pass
     pass
 
 
 #--------------------------------------------------------------------------------------
-def print2_dict( the_sub_keys, the_dict ) :
-    a_keys = the_dict.keys()
-    a_keys.sort()
-    for a_key in a_keys :
-        if a_key in the_sub_keys :
+def print2_dict( the_sub_xs, the_x2y ) :
+    a_xs = the_x2y.keys()
+    a_xs.sort()
+    for a_x in a_xs :
+        if a_x in the_sub_xs :
             print " + ", 
         else:
             print " - ", 
             pass
-        print "%4d : %4.0f" % ( a_key, the_dict[ a_key ] )
+        print "%4d : %4.0f" % ( a_x, the_x2y[ a_x ] )
         pass
     pass
 
 
 #--------------------------------------------------------------------------------------
-def sub_algo( the_x2y, the_xs, the_fun, the_start_x, the_end_x, the_probability_interval, the_count_attempts ) :
+def calc_probability_interval( the_sub_xs, the_x2y ) :
+    the_sub_xs.sort()
+
+    an_y_integral = 0.0
+    an_y_average_max = 0
+    a_max_index = 0
+
+    an_ok_counter = 1
+    an_overall_counter = 1
+
+    for a_x in the_sub_xs :
+        an_y = the_x2y[ a_x ]
+        an_y_integral += an_y
+
+        if an_y > 0.0 :
+            an_ok_counter += 1
+            pass
+
+        an_y_average = an_y_integral / an_overall_counter
+        if an_y_average > an_y_average_max :
+            a_max_index = an_overall_counter
+            an_y_average_max = an_y_average
+            pass
+
+        an_overall_counter += 1
+        pass
+
+    print a_max_index
+    a_selective_interval = float( a_max_index + 0 ) / float( len( the_sub_xs ) )
+
+    an_average_y_ok = an_y_integral / float( an_ok_counter )
+    an_average_y_all = an_y_integral / float( len( the_sub_xs ) )
+    an_estimated_interval = an_average_y_all / an_average_y_ok
+
+    a_probability_interval = max( an_estimated_interval, a_selective_interval )
+    a_probability_interval = max( an_estimated_interval, a_selective_interval )
+    print "calc_probability_interval : %0.3f [ %0.3f; %0.3f ]" % ( a_probability_interval, a_selective_interval, an_estimated_interval )
+
+    return a_probability_interval
+
+
+#--------------------------------------------------------------------------------------
+def sub_algo( the_x2y, the_fun, the_start_x, the_end_x, the_probability_interval, the_count_attempts ) :
     an_end_x = the_start_x + ( the_end_x - the_start_x ) * the_probability_interval
-    a_sub_xs = filter( TFilterFunctor( the_start_x, an_end_x ), the_xs )
-    an_additional_attempts = the_count_attempts - len( a_sub_xs )
-    print an_end_x, an_additional_attempts,
+    a_sub_xs = filter( TFilterFunctor( the_start_x, an_end_x ), the_x2y.keys() )
+    an_additional_attempts = the_count_attempts + 1 - len( a_sub_xs )
 
     a_x = an_end_x
     a_step = ( an_end_x - the_start_x ) / float( the_count_attempts )
@@ -73,24 +114,13 @@ def sub_algo( the_x2y, the_xs, the_fun, the_start_x, the_end_x, the_probability_
         a_sub_xs.append( a_x )
         an_y = the_fun( a_x )
         the_x2y[ a_x ] = an_y
+        print "%4d" % a_x,
         a_x -= a_step
         pass
+    print
 
-    an_ok_counter = 1
-    a_fun_sum_all = 0.0
-    for a_x in a_sub_xs :
-        an_y = the_x2y[ a_x ]
-        a_fun_sum_all += an_y
-        if an_y > 0.0 :
-            an_ok_counter += 1
-            pass
-        pass
+    a_probability_interval = calc_probability_interval( a_sub_xs, the_x2y )
 
-    an_average_fun_ok = a_fun_sum_all / float( an_ok_counter )
-    an_average_fun_all = a_fun_sum_all / float( len( a_sub_xs ) )
-    a_probability_interval = an_average_fun_all / an_average_fun_ok
-
-    print a_probability_interval
     print2_dict( a_sub_xs, the_x2y )
     print
 
@@ -108,37 +138,27 @@ def entry_point( the_fun, the_initial_x, the_finite_x, the_precision, the_count_
     a_count_attempts = the_count_attempts
     a_test_x = an_end_x
     
-    a_xs = []
     a_x2y = {}
-    a_x = a_start_x
-    an_ok_counter = 1
-    a_fun_sum_all = 0.0
+    a_x = an_end_x
     a_step = ( an_end_x - a_start_x ) / float( a_count_attempts )
     for an_id in range( a_count_attempts + 1 ) :
-        a_xs.append( a_x )
         an_y = the_fun( a_x )
         a_x2y[ a_x ] = an_y
-        a_fun_sum_all += an_y
-        if an_y > 0.0 :
-            an_ok_counter += 1
-            pass
-        a_x += a_step
+        a_x -= a_step
         pass
 
-    an_average_fun_ok = a_fun_sum_all / float( an_ok_counter )
-    an_average_fun_all = a_fun_sum_all / float( a_count_attempts )
-    a_probability_interval = an_average_fun_all / an_average_fun_ok
-    print a_step, an_average_fun_ok, an_average_fun_all, a_probability_interval
-    print_dict( a_x2y )
-    print
+    print2_dict( a_x2y.keys(), a_x2y )
+
+    a_probability_interval = calc_probability_interval( a_x2y.keys(), a_x2y )
 
     #-----------------------------------------------------------------------------------------
-    a_x2y, a_sub_xs, a_probability_interval = sub_algo( a_x2y, a_x2y.keys(), 
-                                                        the_fun, a_start_x, an_end_x, 
+    a_x2y, a_sub_xs, a_probability_interval = sub_algo( a_x2y, the_fun, a_start_x, an_end_x, 
                                                         a_probability_interval, a_count_attempts )    
 
-    a_x2y, a_sub_xs, a_probability_interval = sub_algo( a_x2y, a_x2y.keys(), 
-                                                        the_fun, a_start_x, an_end_x, 
+    a_x2y, a_sub_xs, a_probability_interval = sub_algo( a_x2y, the_fun, a_start_x, an_end_x, 
+                                                        a_probability_interval, a_count_attempts )    
+
+    a_x2y, a_sub_xs, a_probability_interval = sub_algo( a_x2y, the_fun, a_start_x, an_end_x, 
                                                         a_probability_interval, a_count_attempts )    
 
     return
