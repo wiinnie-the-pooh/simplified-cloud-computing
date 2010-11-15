@@ -83,7 +83,7 @@ def calc_probability_interval( the_sub_xs, the_x2y ) :
 
 
 #--------------------------------------------------------------------------------------
-def sub_algo( the_x2y, the_fun, the_start_x, the_end_x, the_probability_interval, the_count_attempts ) :
+def sub_algo( the_x2y, the_cost, the_fun, the_start_x, the_end_x, the_probability_interval, the_count_attempts ) :
     an_end_x = the_start_x + ( the_end_x - the_start_x ) * the_probability_interval
     a_sub_xs = filter( TFilterFunctor( the_start_x, an_end_x ), the_x2y.keys() )
     an_additional_attempts = max( the_count_attempts + 1 - len( a_sub_xs ), 1 )
@@ -95,6 +95,7 @@ def sub_algo( the_x2y, the_fun, the_start_x, the_end_x, the_probability_interval
         an_y = the_fun( a_x )
         the_x2y[ a_x ] = an_y
         print "%4d" % a_x,
+        the_cost += a_x
         a_x -= a_step
         pass
     print
@@ -102,9 +103,9 @@ def sub_algo( the_x2y, the_fun, the_start_x, the_end_x, the_probability_interval
     a_probability_interval = calc_probability_interval( a_sub_xs, the_x2y )
 
     print2_dict( a_sub_xs, the_x2y )
-    print
+    print "cost - %4d\n" % the_cost
 
-    return the_x2y, an_end_x, a_probability_interval
+    return the_x2y, the_cost, an_end_x, a_probability_interval
 
 
 #--------------------------------------------------------------------------------------
@@ -124,6 +125,7 @@ def entry_point( the_fun, the_initial_x, the_finite_x, the_precision, the_count_
     for an_id in range( a_count_attempts + 1 ) :
         an_y = the_fun( a_x )
         a_x2y[ a_x ] = an_y
+        a_cost += a_x
         a_x -= a_step
         pass
 
@@ -133,8 +135,8 @@ def entry_point( the_fun, the_initial_x, the_finite_x, the_precision, the_count_
 
     #-----------------------------------------------------------------------------------------
     while ( 1.00 - a_probability_interval ) > float( the_precision / 100.0 )  :
-        a_x2y, an_end_x, a_probability_interval = sub_algo( a_x2y, the_fun, a_start_x, an_end_x, 
-                                                            a_probability_interval, a_count_attempts )    
+        a_x2y, a_cost, an_end_x, a_probability_interval = sub_algo( a_x2y, a_cost, the_fun, a_start_x, an_end_x, 
+                                                                    a_probability_interval, a_count_attempts )    
         pass
 
     return
