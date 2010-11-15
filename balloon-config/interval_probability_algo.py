@@ -62,15 +62,8 @@ def print2_dict( the_sub_xs, the_x2y ) :
 
 #--------------------------------------------------------------------------------------
 def calc_probability_interval( the_sub_xs, the_x2y ) :
-    the_sub_xs.sort()
-
-    an_y_integral = 0.0
-    an_y_average_max = 0
-    a_max_index = 0
-
     an_ok_counter = 1
-    an_overall_counter = 1
-
+    an_y_integral = 0.0
     a_start_x = the_sub_xs[ 0 ]
     for a_x in the_sub_xs :
         an_y = the_x2y[ a_x ]
@@ -79,31 +72,12 @@ def calc_probability_interval( the_sub_xs, the_x2y ) :
         if an_y > 0.0 :
             an_ok_counter += 1
             pass
-
-        an_y_average = None
-        if a_x > a_start_x :
-            an_y_average = an_y_integral / ( a_x - a_start_x )
-        else:
-            an_y_average = an_y
-            pass
-
-        if an_y_average > an_y_average_max :
-            a_max_index = an_overall_counter
-            an_y_average_max = an_y_average
-            pass
-
-        an_overall_counter += 1
         pass
-
-    print a_max_index
-    a_selective_interval = float( a_max_index + 0 ) / float( len( the_sub_xs ) )
 
     an_average_y_ok = an_y_integral / float( an_ok_counter )
     an_average_y_all = an_y_integral / float( len( the_sub_xs ) )
-    an_estimated_interval = an_average_y_all / an_average_y_ok
-
-    a_probability_interval = max( an_estimated_interval, a_selective_interval )
-    print "calc_probability_interval : %0.3f [ %0.3f; %0.3f ]" % ( a_probability_interval, a_selective_interval, an_estimated_interval )
+    a_probability_interval = an_average_y_all / an_average_y_ok
+    print "calc_probability_interval : %0.3f" % a_probability_interval
 
     return a_probability_interval
 
@@ -112,7 +86,7 @@ def calc_probability_interval( the_sub_xs, the_x2y ) :
 def sub_algo( the_x2y, the_fun, the_start_x, the_end_x, the_probability_interval, the_count_attempts ) :
     an_end_x = the_start_x + ( the_end_x - the_start_x ) * the_probability_interval
     a_sub_xs = filter( TFilterFunctor( the_start_x, an_end_x ), the_x2y.keys() )
-    an_additional_attempts = the_count_attempts + 1 - len( a_sub_xs )
+    an_additional_attempts = max( the_count_attempts + 1 - len( a_sub_xs ), the_count_attempts / 2 )
 
     a_x = an_end_x
     a_step = ( an_end_x - the_start_x ) / float( the_count_attempts )
