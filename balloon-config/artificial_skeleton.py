@@ -22,7 +22,7 @@
 
 
 #--------------------------------------------------------------------------------------
-from option_parser import main
+from artificial_option_parser import main
 a_fun, an_initial_x, a_finite_x, a_precision, a_count_attempts = main()
 
 from algorithm import fun_division_by_2
