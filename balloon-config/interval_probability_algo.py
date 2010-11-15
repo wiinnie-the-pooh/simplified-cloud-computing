@@ -49,12 +49,15 @@ def fun_division_by_2( the_fun, the_initial_x, the_finite_x, the_precision, the_
         a_x += a_step
         pass
 
-    an_average_fun_ok = a_fun_sum_all / an_ok_counter
-    an_average_fun_all = a_fun_sum_all / ( a_count_attempts + 1 )
+    an_average_fun_ok = a_fun_sum_all / float( an_ok_counter )
+    an_average_fun_all = a_fun_sum_all / float( a_count_attempts + 1 )
     a_probability_interval = an_average_fun_all / an_average_fun_ok
     print a_step, an_average_fun_ok, an_average_fun_all, a_probability_interval
     print a_xs
     print a_x2y
+    
+    an_end_x = a_start_x + ( an_end_x - a_start_x ) * a_probability_interval
+    print an_end_x
 
     return
 
