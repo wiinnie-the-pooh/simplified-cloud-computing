@@ -81,7 +81,7 @@ def calc_probability_interval( the_sub_xs, the_x2y ) :
 
     an_average_y_all = an_y_integral / float( len( the_sub_xs ) )
     a_probability_interval = an_average_y_all / an_average_y_ok
-    print "calc_probability_interval : %0.3f" % a_probability_interval
+    print "probability interval : %0.3f" % a_probability_interval
 
     return a_probability_interval
 
@@ -94,6 +94,7 @@ def sub_algo( the_x2y, the_cost, the_fun, the_start_x, the_end_x, the_probabilit
 
     a_x = an_end_x
     a_step = ( an_end_x - the_start_x ) / float( an_additional_attempts + 1 )
+    print "additional attempts : ",
     for an_id in range( an_additional_attempts ) :
         a_sub_xs.append( a_x )
         an_y = the_fun( a_x )
