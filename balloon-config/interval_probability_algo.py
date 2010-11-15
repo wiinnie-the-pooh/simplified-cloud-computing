@@ -86,10 +86,10 @@ def calc_probability_interval( the_sub_xs, the_x2y ) :
 def sub_algo( the_x2y, the_fun, the_start_x, the_end_x, the_probability_interval, the_count_attempts ) :
     an_end_x = the_start_x + ( the_end_x - the_start_x ) * the_probability_interval
     a_sub_xs = filter( TFilterFunctor( the_start_x, an_end_x ), the_x2y.keys() )
-    an_additional_attempts = max( the_count_attempts + 1 - len( a_sub_xs ), the_count_attempts / 2 )
+    an_additional_attempts = max( the_count_attempts + 1 - len( a_sub_xs ), 1 )
 
     a_x = an_end_x
-    a_step = ( an_end_x - the_start_x ) / float( the_count_attempts )
+    a_step = ( an_end_x - the_start_x ) / float( an_additional_attempts + 1 )
     for an_id in range( an_additional_attempts + 1 ) :
         a_sub_xs.append( a_x )
         an_y = the_fun( a_x )
@@ -132,14 +132,10 @@ def entry_point( the_fun, the_initial_x, the_finite_x, the_precision, the_count_
     a_probability_interval = calc_probability_interval( a_x2y.keys(), a_x2y )
 
     #-----------------------------------------------------------------------------------------
-    a_x2y, an_end_x, a_probability_interval = sub_algo( a_x2y, the_fun, a_start_x, an_end_x, 
-                                                        a_probability_interval, a_count_attempts )    
-
-    a_x2y, an_end_x, a_probability_interval = sub_algo( a_x2y, the_fun, a_start_x, an_end_x, 
-                                                        a_probability_interval, a_count_attempts )    
-
-    a_x2y, an_end_x, a_probability_interval = sub_algo( a_x2y, the_fun, a_start_x, an_end_x, 
-                                                        a_probability_interval, a_count_attempts )    
+    while ( 1.00 - a_probability_interval ) > float( the_precision / 100.0 )  :
+        a_x2y, an_end_x, a_probability_interval = sub_algo( a_x2y, the_fun, a_start_x, an_end_x, 
+                                                            a_probability_interval, a_count_attempts )    
+        pass
 
     return
 
