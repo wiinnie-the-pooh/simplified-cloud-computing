@@ -71,6 +71,7 @@ def calc_probability_interval( the_sub_xs, the_x2y ) :
     an_ok_counter = 1
     an_overall_counter = 1
 
+    a_start_x = the_sub_xs[ 0 ]
     for a_x in the_sub_xs :
         an_y = the_x2y[ a_x ]
         an_y_integral += an_y
@@ -79,7 +80,13 @@ def calc_probability_interval( the_sub_xs, the_x2y ) :
             an_ok_counter += 1
             pass
 
-        an_y_average = an_y_integral / an_overall_counter
+        an_y_average = None
+        if a_x > a_start_x :
+            an_y_average = an_y_integral / ( a_x - a_start_x )
+        else:
+            an_y_average = an_y
+            pass
+
         if an_y_average > an_y_average_max :
             a_max_index = an_overall_counter
             an_y_average_max = an_y_average
@@ -95,7 +102,6 @@ def calc_probability_interval( the_sub_xs, the_x2y ) :
     an_average_y_all = an_y_integral / float( len( the_sub_xs ) )
     an_estimated_interval = an_average_y_all / an_average_y_ok
 
-    a_probability_interval = max( an_estimated_interval, a_selective_interval )
     a_probability_interval = max( an_estimated_interval, a_selective_interval )
     print "calc_probability_interval : %0.3f [ %0.3f; %0.3f ]" % ( a_probability_interval, a_selective_interval, an_estimated_interval )
 
@@ -124,7 +130,7 @@ def sub_algo( the_x2y, the_fun, the_start_x, the_end_x, the_probability_interval
     print2_dict( a_sub_xs, the_x2y )
     print
 
-    return the_x2y, a_sub_xs, a_probability_interval
+    return the_x2y, an_end_x, a_probability_interval
 
 
 #--------------------------------------------------------------------------------------
@@ -152,13 +158,13 @@ def entry_point( the_fun, the_initial_x, the_finite_x, the_precision, the_count_
     a_probability_interval = calc_probability_interval( a_x2y.keys(), a_x2y )
 
     #-----------------------------------------------------------------------------------------
-    a_x2y, a_sub_xs, a_probability_interval = sub_algo( a_x2y, the_fun, a_start_x, an_end_x, 
+    a_x2y, an_end_x, a_probability_interval = sub_algo( a_x2y, the_fun, a_start_x, an_end_x, 
                                                         a_probability_interval, a_count_attempts )    
 
-    a_x2y, a_sub_xs, a_probability_interval = sub_algo( a_x2y, the_fun, a_start_x, an_end_x, 
+    a_x2y, an_end_x, a_probability_interval = sub_algo( a_x2y, the_fun, a_start_x, an_end_x, 
                                                         a_probability_interval, a_count_attempts )    
 
-    a_x2y, a_sub_xs, a_probability_interval = sub_algo( a_x2y, the_fun, a_start_x, an_end_x, 
+    a_x2y, an_end_x, a_probability_interval = sub_algo( a_x2y, the_fun, a_start_x, an_end_x, 
                                                         a_probability_interval, a_count_attempts )    
 
     return
