@@ -93,10 +93,18 @@ def calculate_timeout( the_backet ):
 def create_logfile( a_region, the_suffix, the_timeout ):
     import os
     import datetime
-    a_curr_date = datetime.datetime(1,1,1).now()
+    a_curr_date = datetime.datetime( 1, 1, 1 ).now()
     a_date = str( a_curr_date.date() )
-    a_time = str( a_curr_date.time() )[:5].replace(':','-')
-    a_filename = a_region + "_" + os.getlogin() + the_suffix + "_" + a_date + "_" + a_time \
+    a_time = str( a_curr_date.time() )[ :5 ].replace( ':', '-' )
+
+    a_username = None
+    try:
+        a_username = os.getlogin()
+    except:
+        a_username = os.environ[ 'USER' ]
+        pass
+
+    a_filename = a_region + "_" + a_username + the_suffix + "_" + a_date + "_" + a_time \
                           + "_" + str( os.getpid() ) + "_" + "%3.3f" % the_timeout + ".csv"
     a_file = open( './logs/%s' % a_filename, 'w' )
     return a_file
