@@ -120,36 +120,11 @@ def sub_algo( the_x2y, the_cost, the_fun, the_start_x, the_end_x, the_probabilit
 
 #--------------------------------------------------------------------------------------
 def entry_point( the_fun, the_initial_x, the_finite_x, the_precision, the_count_attempts ) :
-    """The main idea of this algorithm is to define an interval where overall function values
-    give the best possible result (most relialbe and with the highest values of the function).
-
-    The 'success' condition for this algorithm is when the function values on an interval differ
-    with an average function value on this interval less than the given 'precision'.
-
-    This algorithm uses some insights on the shape of the F( x ) ( it suposes that function value
-    increases along the 'x' ) and P( x ) ( 'delta' function, strated from 100 % at the beginning 
-    and 0 % at the end of the observed interval ). 
-    
-    The idea to use intervals istead of calculation of the probability on a point is that:
-       - from the nature of the function ( probability ) there is no strong reason to mesure 
-       the function value in the same point to get the probability information;
-       - if we deal with interval, it will be possinle to partly reuse the function values 
-       calculated on the previous steps ( as experiments show, this algorithm in approximatelly 
-       2 times 'cheaper' than 'division by 2' method ).
-
-    The result for this algorithm is the most upper value in the found 'probability' interval, which, 
-    according to the insights, would give us the higher combination of F( x ) * P( x ) expression.
-
-    To be more accurate about the upper most interval boundary algorithm tries to mesure all the
-    missing points ( to make a desigin about probability, the interval should contain the given 
-    'count_attempts' number of mesured points, at least ) as much as close to the boundary ( but
-    still distribute these points along interval, to be able to reuse them at the next iteration ).
-    """
+    """ """
     a_start_x = the_initial_x
-    a_cost = a_start_x
     an_end_x = the_finite_x
     a_count_attempts = the_count_attempts
-    a_test_x = an_end_x
+    a_cost = 0.0
     
     a_x2y = {}
     a_x = an_end_x
@@ -173,7 +148,11 @@ def entry_point( the_fun, the_initial_x, the_finite_x, the_precision, the_count_
                                                                     a_probability_interval, a_count_attempts )    
         pass
 
-    return an_end_x
+    an_optimize_x = an_end_x
+
+    print "solution : %4d / cost : %4d\n" % ( an_optimize_x, a_cost )
+
+    return an_optimize_x, a_cost
 
 
 #---------------------------------------------------------------------------------------------
