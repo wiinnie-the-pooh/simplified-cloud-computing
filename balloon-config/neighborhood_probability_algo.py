@@ -188,10 +188,11 @@ def entry_point( the_fun, the_initial_x, the_finite_x, the_precision, the_nb_att
             for a_sub_id in range( an_id, an_id + a_sub2_nb_attempts ) :
                 a_x = a_xs[ a_sub_id ]
                 an_y += a_x2y[ a_x ]
-                print "%4d" % a_x,
+                print "%4d" % a_x, 
                 pass
             pass
-        print "]\n" 
+        an_average_y[ a_middle_x ] = an_y / a_neighbor_nb_attemps
+        print "] = %4d" % an_average_y[ a_middle_x ]
 
         pass
 
