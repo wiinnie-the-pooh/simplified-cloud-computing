@@ -92,30 +92,76 @@ def calc_probability_interval( the_sub_xs, the_x2y ) :
 
 
 #--------------------------------------------------------------------------------------
-def sub_algo( the_x2y, the_cost, the_fun, the_start_x, the_end_x, the_probability_interval, the_count_attempts ) :
-    an_end_x = the_start_x + ( the_end_x - the_start_x ) * the_probability_interval
-    a_sub_xs = filter( TFilterFunctor( the_start_x, an_end_x ), the_x2y.keys() )
-    an_additional_attempts = max( the_count_attempts + 1 - len( a_sub_xs ), 1 )
+def find_center( the_x2y, the_sub2_nb_attempts, the_nb_attempts ) :
+    an_average_y = {}
+    a_xs = the_x2y.keys()
+    a_xs.sort()
+    for an_id in range( len( a_xs ) ) :
+        a_center_x = a_x = a_xs[ an_id ]
+        an_y = the_x2y[ a_x ]
 
-    a_x = an_end_x
-    a_step = ( an_end_x - the_start_x ) / float( an_additional_attempts + 1 )
-    print "additional attempts : ",
-    for an_id in range( an_additional_attempts ) :
-        a_sub_xs.append( a_x )
-        an_y = the_fun( a_x )
-        the_x2y[ a_x ] = an_y
-        print "%4d" % a_x,
-        the_cost += a_x
-        a_x -= a_step
+        a_neighbor_nb_attemps = 0
+
+        print "[", 
+        if an_id < the_sub2_nb_attempts :
+            a_neighbor_nb_attemps += an_id
+            for a_sub_id in range( an_id ) :
+                a_x = a_xs[ a_sub_id ]
+                an_y += the_x2y[ a_x ]
+                print "%4d" % a_x,
+                pass
+            pass
+        else:
+            a_neighbor_nb_attemps += the_sub2_nb_attempts
+            for a_sub_id in range( an_id - the_sub2_nb_attempts, an_id ) :
+                a_x = a_xs[ a_sub_id ]
+                an_y += the_x2y[ a_x ]
+                print "%4d" % a_x,
+                pass
+            pass
+
+        print "| %4d |" % a_center_x,
+
+        if the_nb_attempts - an_id < the_sub2_nb_attempts :
+            a_neighbor_nb_attemps += the_nb_attempts - an_id
+            for a_sub_id in range( an_id, the_nb_attempts ) :
+                a_x = a_xs[ a_sub_id ]
+                an_y += the_x2y[ a_x ]
+                print "%4d" % a_x,
+                pass
+            pass
+        else:
+            a_neighbor_nb_attemps += the_sub2_nb_attempts
+            for a_sub_id in range( an_id, an_id + the_sub2_nb_attempts ) :
+                a_x = a_xs[ a_sub_id ]
+                an_y += the_x2y[ a_x ]
+                print "%4d" % a_x, 
+                pass
+            pass
+        an_average_y[ a_center_x ] = an_y / a_neighbor_nb_attemps
+        print "] = %4d" % an_average_y[ a_center_x ]
+
         pass
-    print
 
-    print2_dict( a_sub_xs, the_x2y )
+    #------------------------------------------------------------------------------------------
+    # Finding out the best interval based on the corresponding average values
+    a_max_average_y = 0.0
+    an_average_y_index = 0
+    for an_id in range( len( a_xs ) ) :
+        a_x = a_xs[ an_id ]
+        an_y = an_average_y[ a_x ]
 
-    a_probability_interval = calc_probability_interval( a_sub_xs, the_x2y )
-    print "cost : %4d\n" % the_cost
+        if an_y > a_max_average_y :
+            an_average_y_index = an_id
+            a_max_average_y = an_y
+            pass
 
-    return the_x2y, the_cost, an_end_x, a_probability_interval
+        pass
+
+    a_center_x = a_xs[ an_average_y_index ]
+    print "%4d - %4d" % ( a_center_x, a_max_average_y )
+
+    return a_center_x
 
 
 #--------------------------------------------------------------------------------------
@@ -147,74 +193,7 @@ def entry_point( the_fun, the_initial_x, the_finite_x, the_precision, the_nb_att
     a_sub2_nb_attempts = a_sub_nb_attempts
 
    #------------------------------------------------------------------------------------------
-   # Calaculating the average values for the half of the intervals
-    an_average_y = {}
-    a_xs = a_x2y.keys()
-    a_xs.sort()
-    for an_id in range( len( a_xs ) ) :
-        a_center_x = a_x = a_xs[ an_id ]
-        an_y = a_x2y[ a_x ]
-
-        a_neighbor_nb_attemps = 0
-
-        print "[", 
-        if an_id < a_sub2_nb_attempts :
-            a_neighbor_nb_attemps += an_id
-            for a_sub_id in range( an_id ) :
-                a_x = a_xs[ a_sub_id ]
-                an_y += a_x2y[ a_x ]
-                print "%4d" % a_x,
-                pass
-            pass
-        else:
-            a_neighbor_nb_attemps += a_sub2_nb_attempts
-            for a_sub_id in range( an_id - a_sub2_nb_attempts, an_id ) :
-                a_x = a_xs[ a_sub_id ]
-                an_y += a_x2y[ a_x ]
-                print "%4d" % a_x,
-                pass
-            pass
-
-        print "| %4d |" % a_center_x,
-
-        if a_nb_attempts - an_id < a_sub2_nb_attempts :
-            a_neighbor_nb_attemps += a_nb_attempts - an_id
-            for a_sub_id in range( an_id, a_nb_attempts ) :
-                a_x = a_xs[ a_sub_id ]
-                an_y += a_x2y[ a_x ]
-                print "%4d" % a_x,
-                pass
-            pass
-        else:
-            a_neighbor_nb_attemps += a_sub2_nb_attempts
-            for a_sub_id in range( an_id, an_id + a_sub2_nb_attempts ) :
-                a_x = a_xs[ a_sub_id ]
-                an_y += a_x2y[ a_x ]
-                print "%4d" % a_x, 
-                pass
-            pass
-        an_average_y[ a_center_x ] = an_y / a_neighbor_nb_attemps
-        print "] = %4d" % an_average_y[ a_center_x ]
-
-        pass
-
-    #------------------------------------------------------------------------------------------
-    # Finding out the best interval based on the corresponding average values
-    a_max_average_y = 0.0
-    an_average_y_index = 0
-    for an_id in range( len( a_xs ) ) :
-        a_x = a_xs[ an_id ]
-        an_y = an_average_y[ a_x ]
-
-        if an_y > a_max_average_y :
-            an_average_y_index = an_id
-            a_max_average_y = an_y
-            pass
-
-        pass
-
-    a_center_x = a_xs[ an_average_y_index ]
-    print "%4d - %4d" % ( a_center_x, a_max_average_y )
+    a_center_x = find_center( a_x2y, a_sub2_nb_attempts, a_nb_attempts )
 
     #------------------------------------------------------------------------------------------
     # New iteration
