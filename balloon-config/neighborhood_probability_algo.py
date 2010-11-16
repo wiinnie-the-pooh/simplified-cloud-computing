@@ -161,13 +161,7 @@ def find_center( the_x2y, the_sub2_nb_attempts ) :
 def get_stats( the_fun, the_x2y, the_cost, the_center_x, the_region_x, the_nb_attempts ) :
     an_end_x = the_center_x + the_region_x / 2.0
     a_start_x = the_center_x - the_region_x / 2.0
-
     a_region_x = the_region_x
-    if a_start_x < 1.0 : # The special Amazon workaround
-        a_start_x = 1000.0
-        a_region_x = ( an_end_x - a_start_x ) / 2.0
-        pass
-
     print "[ %4d - %4d ] : " % ( a_start_x, an_end_x )
 
     a_sub_xs = []
@@ -190,7 +184,7 @@ def get_stats( the_fun, the_x2y, the_cost, the_center_x, the_region_x, the_nb_at
 
 
 #--------------------------------------------------------------------------------------
-def entry_point( the_fun, the_center_x, the_region_x, the_precision, the_nb_attempts ) :
+def entry_point( the_fun, the_center_x, the_region_x, the_precision, the_nb_attempts, the_get_stats = get_stats ) :
     """ """
     a_center_x = the_center_x
     print "%4d - %4d\n" % ( a_center_x, 0.0 )
@@ -205,7 +199,7 @@ def entry_point( the_fun, the_center_x, the_region_x, the_precision, the_nb_atte
         a_max_average_y2 = a_max_average_y
         a_center_x2 = a_center_x
 
-        a_x2y, a_cost, a_region_x = get_stats( the_fun, a_x2y, a_cost, a_center_x, the_region_x, the_nb_attempts )
+        a_x2y, a_cost, a_region_x = the_get_stats( the_fun, a_x2y, a_cost, a_center_x, the_region_x, the_nb_attempts )
         a_center_x, a_max_average_y = find_center( a_x2y, a_sub_nb_attempts )
 
         if a_max_average_y < a_precision :
