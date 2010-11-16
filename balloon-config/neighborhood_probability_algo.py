@@ -144,8 +144,10 @@ def entry_point( the_fun, the_initial_x, the_finite_x, the_precision, the_nb_att
     print "cost : %4d\n" % a_cost
 
     a_sub_nb_attempts = a_nb_attempts / 2
-    a_sub2_nb_attempts = a_sub_nb_attempts / 2
+    a_sub2_nb_attempts = a_sub_nb_attempts
 
+   #------------------------------------------------------------------------------------------
+   # Calaculating the average values for the half of the intervals
     an_average_y = {}
     a_xs = a_x2y.keys()
     a_xs.sort()
@@ -195,6 +197,23 @@ def entry_point( the_fun, the_initial_x, the_finite_x, the_precision, the_nb_att
         print "] = %4d" % an_average_y[ a_middle_x ]
 
         pass
+
+    #------------------------------------------------------------------------------------------
+    # Finding out the best interval based on the corresponding average values
+    a_max_average_y = 0.0
+    an_average_y_index = 0
+    for an_id in range( len( a_xs ) ) :
+        a_x = a_xs[ an_id ]
+        an_y = an_average_y[ a_x ]
+
+        if an_y > a_max_average_y :
+            an_average_y_index = an_id
+            a_max_average_y = an_y
+            pass
+
+        pass
+
+    print "%4d - %4d" % ( an_average_y_index, a_max_average_y )
 
     return None, a_cost
 
