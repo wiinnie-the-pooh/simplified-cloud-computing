@@ -173,7 +173,6 @@ def entry_point( the_fun, the_initial_x, the_finite_x, the_precision, the_count_
         pass
 
     an_optimize_x = an_end_x
-
     print "solution : %4d / cost : %4d\n" % ( an_optimize_x, a_cost )
 
     return an_optimize_x, a_cost

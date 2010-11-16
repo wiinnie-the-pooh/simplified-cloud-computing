@@ -23,10 +23,13 @@
 
 #--------------------------------------------------------------------------------------
 from artificial_option_parser import main
-a_fun, an_initial_x, a_finite_x, a_precision, a_count_attempts = main()
+a_fun, an_initial_x, a_finite_x, a_precision, a_nb_attempts = main()
+
+a_center_x = ( a_finite_x + an_initial_x ) / 2.0
+a_region_x = ( a_finite_x - an_initial_x ) / 4.0
 
 import neighborhood_probability_algo
-an_optimize_x, a_cost = neighborhood_probability_algo.entry_point( a_fun, an_initial_x, a_finite_x, a_precision, a_count_attempts )
+an_optimize_x, a_cost = neighborhood_probability_algo.entry_point( a_fun, a_center_x, a_region_x, a_precision, a_nb_attempts )
 
 
 #---------------------------------------------------------------------------------------------

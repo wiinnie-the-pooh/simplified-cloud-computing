@@ -183,40 +183,42 @@ def get_stats( the_fun, the_x2y, the_cost, the_center_x, the_region_x, the_nb_at
 
 
 #--------------------------------------------------------------------------------------
-def entry_point( the_fun, the_initial_x, the_finite_x, the_precision, the_nb_attempts ) :
+def entry_point( the_fun, the_center_x, the_region_x, the_precision, the_nb_attempts ) :
     """ """
-    a_center_x = ( the_finite_x - the_initial_x ) / 2.0
+    a_center_x = the_center_x
     print "%4d - %4d\n" % ( a_center_x, 0.0 )
-
-    a_region_x = ( the_finite_x - the_initial_x ) / 4.0
+    a_sub_nb_attempts = the_nb_attempts / 1
     a_cost = 0.0
-    
     a_x2y = {}
-    a_sub_nb_attempts = the_nb_attempts / 2
-    a_sub2_nb_attempts = a_sub_nb_attempts / 1
 
     #------------------------------------------------------------------------------------------
-    a_x2y, a_cost = get_stats( the_fun, a_x2y, a_cost, a_center_x, a_region_x, the_nb_attempts )
-    a_center_x, a_max_average_y = find_center( a_x2y, a_sub2_nb_attempts )
+    a_max_average_y = 0.0
+    a_precision = float( the_precision / 100.0 )
+    while True:
+        a_max_average_y2 = a_max_average_y
+        a_center_x2 = a_center_x
+
+        a_x2y, a_cost = get_stats( the_fun, a_x2y, a_cost, a_center_x, the_region_x, the_nb_attempts )
+        a_center_x, a_max_average_y = find_center( a_x2y, a_sub_nb_attempts )
+
+        if a_max_average_y < a_precision :
+            continue
+
+        import math
+        if math.fabs( a_max_average_y - a_max_average_y2 ) / a_max_average_y > a_precision :
+            continue
+
+        if math.fabs( a_center_x - a_center_x2 ) / a_center_x > a_precision :
+            continue
+
+        break
+
 
     #------------------------------------------------------------------------------------------
-    a_x2y, a_cost = get_stats( the_fun, a_x2y, a_cost, a_center_x, a_region_x, the_nb_attempts )
-    a_center_x, a_max_average_y = find_center( a_x2y, a_sub2_nb_attempts )
+    an_optimize_x = a_center_x
+    print "solution : %4d / cost : %4d\n" % ( an_optimize_x, a_cost )
 
-    #------------------------------------------------------------------------------------------
-    a_x2y, a_cost = get_stats( the_fun, a_x2y, a_cost, a_center_x, a_region_x, the_nb_attempts )
-    a_center_x, a_max_average_y = find_center( a_x2y, a_sub2_nb_attempts )
-
-    #------------------------------------------------------------------------------------------
-    a_x2y, a_cost = get_stats( the_fun, a_x2y, a_cost, a_center_x, a_region_x, the_nb_attempts )
-    a_center_x, a_max_average_y = find_center( a_x2y, a_sub2_nb_attempts )
-
-    #------------------------------------------------------------------------------------------
-    a_x2y, a_cost = get_stats( the_fun, a_x2y, a_cost, a_center_x, a_region_x, the_nb_attempts )
-    a_center_x, a_max_average_y = find_center( a_x2y, a_sub2_nb_attempts )
-
-    #------------------------------------------------------------------------------------------
-    return None, a_cost
+    return an_optimize_x, a_cost
 
 
 #---------------------------------------------------------------------------------------------
