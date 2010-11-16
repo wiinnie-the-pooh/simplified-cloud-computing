@@ -140,7 +140,7 @@ def find_center( the_x2y, the_sub2_nb_attempts ) :
     # Shift the 'center' to avoid mesurement of the same points
     if an_average_y_index == 0 :
         a_center_x -= ( a_xs[ an_average_y_index + 1 ] - a_xs[ an_average_y_index ] ) / 3.0
-    elif an_average_y_index == a_nb_attempts :
+    elif an_average_y_index == a_nb_attempts - 1 :
         a_center_x += ( a_xs[ an_average_y_index ] - a_xs[ an_average_y_index - 1 ] ) / 3.0
     else:
         a_left_x = a_xs[ an_average_y_index - 1 ]
@@ -159,13 +159,20 @@ def find_center( the_x2y, the_sub2_nb_attempts ) :
 
 #--------------------------------------------------------------------------------------
 def get_stats( the_fun, the_x2y, the_cost, the_center_x, the_region_x, the_nb_attempts ) :
-    a_start_x = the_center_x - the_region_x / 2.0
     an_end_x = the_center_x + the_region_x / 2.0
+    a_start_x = the_center_x - the_region_x / 2.0
+
+    a_region_x = the_region_x
+    if a_start_x < 1.0 : # The special Amazon workaround
+        a_start_x = 1000.0
+        a_region_x = ( an_end_x - a_start_x ) / 2.0
+        pass
+
     print "[ %4d - %4d ] : " % ( a_start_x, an_end_x )
 
     a_sub_xs = []
     a_x = an_end_x
-    a_step = the_region_x / float( the_nb_attempts )
+    a_step = a_region_x / float( the_nb_attempts )
     for an_id in range( the_nb_attempts + 1 ) :
         if not the_x2y.has_key( a_x ) : 
             a_sub_xs.append( a_x )
@@ -179,7 +186,7 @@ def get_stats( the_fun, the_x2y, the_cost, the_center_x, the_region_x, the_nb_at
     print2_dict( a_sub_xs, the_x2y )
     print "cost : %4d\n" % the_cost
 
-    return the_x2y, the_cost
+    return the_x2y, the_cost, a_region_x
 
 
 #--------------------------------------------------------------------------------------
@@ -198,7 +205,7 @@ def entry_point( the_fun, the_center_x, the_region_x, the_precision, the_nb_atte
         a_max_average_y2 = a_max_average_y
         a_center_x2 = a_center_x
 
-        a_x2y, a_cost = get_stats( the_fun, a_x2y, a_cost, a_center_x, the_region_x, the_nb_attempts )
+        a_x2y, a_cost, a_region_x = get_stats( the_fun, a_x2y, a_cost, a_center_x, the_region_x, the_nb_attempts )
         a_center_x, a_max_average_y = find_center( a_x2y, a_sub_nb_attempts )
 
         if a_max_average_y < a_precision :
