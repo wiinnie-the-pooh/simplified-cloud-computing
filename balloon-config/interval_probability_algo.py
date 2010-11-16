@@ -146,10 +146,9 @@ def entry_point( the_fun, the_initial_x, the_finite_x, the_precision, the_count_
     still distribute these points along interval, to be able to reuse them at the next iteration ).
     """
     a_start_x = the_initial_x
-    a_cost = a_start_x
     an_end_x = the_finite_x
     a_count_attempts = the_count_attempts
-    a_test_x = an_end_x
+    a_cost = 0.0
     
     a_x2y = {}
     a_x = an_end_x
