@@ -92,23 +92,26 @@ def calc_probability_interval( the_sub_xs, the_x2y ) :
 
 
 #--------------------------------------------------------------------------------------
-def find_center( the_x2y, the_sub2_nb_attempts, the_nb_attempts ) :
+def find_center( the_x2y, the_sub2_nb_attempts ) :
     an_average_y = {}
+
     a_xs = the_x2y.keys()
+    a_nb_attempts = len( a_xs )
+
     a_xs.sort()
-    for an_id in range( len( a_xs ) ) :
+    for an_id in range( a_nb_attempts ) :
         a_center_x = a_x = a_xs[ an_id ]
         an_y = the_x2y[ a_x ]
 
         a_neighbor_nb_attemps = 0
 
-        print "[", 
+        # print "[", 
         if an_id < the_sub2_nb_attempts :
             a_neighbor_nb_attemps += an_id
             for a_sub_id in range( an_id ) :
                 a_x = a_xs[ a_sub_id ]
                 an_y += the_x2y[ a_x ]
-                print "%4d" % a_x,
+                # print "%4d" % a_x,
                 pass
             pass
         else:
@@ -116,18 +119,18 @@ def find_center( the_x2y, the_sub2_nb_attempts, the_nb_attempts ) :
             for a_sub_id in range( an_id - the_sub2_nb_attempts, an_id ) :
                 a_x = a_xs[ a_sub_id ]
                 an_y += the_x2y[ a_x ]
-                print "%4d" % a_x,
+                # print "%4d" % a_x,
                 pass
             pass
 
-        print "| %4d |" % a_center_x,
+        # print "| %4d |" % a_center_x,
 
-        if the_nb_attempts - an_id < the_sub2_nb_attempts :
-            a_neighbor_nb_attemps += the_nb_attempts - an_id
-            for a_sub_id in range( an_id, the_nb_attempts ) :
+        if a_nb_attempts - an_id < the_sub2_nb_attempts :
+            a_neighbor_nb_attemps += a_nb_attempts - an_id
+            for a_sub_id in range( an_id, a_nb_attempts ) :
                 a_x = a_xs[ a_sub_id ]
                 an_y += the_x2y[ a_x ]
-                print "%4d" % a_x,
+                # print "%4d" % a_x,
                 pass
             pass
         else:
@@ -135,11 +138,11 @@ def find_center( the_x2y, the_sub2_nb_attempts, the_nb_attempts ) :
             for a_sub_id in range( an_id, an_id + the_sub2_nb_attempts ) :
                 a_x = a_xs[ a_sub_id ]
                 an_y += the_x2y[ a_x ]
-                print "%4d" % a_x, 
+                # print "%4d" % a_x, 
                 pass
             pass
         an_average_y[ a_center_x ] = an_y / a_neighbor_nb_attemps
-        print "] = %4d" % an_average_y[ a_center_x ]
+        # print "] = %4d" % an_average_y[ a_center_x ]
 
         pass
 
@@ -159,58 +162,85 @@ def find_center( the_x2y, the_sub2_nb_attempts, the_nb_attempts ) :
         pass
 
     a_center_x = a_xs[ an_average_y_index ]
-    print "%4d - %4d" % ( a_center_x, a_max_average_y )
 
+    #------------------------------------------------------------------------------------------
+    # Make a shift for the 'center' to avoid mesurement of the same points
+    if an_average_y_index == 0 :
+        a_center_x -= ( a_xs[ an_average_y_index + 1 ] - a_xs[ an_average_y_index ] ) / 3.0
+    elif an_average_y_index == a_nb_attempts :
+        a_center_x += ( a_xs[ an_average_y_index ] - a_xs[ an_average_y_index - 1 ] ) / 3.0
+    else:
+        a_left_x = a_xs[ an_average_y_index - 1 ]
+        a_right_x = a_xs[ an_average_y_index + 1 ]
+        if an_average_y[ a_left_x ] < an_average_y[ a_right_x ] :
+            a_center_x += ( a_right_x - a_center_x ) / 3.0
+        else:
+            a_center_x -= ( a_center_x - a_left_x ) / 3.0
+            pass
+        pass
+
+    print "%4d - %4d\n" % ( a_center_x, a_max_average_y )    
+    
     return a_center_x
+
+
+#--------------------------------------------------------------------------------------
+def get_stats( the_fun, the_x2y, the_cost, the_center_x, the_region_x, the_nb_attempts ) :
+    a_start_x = the_center_x - the_region_x / 2.0
+    an_end_x = the_center_x + the_region_x / 2.0
+    print "[ %4d - %4d ] : " % ( a_start_x, an_end_x ),
+
+    a_x = an_end_x
+    a_step = the_region_x / float( the_nb_attempts )
+    for an_id in range( the_nb_attempts + 1 ) :
+        print "%4d" % a_x,
+        if not the_x2y.has_key( a_x ) : 
+            an_y = the_fun( a_x )
+            the_x2y[ a_x ] = an_y
+            the_cost += a_x
+            pass
+        a_x -= a_step
+        pass
+    print
+
+    print2_dict( the_x2y.keys(), the_x2y )
+    print "cost : %4d\n" % the_cost
+
+    return the_x2y, the_cost, a_step
 
 
 #--------------------------------------------------------------------------------------
 def entry_point( the_fun, the_initial_x, the_finite_x, the_precision, the_nb_attempts ) :
     """ """
     a_center_x = ( the_finite_x - the_initial_x ) / 2.0
+    print "%4d - %4d\n" % ( a_center_x, 0.0 )
+
     a_region_x = ( the_finite_x - the_initial_x ) / 4.0
-
-    a_start_x = a_center_x - a_region_x / 2.0
-    an_end_x = a_center_x + a_region_x / 2.0
-
-    a_nb_attempts = the_nb_attempts
     a_cost = 0.0
     
     a_x2y = {}
-    a_x = an_end_x
-    a_step = ( an_end_x - a_start_x ) / float( a_nb_attempts )
-    for an_id in range( a_nb_attempts + 1 ) :
-        an_y = the_fun( a_x )
-        a_x2y[ a_x ] = an_y
-        a_cost += a_x
-        a_x -= a_step
-        pass
-
-    print2_dict( a_x2y.keys(), a_x2y )
-    print "cost : %4d\n" % a_cost
-
-    a_sub_nb_attempts = a_nb_attempts / 2
-    a_sub2_nb_attempts = a_sub_nb_attempts
-
-   #------------------------------------------------------------------------------------------
-    a_center_x = find_center( a_x2y, a_sub2_nb_attempts, a_nb_attempts )
+    a_sub_nb_attempts = the_nb_attempts / 2
+    a_sub2_nb_attempts = a_sub_nb_attempts / 1
 
     #------------------------------------------------------------------------------------------
-    # New iteration
-    a_start_x = a_center_x - a_region_x / 2.0
-    an_end_x = a_center_x + a_region_x / 2.0
+    a_x2y, a_cost, a_step = get_stats( the_fun, a_x2y, a_cost, a_center_x, a_region_x, the_nb_attempts )
+    a_center_x = find_center( a_x2y, a_sub2_nb_attempts )
 
-    a_x = an_end_x
-    a_step = ( an_end_x - a_start_x ) / float( a_nb_attempts )
-    for an_id in range( a_nb_attempts + 1 ) :
-        an_y = the_fun( a_x )
-        a_x2y[ a_x ] = an_y
-        a_cost += a_x
-        a_x -= a_step
-        pass
+    #------------------------------------------------------------------------------------------
+    a_x2y, a_cost, a_step = get_stats( the_fun, a_x2y, a_cost, a_center_x, a_region_x, the_nb_attempts )
+    a_center_x = find_center( a_x2y, a_sub2_nb_attempts )
 
-    print2_dict( a_x2y.keys(), a_x2y )
-    print "cost : %4d\n" % a_cost
+    #------------------------------------------------------------------------------------------
+    a_x2y, a_cost, a_step = get_stats( the_fun, a_x2y, a_cost, a_center_x, a_region_x, the_nb_attempts )
+    a_center_x = find_center( a_x2y, a_sub2_nb_attempts )
+
+    #------------------------------------------------------------------------------------------
+    a_x2y, a_cost, a_step = get_stats( the_fun, a_x2y, a_cost, a_center_x, a_region_x, the_nb_attempts )
+    a_center_x = find_center( a_x2y, a_sub2_nb_attempts )
+
+    #------------------------------------------------------------------------------------------
+    a_x2y, a_cost, a_step = get_stats( the_fun, a_x2y, a_cost, a_center_x, a_region_x, the_nb_attempts )
+    a_center_x = find_center( a_x2y, a_sub2_nb_attempts )
 
     #------------------------------------------------------------------------------------------
     return None, a_cost
