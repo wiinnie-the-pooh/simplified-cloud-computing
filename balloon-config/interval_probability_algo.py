@@ -47,15 +47,20 @@ def print_dict( the_x2y ) :
 
 #--------------------------------------------------------------------------------------
 def print2_dict( the_sub_xs, the_x2y ) :
+    a_counter = 1
+    an_y_integral = 0.0
+
     a_xs = the_x2y.keys()
     a_xs.sort()
     for a_x in a_xs :
+        an_y_integral += the_x2y[ a_x ]
         if a_x in the_sub_xs :
             print " + ", 
         else:
             print " - ", 
             pass
-        print "%4d : %4.0f" % ( a_x, the_x2y[ a_x ] )
+        print "%4d : %4.0f [ %4.0f ]" % ( a_x, the_x2y[ a_x ], an_y_integral / float( a_counter ) )
+        a_counter += 1
         pass
     pass
 
@@ -105,10 +110,10 @@ def sub_algo( the_x2y, the_cost, the_fun, the_start_x, the_end_x, the_probabilit
         pass
     print
 
-    a_probability_interval = calc_probability_interval( a_sub_xs, the_x2y )
-
     print2_dict( a_sub_xs, the_x2y )
-    print "cost - %4d\n" % the_cost
+
+    a_probability_interval = calc_probability_interval( a_sub_xs, the_x2y )
+    print "cost : %4d\n" % the_cost
 
     return the_x2y, the_cost, an_end_x, a_probability_interval
 
@@ -137,7 +142,7 @@ def entry_point( the_fun, the_initial_x, the_finite_x, the_precision, the_count_
     print2_dict( a_x2y.keys(), a_x2y )
 
     a_probability_interval = calc_probability_interval( a_x2y.keys(), a_x2y )
-    print "cost - %4d\n" % a_cost
+    print "cost : %4d\n" % a_cost
 
 
     #-----------------------------------------------------------------------------------------
