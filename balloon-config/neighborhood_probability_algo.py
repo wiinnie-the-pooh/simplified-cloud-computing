@@ -152,7 +152,7 @@ def entry_point( the_fun, the_initial_x, the_finite_x, the_precision, the_nb_att
     a_xs = a_x2y.keys()
     a_xs.sort()
     for an_id in range( len( a_xs ) ) :
-        a_middle_x = a_x = a_xs[ an_id ]
+        a_center_x = a_x = a_xs[ an_id ]
         an_y = a_x2y[ a_x ]
 
         a_neighbor_nb_attemps = 0
@@ -175,7 +175,7 @@ def entry_point( the_fun, the_initial_x, the_finite_x, the_precision, the_nb_att
                 pass
             pass
 
-        print "| %4d |" % a_middle_x,
+        print "| %4d |" % a_center_x,
 
         if a_nb_attempts - an_id < a_sub2_nb_attempts :
             a_neighbor_nb_attemps += a_nb_attempts - an_id
@@ -193,8 +193,8 @@ def entry_point( the_fun, the_initial_x, the_finite_x, the_precision, the_nb_att
                 print "%4d" % a_x, 
                 pass
             pass
-        an_average_y[ a_middle_x ] = an_y / a_neighbor_nb_attemps
-        print "] = %4d" % an_average_y[ a_middle_x ]
+        an_average_y[ a_center_x ] = an_y / a_neighbor_nb_attemps
+        print "] = %4d" % an_average_y[ a_center_x ]
 
         pass
 
@@ -213,8 +213,27 @@ def entry_point( the_fun, the_initial_x, the_finite_x, the_precision, the_nb_att
 
         pass
 
-    print "%4d - %4d" % ( an_average_y_index, a_max_average_y )
+    a_center_x = a_xs[ an_average_y_index ]
+    print "%4d - %4d" % ( a_center_x, a_max_average_y )
 
+    #------------------------------------------------------------------------------------------
+    # New iteration
+    a_start_x = a_center_x - a_region_x / 2.0
+    an_end_x = a_center_x + a_region_x / 2.0
+
+    a_x = an_end_x
+    a_step = ( an_end_x - a_start_x ) / float( a_nb_attempts )
+    for an_id in range( a_nb_attempts + 1 ) :
+        an_y = the_fun( a_x )
+        a_x2y[ a_x ] = an_y
+        a_cost += a_x
+        a_x -= a_step
+        pass
+
+    print2_dict( a_x2y.keys(), a_x2y )
+    print "cost : %4d\n" % a_cost
+
+    #------------------------------------------------------------------------------------------
     return None, a_cost
 
 
