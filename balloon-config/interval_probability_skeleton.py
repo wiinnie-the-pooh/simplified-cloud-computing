@@ -26,7 +26,7 @@ from artificial_option_parser import main
 a_fun, an_initial_x, a_finite_x, a_precision, a_count_attempts = main()
 
 import interval_probability_algo
-an_optimize_size = interval_probability_algo.entry_point( a_fun, an_initial_x, a_finite_x, a_precision, a_count_attempts )
+an_optimize_x, a_cost = interval_probability_algo.entry_point( a_fun, an_initial_x, a_finite_x, a_precision, a_count_attempts )
 
 
 #---------------------------------------------------------------------------------------------
