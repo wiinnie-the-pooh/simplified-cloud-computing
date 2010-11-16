@@ -135,7 +135,7 @@ def entry_point( the_fun, the_initial_x, the_finite_x, the_precision, the_count_
        the function value in the same point to get the probability information;
        - if we deal with interval, it will be possinle to partly reuse the function values 
        calculated on the previous steps ( as experiments show, this algorithm in approximatelly 
-       2 times 'cheaper' than 'division by 2' method).
+       2 times 'cheaper' than 'division by 2' method ).
 
     The result for this algorithm is the most upper value in the found 'probability' interval, which, 
     according to the insights, would give us the higher combination of F( x ) * P( x ) expression.
@@ -173,7 +173,7 @@ def entry_point( the_fun, the_initial_x, the_finite_x, the_precision, the_count_
                                                                     a_probability_interval, a_count_attempts )    
         pass
 
-    return
+    return an_end_x
 
 
 #---------------------------------------------------------------------------------------------
