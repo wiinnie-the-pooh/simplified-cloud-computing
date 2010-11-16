@@ -53,42 +53,15 @@ def print2_dict( the_sub_xs, the_x2y ) :
     a_xs = the_x2y.keys()
     a_xs.sort()
     for a_x in a_xs :
-        an_y_integral += the_x2y[ a_x ]
         if a_x in the_sub_xs :
             print " + ", 
         else:
             print " - ", 
             pass
-        print "%4d : %4.0f [ %4.0f ]" % ( a_x, the_x2y[ a_x ], an_y_integral / float( a_counter ) )
+        print "%4d : %4.0f" % ( a_x, the_x2y[ a_x ] )
         a_counter += 1
         pass
     pass
-
-
-#--------------------------------------------------------------------------------------
-def calc_probability_interval( the_sub_xs, the_x2y ) :
-    an_ok_counter = 0
-    an_y_integral = 0.0
-    a_start_x = the_sub_xs[ 0 ]
-    for a_x in the_sub_xs :
-        an_y = the_x2y[ a_x ]
-        an_y_integral += an_y
-
-        if an_y > 0.0 :
-            an_ok_counter += 1
-            pass
-        pass
-
-    an_average_y_ok = 0
-    if an_ok_counter != 0 :
-        an_average_y_ok = an_y_integral / float( an_ok_counter )
-        pass
-
-    an_average_y_all = an_y_integral / float( len( the_sub_xs ) )
-    a_probability_interval = an_average_y_all / an_average_y_ok
-    print "probability interval : %0.3f" % a_probability_interval
-
-    return a_probability_interval
 
 
 #--------------------------------------------------------------------------------------
@@ -164,7 +137,7 @@ def find_center( the_x2y, the_sub2_nb_attempts ) :
     a_center_x = a_xs[ an_average_y_index ]
 
     #------------------------------------------------------------------------------------------
-    # Make a shift for the 'center' to avoid mesurement of the same points
+    # Shift the 'center' to avoid mesurement of the same points
     if an_average_y_index == 0 :
         a_center_x -= ( a_xs[ an_average_y_index + 1 ] - a_xs[ an_average_y_index ] ) / 3.0
     elif an_average_y_index == a_nb_attempts :
@@ -181,32 +154,32 @@ def find_center( the_x2y, the_sub2_nb_attempts ) :
 
     print "%4d - %4d\n" % ( a_center_x, a_max_average_y )    
     
-    return a_center_x
+    return a_center_x, a_max_average_y
 
 
 #--------------------------------------------------------------------------------------
 def get_stats( the_fun, the_x2y, the_cost, the_center_x, the_region_x, the_nb_attempts ) :
     a_start_x = the_center_x - the_region_x / 2.0
     an_end_x = the_center_x + the_region_x / 2.0
-    print "[ %4d - %4d ] : " % ( a_start_x, an_end_x ),
+    print "[ %4d - %4d ] : " % ( a_start_x, an_end_x )
 
+    a_sub_xs = []
     a_x = an_end_x
     a_step = the_region_x / float( the_nb_attempts )
     for an_id in range( the_nb_attempts + 1 ) :
-        print "%4d" % a_x,
         if not the_x2y.has_key( a_x ) : 
+            a_sub_xs.append( a_x )
             an_y = the_fun( a_x )
             the_x2y[ a_x ] = an_y
             the_cost += a_x
             pass
         a_x -= a_step
         pass
-    print
 
-    print2_dict( the_x2y.keys(), the_x2y )
+    print2_dict( a_sub_xs, the_x2y )
     print "cost : %4d\n" % the_cost
 
-    return the_x2y, the_cost, a_step
+    return the_x2y, the_cost
 
 
 #--------------------------------------------------------------------------------------
@@ -223,24 +196,24 @@ def entry_point( the_fun, the_initial_x, the_finite_x, the_precision, the_nb_att
     a_sub2_nb_attempts = a_sub_nb_attempts / 1
 
     #------------------------------------------------------------------------------------------
-    a_x2y, a_cost, a_step = get_stats( the_fun, a_x2y, a_cost, a_center_x, a_region_x, the_nb_attempts )
-    a_center_x = find_center( a_x2y, a_sub2_nb_attempts )
+    a_x2y, a_cost = get_stats( the_fun, a_x2y, a_cost, a_center_x, a_region_x, the_nb_attempts )
+    a_center_x, a_max_average_y = find_center( a_x2y, a_sub2_nb_attempts )
 
     #------------------------------------------------------------------------------------------
-    a_x2y, a_cost, a_step = get_stats( the_fun, a_x2y, a_cost, a_center_x, a_region_x, the_nb_attempts )
-    a_center_x = find_center( a_x2y, a_sub2_nb_attempts )
+    a_x2y, a_cost = get_stats( the_fun, a_x2y, a_cost, a_center_x, a_region_x, the_nb_attempts )
+    a_center_x, a_max_average_y = find_center( a_x2y, a_sub2_nb_attempts )
 
     #------------------------------------------------------------------------------------------
-    a_x2y, a_cost, a_step = get_stats( the_fun, a_x2y, a_cost, a_center_x, a_region_x, the_nb_attempts )
-    a_center_x = find_center( a_x2y, a_sub2_nb_attempts )
+    a_x2y, a_cost = get_stats( the_fun, a_x2y, a_cost, a_center_x, a_region_x, the_nb_attempts )
+    a_center_x, a_max_average_y = find_center( a_x2y, a_sub2_nb_attempts )
 
     #------------------------------------------------------------------------------------------
-    a_x2y, a_cost, a_step = get_stats( the_fun, a_x2y, a_cost, a_center_x, a_region_x, the_nb_attempts )
-    a_center_x = find_center( a_x2y, a_sub2_nb_attempts )
+    a_x2y, a_cost = get_stats( the_fun, a_x2y, a_cost, a_center_x, a_region_x, the_nb_attempts )
+    a_center_x, a_max_average_y = find_center( a_x2y, a_sub2_nb_attempts )
 
     #------------------------------------------------------------------------------------------
-    a_x2y, a_cost, a_step = get_stats( the_fun, a_x2y, a_cost, a_center_x, a_region_x, the_nb_attempts )
-    a_center_x = find_center( a_x2y, a_sub2_nb_attempts )
+    a_x2y, a_cost = get_stats( the_fun, a_x2y, a_cost, a_center_x, a_region_x, the_nb_attempts )
+    a_center_x, a_max_average_y = find_center( a_x2y, a_sub2_nb_attempts )
 
     #------------------------------------------------------------------------------------------
     return None, a_cost
