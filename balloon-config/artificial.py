@@ -33,7 +33,7 @@ class function():
          a_file = open( a_logfile )
          for a_line in a_file.readlines():
              a_data = a_line.split( ";" )
-             a_key = int( a_data[ :1 ][ 0 ] )
+             a_key = float( a_data[ :1 ][ 0 ] )
              a_values = a_data[ 1: ][ :-1 ]
              if self.list_fun_values.has_key( a_key ):
                 for a_value in a_values:
