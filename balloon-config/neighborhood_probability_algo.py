@@ -152,7 +152,7 @@ def find_center( the_x2y, the_sub2_nb_attempts ) :
             pass
         pass
 
-    print "%4d - %4d\n" % ( a_center_x, a_max_average_y )    
+    print "center: %4d - < value >: %4d\n" % ( a_center_x, a_max_average_y )    
     
     return a_center_x, a_max_average_y
 
