@@ -185,7 +185,36 @@ def get_stats( the_fun, the_x2y, the_cost, the_center_x, the_region_x, the_nb_at
 
 #--------------------------------------------------------------------------------------
 def entry_point( the_fun, the_center_x, the_region_x, the_precision, the_nb_attempts, the_get_stats = get_stats ) :
-    """ """
+    """The idea of this algorithm is very close to the 'interval' one; it supposes that the best value of a 
+    probabilty nature function - F( x ) had better be defined through a some 'neighborhood', which could give
+    more realistic representation of what is happenning in fact, not a precise point.
+
+    This algorithm, like 'interval' one, designed in that way that it accumulates the statistics to be able 
+    to make more 'proven' choice in whatever time over all the obtained results, not just currently calculated.
+    So, it has good level of resistance to be caught in a local trap.
+    
+    Note, that the cost of F( x ) mesurement is much higher than whatever algorithmic tricks are applied over 
+    the mesured results.
+    
+    The 'success' condition for this algorithm is when the function values on successive neighborhoods start
+    differ less than the given 'precision'.
+
+    This algorithm overcomes the initial limitation of the other two ( 'division by two' & 'interval probability' )
+    in the point that it does not look for a solution within a given 'interval', instead it just starts to look
+    from a given point with a given neighborhood, but can move in whatever direction and scale to reach the 'success'.
+    
+    As well, this algorithm is more universal in compare with 'interval' one, because it does not use any insights 
+    about the possible shape and function behaviour. From this point, it could be used for any application of that 
+    sort.
+    
+    The result for this algorithm is the central point in the most successful 'neighborhod', which would give us
+    the higher combination of F( x ) * P( x ) expression.
+
+    Attention, this algorithm will be satisfied even with low 'probability' behaviour functions, but the result 
+    could be not what you are looking for. So, the best practise to use this algorithm it is to start it from a steady
+    'probability'neighborhod that the algorithm will be able to distinguish the right trend ( in some ways, it works 
+    like a dog; you need to give him a good hook first to make sure that he understood what you are looking for ).
+    """
     a_center_x = the_center_x
     print "%4d - %4d\n" % ( a_center_x, 0.0 )
     a_sub_nb_attempts = the_nb_attempts / 1
