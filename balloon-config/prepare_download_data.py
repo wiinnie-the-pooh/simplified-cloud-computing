@@ -107,12 +107,20 @@ def main():
         region2bucket[ a_region ] =  create_bucket( a_region )
         print "\'%s\' region - \'%s\'" %( a_region, region2bucket[ a_region ] ) 
         pass
+    a_values = ""
     while a_size <= a_max_size:
+         a_values += "%5d;" % a_size
          print "upload file - %d bytes" % a_size
          upload_file( region2bucket[ '' ] , a_size )
          a_size = int ( a_size / ( float( 100 - a_step ) / float( 100 ) ) )
          pass
     
+    #create list of existing values 
+    from boto.s3.key import Key
+    a_key_name = "values"
+    a_key=Key( region2bucket[ '' ], a_key_name )
+    #write values w/o last ";"
+    a_key.set_contents_from_string( a_values[ :-1 ] )
     
     for a_key in region2bucket[ '' ]:
         for a_region in a_regions[ 1: ]:
