@@ -81,7 +81,7 @@ def main():
                                  action = "store",
                                 dest = "max_size",
                                  help = "(\"%default\", by default)",
-                                 default = 6000 )
+                                 default = 10 )
  
     an_option_parser.add_option( "--step",
                                  metavar = "< The step in percent >",
@@ -109,7 +109,7 @@ def main():
         pass
     a_values = ""
     while a_size <= a_max_size:
-         a_values += "%5d;" % a_size
+         a_values += "%d;" % a_size
          print "upload file - %d bytes" % a_size
          upload_file( region2bucket[ '' ] , a_size )
          a_size = int ( a_size / ( float( 100 - a_step ) / float( 100 ) ) )
