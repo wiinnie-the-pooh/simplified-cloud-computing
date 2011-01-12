@@ -81,7 +81,7 @@ def main():
                                  action = "store",
                                 dest = "max_size",
                                  help = "(\"%default\", by default)",
-                                 default = 10 )
+                                 default = 6000 )
  
     an_option_parser.add_option( "--step",
                                  metavar = "< The step in percent >",
