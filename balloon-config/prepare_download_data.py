@@ -22,33 +22,25 @@
 
 
 #--------------------------------------------------------------------------------------
-def sh_command( the_command ) :
-    "Execution of shell command"
-    from subprocess import Popen,PIPE
-    import os
-    a_pipe = Popen( the_command, stdout = PIPE, stderr = PIPE, shell = True )
-
-    a_return_code = os.waitpid( a_pipe.pid, 0 )[ 1 ]
-
-    if a_return_code != 0 :
-        os._exit( os.EX_USAGE )
-        pass
-        
-        
-#--------------------------------------------------------------------------------------
-def create_bucket():
+def create_bucket( the_region ):
     from boto.s3.connection import S3Connection
     import os, uuid
     a_conn=S3Connection( aws_access_key_id=os.getenv( "AWS_ACCESS_KEY_ID" ), aws_secret_access_key=os.getenv( "AWS_SECRET_ACCESS_KEY" ) )
-    a_bucket_name="download-seed-size" + str( uuid.uuid4() )
-    a_bucket=a_conn.create_bucket( a_bucket_name )
+    a_bucket_name="download-seed-size"
+    import hashlib
+    a_bucket_name = hashlib.md5( a_bucket_name + the_region ).hexdigest()
+    a_bucket=a_conn.create_bucket( a_bucket_name, location = the_region )
     return a_bucket
 
 
 #--------------------------------------------------------------------------------------     
 def create_test_file( the_size ):
-    a_filename='upload_test'+str( the_size )
-    sh_command( 'dd if=/dev/zero of=%s bs=%d count=1' % ( a_filename, the_size ) )
+    import tempfile
+    a_filename = tempfile.mkstemp( prefix = '%d-' % the_size )[ 1 ]
+
+    import os
+    os.system( 'dd if=/dev/zero of=%s bs=%d count=1 > /dev/null 2>&1' % ( a_filename, the_size ) )
+    
     return a_filename
     
 
@@ -59,7 +51,8 @@ def upload_file( the_backet, the_size ):
     a_key=Key( the_backet, a_key_name )
     a_file = create_test_file( the_size )
     a_key.set_contents_from_filename( a_file )
-
+    import os
+    os.system( 'rm %s' % a_file )
     pass
 
 
@@ -88,7 +81,7 @@ def main():
                                  action = "store",
                                 dest = "max_size",
                                  help = "(\"%default\", by default)",
-                                 default = 6000 )
+                                 default = 10 )
  
     an_option_parser.add_option( "--step",
                                  metavar = "< The step in percent >",
@@ -104,14 +97,30 @@ def main():
     a_max_size = an_options.max_size * 1024
     an_initial_size = an_options.initial_size * 1024
 
-    a_bucket = create_bucket()
+    a_bucket = create_bucket( '' )
     a_size = an_initial_size
+    
+    a_regions = [ '', 'EU', 'ap-southeast-1', 'us-west-1' ]
+    region2bucket = {}
+    
+    for a_region in a_regions :
+        region2bucket[ a_region ] =  create_bucket( a_region )
+        print "\'%s\' region - \'%s\'" %( a_region, region2bucket[ a_region ] ) 
+        pass
     while a_size <= a_max_size:
-         print "upload %d bytes" % a_size
-         upload_file( a_bucket, a_size )
+         print "upload file - %d bytes" % a_size
+         upload_file( region2bucket[ '' ] , a_size )
          a_size = int ( a_size / ( float( 100 - a_step ) / float( 100 ) ) )
-         print a_size
          pass
+    
+    
+    for a_key in region2bucket[ '' ]:
+        for a_region in a_regions[ 1: ]:
+            print "Copying \'%s\' key to \'%s\'" %( a_key.name, a_region )
+            a_new_key = a_key.copy( region2bucket[ a_region ].name, a_key.name )
+            pass
+        pass
+    
     pass
 
    
