@@ -81,7 +81,7 @@ def main():
                                  action = "store",
                                 dest = "max_size",
                                  help = "(\"%default\", by default)",
-                                 default = 10 )
+                                 default = 6000 )
  
     an_option_parser.add_option( "--step",
                                  metavar = "< The step in percent >",
@@ -118,7 +118,7 @@ def main():
     #create list of existing values 
     from boto.s3.key import Key
     a_key_name = "values"
-    a_key=Key( region2bucket[ '' ], a_key_name )
+    a_key = Key( region2bucket[ '' ], a_key_name )
     #write values w/o last ";"
     a_key.set_contents_from_string( a_values[ :-1 ] )
     
