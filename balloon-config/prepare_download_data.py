@@ -29,7 +29,11 @@ def create_bucket( the_region ):
     a_bucket_name="download-seed-size"
     import hashlib
     a_bucket_name = hashlib.md5( a_bucket_name + the_region ).hexdigest()
-    a_bucket=a_conn.create_bucket( a_bucket_name, location = the_region )
+    try:
+       a_bucket=a_conn.get_bucket( a_bucket_name )
+    except:   
+       a_bucket=a_conn.create_bucket( a_bucket_name, location = the_region )
+
     return a_bucket
 
 
@@ -53,7 +57,7 @@ def upload_file( the_backet, the_size ):
     a_key.set_contents_from_filename( a_file )
     import os
     os.system( 'rm %s' % a_file )
-    pass
+    return a_key
 
 
 #-----------------------------------------------------------------------------------------
@@ -111,23 +115,16 @@ def main():
     while a_size <= a_max_size:
          a_values += "%d;" % a_size
          print "upload file - %d bytes" % a_size
-         upload_file( region2bucket[ '' ] , a_size )
-         a_size = int ( a_size / ( float( 100 - a_step ) / float( 100 ) ) )
-         pass
-    
-    #create list of existing values 
-    from boto.s3.key import Key
-    a_key_name = "values"
-    a_key = Key( region2bucket[ '' ], a_key_name )
-    #write values w/o last ";"
-    a_key.set_contents_from_string( a_values[ :-1 ] )
-    
-    for a_key in region2bucket[ '' ]:
-        for a_region in a_regions[ 1: ]:
+         a_key = upload_file( region2bucket[ '' ] , a_size )
+         a_key.make_public()
+         #copy key to another region
+         for a_region in a_regions[ 1: ]:
             print "Copying \'%s\' key to \'%s\'" %( a_key.name, a_region )
             a_new_key = a_key.copy( region2bucket[ a_region ].name, a_key.name )
+            a_new_key.make_public()
             pass
-        pass
+         a_size = int ( a_size / ( float( 100 - a_step ) / float( 100 ) ) )
+         pass
     
     pass
 
